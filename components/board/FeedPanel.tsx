@@ -67,7 +67,7 @@ export function FeedTicker() {
   if (!items.length) return null;
   const [newest, ...rest] = items;
   return (
-    <div className="pointer-events-auto absolute left-3 top-3 z-[1000] w-[min(380px,calc(100%-5rem))] shadow-lg">
+    <div data-tour="feed-ticker" className="pointer-events-auto absolute left-3 top-3 z-[1000] w-[min(380px,calc(100%-5rem))] shadow-lg">
       <FeedCard item={newest} now={snap.now} compact onDismiss={() => setDismissed((d) => [...d, newest.id])} />
       {rest.length ? (
         <p className="mt-1 w-fit rounded bg-white/95 px-2 py-0.5 text-xs font-semibold text-slate-700 shadow">

@@ -41,7 +41,7 @@ export function SidePanel() {
   }
 
   return (
-    <section className="flex min-h-[132px] flex-1 flex-col overflow-hidden rounded-lg border border-slate-300 bg-white">
+    <section data-tour="side-panel" className="flex min-h-[132px] flex-1 flex-col overflow-hidden rounded-lg border border-slate-300 bg-white">
       <Tabs label="Board panels" tabs={tabs} value={tab} onChange={select} />
       {/* Keyed by tab, so each tab opens scrolled to the top. */}
       <div key={tab} role="tabpanel" className="min-h-0 flex-1 overflow-y-auto">

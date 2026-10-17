@@ -94,7 +94,7 @@ function ZoneCard({ zone, onAction }: { zone: Zone; onAction: (p: Pending) => vo
               Stage 2 check
             </Button>
             {holdOpen ? null : (
-              <Button size="sm" onClick={() => onAction({ kind: "compose", zone })}>
+              <Button size="sm" data-tour="compose-order" onClick={() => onAction({ kind: "compose", zone })}>
                 Compose Order (opens hold)
               </Button>
             )}

@@ -34,7 +34,7 @@ const dot = (color: string, hollow = false) => (
 export function MapLegend({ mode }: { mode: Mode }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="pointer-events-auto absolute bottom-3 left-3 z-[1000] max-w-[440px] rounded-lg border border-slate-300 bg-white/95 text-xs text-slate-800 shadow-md">
+    <div data-tour="legend" className="pointer-events-auto absolute bottom-3 left-3 z-[1000] max-w-[440px] rounded-lg border border-slate-300 bg-white/95 text-xs text-slate-800 shadow-md">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

@@ -114,7 +114,7 @@ export const SHORT: Record<JurisdictionCode, Record<"decider" | "channel" | "voi
 
 /** Los Angeles cells for the adapter rows the profile has no field for (PRD 17.2 table, product description). */
 export const LA_EXTRA = {
-  ladder: "Cal OES standard terms: a human moves a zone between them",
+  ladder: "Cal OES standard terms",
   dose: "Dose: the population inside the polygon, shown before the send.",
   sentinels: "Enrolled residents, CERT members and block captains at the zone's edges.",
   lastMile: "No answer becomes retries, a call to a linked contact, then a door-knock row for the quick response team.",

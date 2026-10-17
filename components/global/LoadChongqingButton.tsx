@@ -4,7 +4,7 @@
 // (calls, holds, registry, ledger) and keeps the twist log, so the first click asks once, inline.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import SignalGlyph from "./SignalGlyph";
 import { motionTokens } from "./motion";
@@ -32,7 +32,10 @@ function Spinner() {
   );
 }
 
-export default function LoadChongqingButton({ note = true }: { note?: boolean }) {
+const DEFAULT_NOTE = "Puts the Beibei scenario on the board. It replaces the current run; the twist log is kept.";
+
+/** `note` is the line under the button while it is idle; false hides it. */
+export default function LoadChongqingButton({ note = DEFAULT_NOTE }: { note?: ReactNode }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [elapsed, setElapsed] = useState(0);
@@ -112,9 +115,7 @@ export default function LoadChongqingButton({ note = true }: { note?: boolean })
           {busy ? <Spinner /> : <SignalGlyph className="h-4 w-8" />}
           {label}
         </motion.button>
-        {note && phase.kind === "idle" && (
-          <p className="mt-2 text-sm text-vf-smoke">Puts the Beibei scenario on the board. It replaces the current run; the twist log is kept.</p>
-        )}
+        {note && phase.kind === "idle" ? <p className="mt-2 text-sm leading-relaxed text-vf-smoke">{note}</p> : null}
 
         <AnimatePresence mode="wait" initial={false}>
           {phase.kind === "confirm" && (

@@ -44,7 +44,7 @@ export function CallsStrip() {
   const live = snap.calls.filter((c) => c.state === "ringing" || c.state === "active");
   const lastEnded = snap.calls.find((c) => c.ended_at);
   return (
-    <section aria-label="Live calls" className="flex h-[112px] shrink-0 flex-col rounded-lg border border-slate-300 bg-white">
+    <section data-tour="calls" aria-label="Live calls" className="flex h-[112px] shrink-0 flex-col rounded-lg border border-slate-300 bg-white">
       <header className="flex items-center gap-3 px-3 py-1.5">
         <h2 className="shrink-0 text-xs font-bold uppercase tracking-wider text-slate-600">Live calls</h2>
         <span className="shrink-0 text-sm text-slate-700">

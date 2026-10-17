@@ -73,7 +73,7 @@ export function AskBoard() {
   }
 
   return (
-    <section aria-label="Ask the board" className="shrink-0">
+    <section data-tour="ask" aria-label="Ask the board" className="shrink-0">
       <form onSubmit={ask} className="flex gap-2">
         <input
           value={question}

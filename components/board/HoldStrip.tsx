@@ -175,7 +175,7 @@ function OpenHold({ hold, others, onSelect }: { hold: Hold; others: Hold[]; onSe
 
   // A column: everything fixed except the sentinel list, which scrolls, so the five buttons always show.
   return (
-    <section aria-label="Hold" className="flex min-h-0 flex-col overflow-hidden rounded-lg border-2 border-red-600 bg-white shadow-sm">
+    <section data-tour="hold" aria-label="Hold" className="flex min-h-0 flex-col overflow-hidden rounded-lg border-2 border-red-600 bg-white shadow-sm">
       <header className="flex shrink-0 flex-wrap items-center gap-2 bg-red-50 px-3 py-1.5">
         <span className="rounded bg-red-700 px-1.5 py-0.5 text-[11px] font-black tracking-widest text-white">HOLD</span>
         <b className="text-[15px]">{zone?.name ?? hold.zone_id}</b>
@@ -234,7 +234,7 @@ function OpenHold({ hold, others, onSelect }: { hold: Hold; others: Hold[]; onSe
         <SentinelRows hold={hold} />
       </div>
       <p className="shrink-0 px-3 pt-1 text-xs text-slate-600">{read.detail}</p>
-      <div className="mt-1.5 flex shrink-0 flex-wrap gap-1.5 border-t border-slate-200 px-3 py-2">
+      <div data-tour="hold-actions" className="mt-1.5 flex shrink-0 flex-wrap gap-1.5 border-t border-slate-200 px-3 py-2">
         {(Object.keys(DECISIONS) as Decision[]).map((d) => (
           <Button
             key={d}
@@ -282,7 +282,7 @@ function ClosedHold({ hold, onDismiss }: { hold: Hold; onDismiss: () => void }) 
   const canaries = snap.canaries.filter((c) => c.hold_id === hold.id);
   const sent = hold.status === "sent";
   return (
-    <section aria-label="Last hold" className="shrink-0 rounded-lg border border-slate-300 bg-white">
+    <section data-tour="last-hold" aria-label="Last hold" className="shrink-0 rounded-lg border border-slate-300 bg-white">
       <header className="flex items-start gap-2 px-3 pt-2">
         <span className="mt-0.5 shrink-0 rounded bg-slate-800 px-1.5 py-0.5 text-[11px] font-black tracking-widest text-white">LAST HOLD</span>
         <div className="min-w-0 flex-1">

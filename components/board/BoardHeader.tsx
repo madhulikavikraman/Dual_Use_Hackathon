@@ -1,9 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { fmtInt, fmtPct, fmtUsd } from "@/lib/client/format";
 import { MODE_LABEL, WORDING } from "@/lib/client/labels";
+import { BOARD_TOUR } from "@/components/tour/boardSteps";
+import { TourButton } from "@/components/tour/TourButton";
 import { useBoard } from "./BoardContext";
 import { LiveClock, ScenarioSwitcher, SupervisorInput } from "./HeaderControls";
 
@@ -23,9 +26,12 @@ function HeaderChip({ on, className = "", children }: { on: boolean; className?:
 export function BoardHeader() {
   const { snap } = useBoard();
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 bg-slate-900 px-4 text-white">
-      <div className="flex shrink-0 items-baseline gap-2">
-        <span className="text-xl font-black tracking-tight">VoiceFlare</span>
+    <header data-tour="header" className="flex h-14 shrink-0 items-center gap-3 bg-slate-900 px-4 text-white">
+      <div className="flex shrink-0 items-center gap-2">
+        <span className="flex items-center gap-2 text-xl font-black tracking-tight">
+          <Image src="/brand/voiceflare-mark.png" alt="" width={28} height={28} className="size-7" loading="eager" />
+          VoiceFlare
+        </span>
         <span className="hidden text-xs text-slate-400 2xl:inline">the supervisor&apos;s screen</span>
       </div>
       <span
@@ -45,7 +51,8 @@ export function BoardHeader() {
       <div className="ml-auto flex shrink-0 items-center gap-3">
         <LiveClock />
         <SupervisorInput />
-        <nav className="flex gap-3 text-sm font-semibold text-slate-300">
+        <TourButton tour={BOARD_TOUR} />
+        <nav data-tour="links" className="flex gap-3 text-sm font-semibold text-slate-300">
           <Link href="/qrt" target="_blank" className="hover:text-white">
             QRT ↗
           </Link>
@@ -77,7 +84,7 @@ export function MetricsStrip() {
   // not part of the demo roster, so they are not in the denominator either.
   const realResidents = snap.households.filter((h) => h.has_device && h.device_label !== "Public line" && h.role === "resident").length;
   return (
-    <div className="grid shrink-0 grid-cols-8 divide-x divide-slate-200 border-b border-slate-300 bg-white">
+    <div data-tour="metrics" className="grid shrink-0 grid-cols-8 divide-x divide-slate-200 border-b border-slate-300 bg-white">
       <Metric
         label="Real phones"
         value={

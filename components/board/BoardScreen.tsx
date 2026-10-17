@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { getBoard } from "@/lib/client/api";
 import { fmtClock } from "@/lib/client/format";
 import { usePoll } from "@/lib/client/usePoll";
+import { BoardTour } from "@/components/tour/BoardTour";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AskBoard } from "./AskBoard";
 import { BoardProvider, useBoard } from "./BoardContext";
@@ -21,7 +23,10 @@ export function BoardWaiting({ error }: { error: string | null }) {
   return (
     <div className="grid h-dvh place-items-center bg-slate-100 p-6 text-slate-900">
       <div className="max-w-md text-center">
-        <div className="text-2xl font-black tracking-tight">VoiceFlare</div>
+        <div className="flex items-center justify-center gap-2 text-2xl font-black tracking-tight">
+          <Image src="/brand/voiceflare-mark.png" alt="" width={32} height={32} className="size-8" loading="eager" />
+          VoiceFlare
+        </div>
         <span className="mt-2 inline-block rounded bg-amber-400 px-2 py-0.5 text-xs font-black tracking-widest text-slate-950">SIMULATED</span>
         {error ? (
           <p className="mt-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
@@ -50,7 +55,7 @@ function Layout() {
   return (
     <main className="flex min-h-0 flex-1 gap-3 p-3">
       <section className="flex min-w-0 flex-1 flex-col gap-3">
-        <div className="relative min-h-0 flex-1 overflow-hidden rounded-lg border border-slate-300 bg-slate-200">
+        <div data-tour="map" className="relative min-h-0 flex-1 overflow-hidden rounded-lg border border-slate-300 bg-slate-200">
           <BoardMap variant="board" />
           <FeedTicker />
           <MapLegend mode={snap.meta.mode} />
@@ -83,6 +88,7 @@ export function BoardScreen() {
           {error ? <OfflineBanner error={error} receivedAt={receivedAt} /> : null}
           <Layout />
         </div>
+        <BoardTour />
       </BoardProvider>
     </ToastProvider>
   );

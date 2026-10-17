@@ -57,3 +57,133 @@ body {
     margin: 12mm;
   }
 }
+
+/* Landing page (/: app/page.tsx and components/landing). Everything below applies only while .vf-landing is on the
+   page: a dark ground whatever the OS theme, the hero's entrance, the breathing signal arcs, the cut-corner buttons,
+   and a reduced-motion fallback for each animation. */
+html:has(.vf-landing) {
+  background: var(--vf-ink);
+  color-scheme: dark;
+  scroll-padding-top: 4.5rem;
+}
+body:has(.vf-landing) {
+  background: var(--vf-ink);
+  color: var(--vf-bone);
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.vf-landing) {
+    scroll-behavior: smooth;
+  }
+}
+
+@keyframes vf-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes vf-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes vf-arc {
+  0%,
+  100% {
+    opacity: 0.12;
+  }
+  35% {
+    opacity: 0.85;
+  }
+}
+@keyframes vf-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  80%,
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+.vf-landing .vf-rise {
+  animation: vf-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.vf-landing .vf-arc {
+  animation: vf-arc 3.6s ease-in-out infinite;
+}
+.vf-landing .vf-ring {
+  animation: vf-arc 1.2s ease-in-out infinite;
+}
+.vf-landing .vf-ping {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: vf-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Buttons with the emblem's cut corners. ::before (and ::after for the outlined style) draws the shape, so the
+   focus outline on the link itself is never clipped. */
+.vf-landing .vf-cta {
+  isolation: isolate;
+}
+.vf-landing .vf-cta::before,
+.vf-landing .vf-cta::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: background-color 150ms;
+}
+.vf-landing .vf-cta::before {
+  inset: 0;
+}
+.vf-landing .vf-cta-primary {
+  filter: drop-shadow(0 6px 22px rgba(255, 42, 18, 0.35));
+}
+.vf-landing .vf-cta-primary::before {
+  background: var(--vf-flare);
+}
+.vf-landing .vf-cta-primary:hover::before {
+  background: #ff4b30;
+}
+.vf-landing .vf-cta-primary::after {
+  display: none;
+}
+.vf-landing .vf-cta-secondary::before {
+  background: #3a3a43;
+}
+.vf-landing .vf-cta-secondary::after {
+  inset: 1px;
+  background: var(--vf-coal);
+  clip-path: polygon(9.6px 0, 100% 0, 100% calc(100% - 9.6px), calc(100% - 9.6px) 100%, 0 100%, 0 9.6px);
+}
+.vf-landing .vf-cta-secondary:hover::before {
+  background: var(--vf-ember);
+}
+.vf-landing .vf-cta-secondary:hover::after {
+  background: #17171b;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vf-landing .vf-rise {
+    animation: vf-fade 0.2s ease-out both;
+  }
+  .vf-landing .vf-arc,
+  .vf-landing .vf-ring {
+    animation: none;
+    opacity: 0.45;
+  }
+  .vf-landing .vf-ping {
+    animation: none;
+    opacity: 0;
+  }
+}
