@@ -1,6 +1,6 @@
 # Second Key: Product Requirements Document
 
-**Version 1.0, draft for team review.** Friday, October 16, 2026, 10:30 PM PDT. USC Viterbi x InnovateLA Dual-Use Hackathon, Resilience Comms track (sponsor Retell AI). Team of four (P1 backend and data, P2 AI and Retell, P3 frontend and demo, P4 product, twists and pitch).
+**Version 1.1.** Saturday, October 17, 2026, 12:45 AM PDT: adds the Twist 1 response (section 17.1, the federal funding pathway) and the `/evidence` page. Version 1.0: Friday, October 16, 2026, 10:30 PM PDT. USC Viterbi x InnovateLA Dual-Use Hackathon, Resilience Comms track (sponsor Retell AI). Team of four (P1 backend and data, P2 AI and Retell, P3 frontend and demo, P4 product, twists and pitch).
 
 "Second Key" is the working name. The name is decision D-01 in `decisions.md`; the alternates are "Lookout" and keeping "AllClear". Nothing in this document depends on the name.
 
@@ -494,6 +494,43 @@ Three twists drop: Friday 11:30 PM, Saturday 4:30 AM, Saturday 7:00 AM, with six
 | Earthquake instead of fire | Pattern watch mode; Shelter in Place vocabulary; USGS trigger; post-quake roll call; silence clusters flag damaged blocks; ArcGIS feed | The earthquake beat in section 12 |
 | Shelter loses power or internet (AllFound lane) | Intake keeps queuing; print the roster and wristband codes; sync from any hotspot later | Pending sync count drops to zero when WiFi returns |
 
+### 17.1 Twist 1 (Friday 11:30 PM): the federal funding pathway
+
+**Text (verbatim).** "Identify the government funding pathway for your venture. Many startups find their first funding through government agencies like NASA, DHS, USDA, etc. They also find them through different funding programs such as DARPA and NSF project funding platforms. Identify at least one federal funding pathway in the US government whether through an agency, program, or military sector as your primary or alternative funding source to launch your venture."
+
+**Answer in one line.** Second Key launches on an NSF SBIR Phase I grant (up to $305,000, zero equity). It sells to counties and cities, which buy it with FEMA preparedness grants they already receive (UASI and EMPG). It reaches the defense customer through DoD SBIR topics and the Defense Innovation Unit. Decisions D-26 to D-28.
+
+| Leg | Program | Who funds whom | Size and timing (verified Oct 17, 2026) | Why it fits Second Key |
+| --- | --- | --- | --- | --- |
+| **Primary: launch** | **NSF SBIR/STTR Phase I ("America's Seed Fund"), solicitation NSF 26-510** | NSF grants the company directly; no equity | Phase I up to **$305,000 for 6 to 18 months**; Phase II up to **$1,250,000**. Full proposals need an invitation from a **Project Pitch**; an invitation is valid for the next two deadlines. Deadlines: **Nov 4, 2026; Mar 4, 2027; Jul 7, 2027** | NSF funds "nearly all technology areas" and does not need a government topic to match, so a civilian-first, high-risk product qualifies. The risk NSF pays to retire is exactly ours: can a four-person edge panel give a correct read on an alert polygon inside 90 seconds at 3 AM, and can a voice agent classify multilingual distress calls well enough to route them to a person? |
+| **Alternative 1: the customer's money** | **FEMA Homeland Security Grant Program (UASI) and Emergency Management Performance Grants (EMPG)** | FEMA funds states, which pass money to counties and cities, which buy from us | FY2026 HSGP about **$1.064 billion**, of which UASI about **$584 million** (applications closed Jul 24, 2026); FY2026 EMPG about **$337 million** (closed Jul 10, 2026). Next cycle: FY2027 notices, expected mid-2027 | FEMA's Authorized Equipment List names public alert and warning systems (item 04AP-09-ALRT, "Systems, Public Notification and Warning," which cites IPAWS and WEA; newer lists use 13IT-00-ALRT) with UASI as an eligible program. Los Angeles/Long Beach is a UASI urban area. Caveat priced in: telecommunications service fees are not allowable under that item, so call minutes go on the jurisdiction's operating budget and the grant buys the platform |
+| **Alternative 2: the defense customer** | **DoD SBIR/STTR topics (DSIP portal) and the Defense Innovation Unit's Commercial Solutions Opening** | DoD components award contracts (SBIR) or prototype Other Transaction agreements (DIU) | SBIR and STTR were **reauthorized April 13, 2026 (S. 3971) through Sept 30, 2031**, after a lapse from Oct 1, 2025 in which no new awards could be made; FY26 DoD releases resumed. DIU's standing CSO (solution brief, pitch, proposal) answers posted areas of interest | The installation command post before a base-wide lockdown (section 16): zones are housing areas and gates, sentinels are gate posts, the registry speaks ADPAAS, NFAAS and AFPAAS. We apply when a topic on installation warning, mass notification or personnel accountability opens, with NSF Phase I data in hand |
+
+**Why NSF first, not DHS or DoD first.** NSF is open now with fixed windows and needs no matching topic. We found no open FY2026 DHS SBIR topic for alerting, and DHS S&T's Silicon Valley Innovation Program has no current call we could confirm, so DHS stays on the watch list (sbir.dhs.gov, SAM.gov). The six-month SBIR lapse (Oct 2025 to Apr 2026) is also the reason for a second leg: customer revenue paid from FEMA grants does not stop when one program does.
+
+**The plan and its dates.**
+
+| When | Step |
+| --- | --- |
+| Week of Oct 19, 2026 | Form the company (US-owned small business, under 500 employees, as SBIR requires). Start SAM.gov registration for a UEI (it can take weeks), then Research.gov |
+| By Oct 30, 2026 | Submit the NSF Project Pitch: the technical risk, the team, the USC DPS pilot ask |
+| On invitation | Full Phase I proposal for **Mar 4, 2027**, or Nov 4, 2026 if the invitation and SAM registration both land in time |
+| Phase I (6 to 18 months, up to $305K) | Three milestones, each measured by the product itself on the `/evidence` page: (1) hold opened to a quorum read in under 90 s in at least 80% of drills, with sentinel reads checked against ground truth; (2) 18 of 20 gold-set calls classified correctly across English, Spanish and Korean, and 100% recall on `needs_help_now`; (3) the delivery canary flags a seeded wrong-polygon or no-delivery failure within 60 s of the send, in every drill. A safety bar on all three: zero instructions read that a human did not approve, across adversarial test calls. Pilot: USC DPS monthly test calls (a letter of support is the ask) and one tabletop with a Westside city emergency manager |
+| Phase II (up to $1.25M) | A county or city pilot on live rosters; IPAWS-compatible CAP output; the first paid contract budgeted from the customer's next UASI or EMPG cycle |
+| After Phase I | DoD SBIR topic or DIU solution brief for installation warning; later, the 2026 Act's Phase II "strategic breakthrough" awards (up to $30M over 48 months, a prior Phase I or II award and a 100% match required) |
+
+**Requirements we accept by taking this money.** The 2026 Act adds foreign-risk screening of owners and key personnel, and lets agencies cap proposals per company from FY2027. We have nothing to disclose and plan one proposal per window.
+
+**What changed in the build (not just the slides).**
+
+1. **`/evidence` page and `GET /api/evidence` (new backlog item 72, P0).** The metrics service (item 43) moves from P1 to P0 and is shaped as the three Phase I milestones plus the safety bar, computed live from the ledger, holds, canaries, intents and calls. It shows median hold-to-read time, the quorum rate, needs-help-now recall against the gold set, canary results, and refusals counted against instructions read. A grant reviewer or a county grant manager gets the same numbers as a JSON or CSV export.
+2. **CAP 1.2 export (item 19) moves from P2 to P1.** It is the format IPAWS accepts, and a county buying with UASI money will ask for it.
+3. **`/twists` page.** Twist 1 is filed in the `twist_log` table with this text, the commits and the proof.
+
+**Proof (20 seconds).** Run the demo path, open `/evidence`, and the three Phase I milestones fill from the run that just happened; download the CSV.
+
+**Pitch line (for section 18 step 4).** "NSF's seed fund pays for the Phase I proof, up to $305,000 and no equity. Counties already have the money to buy it, in the FEMA grants that pay for alert and warning systems. The same product is a base's lockdown desk, which is our DoD SBIR path."
+
 ## 18. Demo and pitch
 
 ### Demo, three to three and a half minutes, working thing first
@@ -522,7 +559,7 @@ If the slot is three minutes, cut the linked-contact beat. Keep one phone on spe
 1. 0:00 The opening sentence (section 1). One slide: ten million phones, three cities; the west Altadena warnings that came hours late the day before.
 2. 0:30 The demo above, live.
 3. 3:30 The twist: what changed in the build, why, proof. Thirty seconds.
-4. 4:00 Who pays on Tuesday (USC DPS with a monthly test call; senior-living and home-health operators with daily check-ins that build the memory note), who it is for at 3 AM (the supervisor and the QRT), where it goes (the county's alert desk, a hospital, an installation). What is simulated and what is not.
+4. 4:00 Who pays on Tuesday (USC DPS with a monthly test call; senior-living and home-health operators with daily check-ins that build the memory note), who it is for at 3 AM (the supervisor and the QRT), where it goes (the county's alert desk, a hospital, an installation). Who funds the launch: NSF SBIR Phase I (up to $305K, no equity), counties buying with UASI and EMPG grants, DoD SBIR and DIU for installations (section 17.1). What is simulated and what is not.
 5. 4:40 The weakness, said first: the roster. Five awake, consenting people per zone at 3:40 AM is the whole product, which is why the Tuesday customer is a campus already on shift, and why callers bootstrap the panel in a surge.
 
 **The second sentence of the pitch (the "isn't this just Everbridge" answer).** Everbridge, Genasys and AtHoc send and collect replies; the 911-AI companies answer inbound. None of them hold the send, ask the edge, count the dose, check delivery, or show the supervisor what the machine refused to do. Conversational two-way is a closing gap (Everbridge 360 AI shipped in September 2026), not our moat. The hold, the canary and the ledger are.
@@ -588,7 +625,7 @@ The Project Document's 45 items keep their numbers. Priorities are the Project D
 | 16 | Hazard layer with direction arrows | P1 | Feeds pattern watch |
 | 17 | Ask the board | P2 | Unchanged |
 | 18 | Base mode toggle | P1 | Unchanged |
-| 19 | CSV and CAP export | P2 | Unchanged; GeoJSON feeds are item 63 |
+| 19 | CSV and CAP export | P2 to P1 | CAP 1.2 is what IPAWS accepts and what a UASI-funded buyer asks for (Twist 1); GeoJSON feeds are item 63 |
 | 20 | Twist log page | P1 to P0 | Scored criterion and its own award |
 | 21 | /phone/[id] route | P0 | Now the fallback transport |
 | 22 | Push-to-talk SpeechRecognition | P0 | Unchanged |
@@ -612,7 +649,7 @@ The Project Document's 45 items keep their numbers. Priorities are the Project D
 | 40 | Silence clustering | P1 | Also writes `clusters` rows |
 | 41 | Pickup-run builder | P1 | Reads `help_requests` |
 | 42 | Hazard clustering | P2 | Part of pattern watch (item 62) |
-| 43 | Metrics service | P1 | Add hold-to-read, call-to-registry, canary times |
+| 43 | Metrics service | P1 to P0 | Add hold-to-read, call-to-registry, canary times; shaped as the NSF Phase I milestones (Twist 1, item 72) |
 | 44 | Simulator presets | P0 | Unchanged |
 | 45 | Scripted test harness | P1 | Gold set of 20 covers intents |
 | 46 | Migration 002: new tables and columns (section 15) | P0 | New, P1 |
@@ -641,6 +678,7 @@ The Project Document's 45 items keep their numbers. Priorities are the Project D
 | 69 | Monthly test call (`checkin` kind) and reliability score | P2 | New, P2 |
 | 70 | AllFound lane | P2, gate 11:00 AM | From the earlier plan |
 | 71 | Westside seed preset: households across Culver City and Palms, devices at the edges | P0 | New, P4 |
+| 72 | `/evidence` page and `GET /api/evidence` (JSON and CSV): the three Phase I milestones and the safety bar computed from the run | P0 | New (Twist 1), P1 and P3 |
 
 ### Cut line
 
@@ -698,4 +736,9 @@ Each is logged with a recommendation in `decisions.md`: the name (D-01); directi
 - LA City Neighborhood Council boundaries (data.lacity.org, shapefile export): https://catalog.data.gov/dataset/neighborhood-councils-certified
 - Everbridge 360 AI launch (September 2026): https://www.01net.it/everbridge-introduces-everbridge-360-ai-the-next-evolution-of-high-velocity-critical-event-management/
 - TechCrunch on Aurelian and Hyper (AI for non-emergency 911 lines): https://techcrunch.com/2025/08/27/911-centers-are-so-understaffed-theyre-turning-to-ai-to-answer-calls
+- Twist 1 (funding): NSF SBIR/STTR Phase I solicitation NSF 26-510 (amounts, deadlines, Project Pitch rule): https://nsf.gov/funding/opportunities/small-business-innovation-research-small-business-technology/nsf26-510/solicitation ; America's Seed Fund: https://seedfund.nsf.gov/
+- Twist 1: Crowell & Moring, "SBIR/STTR Programs Reauthorized After Six-Month Lapse" (S. 3971 signed Apr 13, 2026; through Sept 30, 2031; strategic breakthrough awards; foreign-risk screening; proposal caps): https://www.crowell.com/en/insights/client-alerts/sbirsttr-programs-reauthorized-after-six-month-lapse
+- Twist 1: FEMA FY2026 HSGP notice (SHSP, UASI, Operation Stonegarden): https://www.fema.gov/sites/default/files/documents/fema_gpd_hsgp-nofo-fy2026.pdf ; FY2026 EMPG notice: https://www.fema.gov/sites/default/files/documents/fema_gpd_empg_nofo_fy2026.pdf
+- Twist 1: FEMA Authorized Equipment List, 04AP-09-ALRT "Systems, Public Notification and Warning": https://fema.gov/authorized-equipment-list-item/04ap-09-alrt and 13IT-00-ALRT: https://www.fema.gov/ht/authorized-equipment-list-item/13it-00-alrt
+- Twist 1: Defense Innovation Unit Commercial Solutions Opening (HQ0845-20-S-C001): https://sam.gov/opp/f20f4abc83ff426d9ed10cb2a2d02a69/view and https://www.diu.mil/ ; DHS SBIR: https://www.dhs.gov/science-and-technology/sbir
 - Team artifacts: Dual-Use Hackathon Playbook https://claude.ai/artifact/3txjATakZSs46gNZJ7qdz4 ; AllClear Build Brief https://claude.ai/artifact/Kyc2ezMCKm4ZFaRTqPWwKC ; Ask Before the Bang (ideation verdict) https://claude.ai/artifact/NCv2eemdrGMGJEbMQePYYK
