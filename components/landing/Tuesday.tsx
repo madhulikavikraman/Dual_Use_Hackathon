@@ -1,24 +1,27 @@
-// Second customers on an ordinary Tuesday (PRD section 16): campus, base and the collections line. Then the
-// collections line itself, from lib/stories.ts (HERITAGE): its flow from enrolment to after the fire, each stage with
-// its rule, and real cases once the research adds them (none are invented here). Lives first, always.
+// Second customers on an ordinary Tuesday (PRD section 16): the heat check-in line, base and the collections line.
+// Then the collections line itself, from lib/stories.ts (HERITAGE): its flow from enrolment to after the fire, each
+// stage with its rule, and real cases once the research adds them (none are invented here). Lives first, always.
 import { HERITAGE } from "@/lib/stories";
 import { ExternalLink, Section, ShieldIcon, hostOf } from "./ui";
 
-const CUSTOMERS: { id: string; who: string; mode: string; text: string; link?: { href: string; label: string } }[] = [
+const CUSTOMERS: { id: string; icon: string; who: string; mode: string; text: string; link?: { href: string; label: string } }[] = [
   {
-    id: "campus",
-    who: "USC Department of Public Safety",
-    mode: "Campus mode",
-    text: "Before a TrojansAlert, buildings and quads are the zones and the resident assistants and officers already on post are the sentinels. The words are avoid the area, shelter in place and all clear. A 20-second test call each month keeps the roster alive.",
+    id: "heat",
+    icon: "🌡️",
+    who: "A city’s senior services desk",
+    mode: "Heat mode",
+    text: "On hot days the zones follow the weather. Live readings and any National Weather Service heat alert propose a level, and a person approves it. Older people who live alone or have no air conditioning get the first calls: a ride to a cooling center, a check-in visit, or “hang up and call 911” at the first sign of heat stroke.",
   },
   {
     id: "base",
+    icon: "🛡️",
     who: "An installation’s command post",
     mode: "Base mode",
     text: "Before a base-wide lockdown, housing areas, gates and the flight line are the zones, and gate posts and housing phones are the sentinels. The registry speaks personnel accountability (ADPAAS, NFAAS, AFPAAS): accounted and unaccounted.",
   },
   {
     id: "collections",
+    icon: "🖼️",
     who: "Museums, libraries, archives and collectors",
     mode: HERITAGE.name || "Collections line",
     text: "They enroll, keep a short grab list of what to save first and answer a monthly test call. When a warning comes, they can ask for help moving it while there is still time. Lives first, always.",
@@ -39,7 +42,12 @@ export function Tuesday() {
       <ul className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 md:grid-cols-3">
         {CUSTOMERS.map((c) => (
           <li key={c.id} className="flex flex-col bg-vf-ink p-6 sm:p-7">
-            <p className="text-sm text-vf-ember">{c.mode}</p>
+            <p className="flex items-center gap-2 text-sm text-vf-ember">
+              <span aria-hidden="true" className="text-lg leading-none">
+                {c.icon}
+              </span>
+              {c.mode}
+            </p>
             <h3 className="mt-2 font-display text-xl font-semibold leading-snug text-vf-bone">{c.who}</h3>
             <p className="mt-3 text-[15px] leading-relaxed text-vf-smoke">{c.text}</p>
             {c.link ? (

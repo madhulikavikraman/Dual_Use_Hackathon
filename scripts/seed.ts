@@ -1,5 +1,5 @@
 // Load a scenario into the running app (local store or Supabase, whichever the server uses).
-// Usage: npm run seed [westside|usc|altadena]   (the dev server must be running)
+// Usage: npm run seed [westside|heat|altadena|norte|chongqing]   (the dev server must be running)
 import { config } from "dotenv";
 
 config({ path: ".env.local" });

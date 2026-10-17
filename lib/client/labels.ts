@@ -1,7 +1,7 @@
 // Display labels and colors for the board. Zone colors and the civilian vocabulary come from
 // lib/directives (PRD 6.1); everything here is presentation only.
 import type { HouseholdView } from "@/lib/contracts";
-import { STATE_LABEL, STATE_SHORT } from "@/lib/directives";
+import { HEAT_STATE_LABEL, HEAT_STATE_SHORT, STATE_LABEL, STATE_SHORT } from "@/lib/directives";
 import type {
   AlertItem,
   Campaign,
@@ -29,7 +29,7 @@ export type Tone = "neutral" | "info" | "good" | "warn" | "bad";
 
 export const SCENARIO_OPTIONS: { id: Scenario; label: string }[] = [
   { id: "westside", label: "Westside Fire (LA)" },
-  { id: "usc", label: "USC DPS (ordinary Tuesday)" },
+  { id: "heat", label: "Heat wave: senior check-ins" },
   { id: "altadena", label: "West Altadena (Eaton fire framing)" },
 ];
 
@@ -37,20 +37,20 @@ export const scenarioLabel = (s: Scenario) => SCENARIO_OPTIONS.find((o) => o.id 
 
 export const MODE_LABEL: Record<Mode, string> = {
   civilian: "City mode",
-  campus: "Campus mode",
+  heat: "Heat · wellness check-ins",
   base: "Installation command post (base mode)",
 };
 
 /** Base mode speaks personnel accountability (ADPAAS / NFAAS / AFPAAS): accounted and unaccounted. */
 export const WORDING: Record<Mode, { registry: string; reached: string; needsHelp: string }> = {
   civilian: { registry: "Help registry", reached: "Reached", needsHelp: "Needs help · open" },
-  campus: { registry: "Help registry", reached: "Reached", needsHelp: "Needs help · open" },
+  heat: { registry: "Help registry", reached: "Reached", needsHelp: "Needs help · open" },
   base: { registry: "Accountability", reached: "Accounted", needsHelp: "Needs assistance" },
 };
 
 // ---------- Zone states in the scenario's vocabulary (PRD 16) ----------
 
-const CAMPUS_LABEL: Record<ZoneState, string> = {
+const AVOID_LABEL: Record<ZoneState, string> = {
   monitor: "Monitor",
   watch: "Watch",
   warning: "Near-Crisis · Avoid the area",
@@ -58,15 +58,15 @@ const CAMPUS_LABEL: Record<ZoneState, string> = {
   shelter_in_place: "Shelter in Place",
   lifted: "All clear",
 };
-const BASE_LABEL: Record<ZoneState, string> = { ...CAMPUS_LABEL, order: "Crisis · Evacuate", shelter_in_place: "Lockdown" };
-const CAMPUS_SHORT: Record<ZoneState, string> = { ...STATE_SHORT, warning: "Avoid", order: "Leave", lifted: "All clear" };
-const BASE_SHORT: Record<ZoneState, string> = { ...CAMPUS_SHORT, order: "Evacuate", shelter_in_place: "Lockdown" };
+const BASE_LABEL: Record<ZoneState, string> = { ...AVOID_LABEL, order: "Crisis · Evacuate", shelter_in_place: "Lockdown" };
+const AVOID_SHORT: Record<ZoneState, string> = { ...STATE_SHORT, warning: "Avoid", order: "Leave", lifted: "All clear" };
+const BASE_SHORT: Record<ZoneState, string> = { ...AVOID_SHORT, order: "Evacuate", shelter_in_place: "Lockdown" };
 
 export const stateLabel = (s: ZoneState, mode: Mode) =>
-  mode === "campus" ? CAMPUS_LABEL[s] : mode === "base" ? BASE_LABEL[s] : STATE_LABEL[s];
+  mode === "heat" ? HEAT_STATE_LABEL[s] : mode === "base" ? BASE_LABEL[s] : STATE_LABEL[s];
 
 export const stateShort = (s: ZoneState, mode: Mode) =>
-  mode === "campus" ? CAMPUS_SHORT[s] : mode === "base" ? BASE_SHORT[s] : STATE_SHORT[s];
+  mode === "heat" ? HEAT_STATE_SHORT[s] : mode === "base" ? BASE_SHORT[s] : STATE_SHORT[s];
 
 /** Text that reads well on the zone's state color. */
 export const STATE_TEXT: Record<ZoneState, string> = {
@@ -82,6 +82,7 @@ export const MODEL_LABEL: Record<ProposalModel, string> = {
   fire_envelope: "Fire envelope (toy model)",
   call_pattern: "Call pattern",
   nws: "NWS alert polygon",
+  heat_threshold: "Heat thresholds (demo setting)",
 };
 
 export function campaignLabel(c: Pick<Campaign, "kind" | "wave">): string {
@@ -153,7 +154,16 @@ const BASE_STATUS: Partial<Record<Status, string>> = {
   unreachable: "Unaccounted · unreachable",
 };
 
-export const statusLabel = (s: Status, mode: Mode) => (mode === "base" ? BASE_STATUS[s] : undefined) ?? STATUS_LABEL[s];
+/** Heat check-in line: the same stored statuses, in the heat line's words. */
+const HEAT_STATUS: Partial<Record<Status, string>> = {
+  safe: "Home and cool (own word)",
+  leaving: "Going to a cooling center",
+  wont_leave: "Staying home",
+  needs_help: "Needs help (ride or unwell)",
+};
+
+export const statusLabel = (s: Status, mode: Mode) =>
+  (mode === "base" ? BASE_STATUS[s] : mode === "heat" ? HEAT_STATUS[s] : undefined) ?? STATUS_LABEL[s];
 
 /** Drawn as hollow rings: nobody gave a usable answer. */
 export const HOLLOW_STATUS: Status[] = ["unclear", "no_answer", "wrong_number"];

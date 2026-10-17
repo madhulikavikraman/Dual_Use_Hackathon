@@ -27,7 +27,7 @@ create table households (
 create table campaigns (
   id uuid primary key default gen_random_uuid(),
   stage text not null check (stage in ('checkin','warning','order','all_clear')),
-  mode text not null default 'civilian' check (mode in ('civilian','base')),
+  mode text not null default 'civilian' check (mode in ('civilian','heat','base')), -- 'heat' since migration 004
   zone_name text, polygon jsonb not null, alert_text text not null,
   shelter_name text, shelter_address text, shelter_accepts_pets boolean,
   verification_phrase text, callback_number text,

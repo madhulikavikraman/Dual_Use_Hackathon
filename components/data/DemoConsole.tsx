@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { BoardSnapshot } from "@/lib/contracts";
-import { STATE_COLOR, STATE_SHORT } from "@/lib/directives";
-import type { Mode, SimPreset, ZoneState } from "@/lib/types";
+import { HEAT_STATE_SHORT, STATE_COLOR, STATE_SHORT } from "@/lib/directives";
+import { HEAT_THRESHOLDS, HEAT_THRESHOLD_NOTE, SOURCES, deg, localClock } from "@/lib/scenarios/heatLadder";
+import type { Mode, SimPreset, Zone, ZoneState } from "@/lib/types";
 import { Button, SimulatedBadge, clock } from "./ui";
 
 // The operator's console for the demo and rehearsals (backlog item 5): reset a scenario, drive the simulator,
@@ -12,7 +13,11 @@ import { Button, SimulatedBadge, clock } from "./ui";
 
 const SCENARIOS = [
   { id: "westside", label: "Westside Fire (LA)", hint: "The demo path: Santa Monica on fire, Culver City next" },
-  { id: "usc", label: "USC DPS (ordinary Tuesday)", hint: "Campus zones, RAs and officers on post" },
+  {
+    id: "heat",
+    label: "Heat wave: senior check-ins",
+    hint: "The ordinary Tuesday: six Valley zones by live weather (a labeled simulated heat wave when it is mild), older residents who opted in",
+  },
   { id: "altadena", label: "West Altadena (Eaton framing)", hint: "One-zone fallback for the problem slide" },
   { id: "norte", label: "Norte Fire, San Clemente (live)", hint: "The real fire on demo weekend: live CAL FIRE status and NWS alerts in the feed; zones and residents simulated" },
   { id: "chongqing", label: "Chongqing, China (Twist 2)", hint: "China's ladder, 119, grid-worker sentinels" },
@@ -20,7 +25,11 @@ const SCENARIOS = [
 
 const MODES: { id: Mode; label: string; hint: string }[] = [
   { id: "civilian", label: "Civilian · Cal OES", hint: "Evacuation Warning, Evacuation Order, Shelter in Place, Lifted (Cal OES, May 2020)." },
-  { id: "campus", label: "Campus · USC DPS", hint: "Avoid the area, leave by the nearest safe exit, shelter in place, all clear." },
+  {
+    id: "heat",
+    label: "Heat · wellness",
+    hint: "Heat watch (check on seniors who live alone), Heat Advisory (call every senior), Extreme Heat Warning (call everyone, rides, door knocks), heat over.",
+  },
   { id: "base", label: "Base · installation", hint: "Avoid, evacuate to your accountability point, lockdown, all clear." },
 ];
 
@@ -111,6 +120,56 @@ function Toggle({ label, hint, checked, onChange, disabled }: { label: string; h
         <span className="block text-xs text-neutral-500">{hint}</span>
       </span>
     </label>
+  );
+}
+
+/** Heat line: one zone's reading, labeled live or SIMULATED, with source and time, and the level the table proposes. */
+function HeatZoneRow({ z, busy, onCheckIn }: { z: Zone; busy: boolean; onCheckIn: () => void }) {
+  const w = z.weather;
+  return (
+    <li className="rounded border border-neutral-200 p-2 dark:border-neutral-800">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="flex items-center gap-2 text-sm font-semibold">
+          <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full" style={{ background: STATE_COLOR[z.state] }} />
+          {z.name}
+          <span className="text-xs font-normal text-neutral-500">{HEAT_STATE_SHORT[z.state]}</span>
+        </span>
+        {w ? (
+          <span className="flex flex-wrap items-center gap-1.5 text-sm tabular-nums">
+            <span aria-hidden="true">🌡️</span>
+            <span>
+              Feels like <b>{deg(w.feels_like_high_f)}</b> today
+            </span>
+            {w.basis === "simulated" ? (
+              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                SIMULATED heat wave
+              </span>
+            ) : (
+              <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+                LIVE forecast
+              </span>
+            )}
+          </span>
+        ) : null}
+      </div>
+      {w ? (
+        <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
+          Live now:{" "}
+          {w.live
+            ? `feels like ${deg(w.live.feels_like_f)} (${deg(w.live.temp_f)} air${w.live.humidity_pct !== null ? `, ${Math.round(w.live.humidity_pct)}% humidity` : ""}) at ${localClock(w.live.observed_local)} PT${
+                w.live.feels_like_high_f !== null ? `, today's feels-like high ${deg(w.live.feels_like_high_f)}` : ""
+              } · Open-Meteo`
+            : `unavailable${w.live_error ? ` (${w.live_error})` : ""}`}
+          {" · "}NWS: {!w.nws_checked ? "not reached" : w.nws.length ? w.nws.map((a) => a.event).join(", ") : "no active alerts"}
+          {" · "}table proposes <b>{HEAT_STATE_SHORT[w.proposed]}</b>
+        </p>
+      ) : (
+        <p className="mt-1 text-xs text-neutral-500">No weather check yet.</p>
+      )}
+      <Button tone="quiet" className="mt-1 !px-2 !py-0.5 text-xs" disabled={busy} onClick={onCheckIn} title="Starts check-in calls to the seniors in this zone who live alone">
+        <span aria-hidden="true">📞 </span>Heat watch check-ins (people who live alone)
+      </Button>
+    </li>
   );
 }
 
@@ -238,6 +297,19 @@ export default function DemoConsole({ feedToken, defaultBase }: { feedToken: str
     );
     if (j) setFire(j);
   };
+
+  const runHeat = () =>
+    post<{ basis?: string; live_ok?: boolean; proposals?: unknown[] }>("Re-check live weather", "/api/heat", { actor: "Demo operator" }, (j) =>
+      `${j.live_ok ? "live reading in" : "live reading unavailable"}; ${j.basis === "live" ? "live drives the ladder" : "simulated heat wave in use"}; ${j.proposals?.length ?? 0} new proposal(s)`,
+    );
+
+  const heatCheckIn = (z: Zone) =>
+    post<{ id?: string }>(`Heat watch check-ins: ${z.name}`, "/api/campaigns", {
+      zone_id: z.id,
+      kind: "checkin",
+      started_by: "Demo operator",
+      reason: "Heat watch: check in with seniors who live alone",
+    });
 
   const runPattern = () =>
     post<{ changes?: number; proposals?: unknown[] }>("Run pattern watch", "/api/proposals/run", { model: "call_pattern" }, (j) =>
@@ -367,7 +439,7 @@ export default function DemoConsole({ feedToken, defaultBase }: { feedToken: str
                     className="inline-flex items-center gap-1 rounded-full border border-neutral-200 px-2 py-0.5 text-xs dark:border-neutral-700"
                   >
                     <span className="h-2 w-2 rounded-full" style={{ background: STATE_COLOR[z.state] }} />
-                    {z.id} {STATE_SHORT[z.state]}
+                    {z.id} {meta?.mode === "heat" ? HEAT_STATE_SHORT[z.state] : STATE_SHORT[z.state]}
                   </span>
                 ))}
               </div>
@@ -409,6 +481,48 @@ export default function DemoConsole({ feedToken, defaultBase }: { feedToken: str
             <p className="text-sm text-neutral-500">{boardError ? `Board unavailable: ${boardError}` : "Loading…"}</p>
           )}
         </Card>
+
+        {meta?.scenario === "heat" && board ? (
+          <Card
+            title="Heat check (live weather)"
+            right={
+              <Button disabled={Boolean(busy)} onClick={() => void runHeat()} className="!px-2 !py-0.5 text-xs">
+                <span aria-hidden="true">🔄 </span>Re-check live weather
+              </Button>
+            }
+          >
+            <ul className="flex flex-col gap-2">
+              {board.zones
+                .filter((z) => z.scenario === "heat")
+                .map((z) => (
+                  <HeatZoneRow key={z.id} z={z} busy={Boolean(busy)} onCheckIn={() => void heatCheckIn(z)} />
+                ))}
+            </ul>
+            <div className="mt-3 rounded border border-neutral-200 p-2 text-xs dark:border-neutral-800">
+              <div className="font-semibold text-neutral-600 dark:text-neutral-300">Threshold table · {HEAT_THRESHOLD_NOTE}</div>
+              <ul className="mt-1 flex flex-col gap-0.5">
+                {HEAT_THRESHOLDS.map((t) => (
+                  <li key={t.state}>
+                    <span className="inline-block h-2 w-2 rounded-full align-middle" aria-hidden="true" style={{ background: STATE_COLOR[t.state] }} />{" "}
+                    <b>{t.min_f}°F and up</b>: {t.label} · {t.does}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-neutral-500">
+                The model proposes; a named human approves on the board. Cooling centers and residents are simulated. Sources:{" "}
+                {Object.values(SOURCES).map((s, i) => (
+                  <span key={s.url}>
+                    {i ? ", " : ""}
+                    <a className="text-sky-700 underline dark:text-sky-400" href={s.url} target="_blank" rel="noreferrer">
+                      {s.label}
+                    </a>
+                  </span>
+                ))}
+                .
+              </p>
+            </div>
+          </Card>
+        ) : null}
 
         <Card title="Simulator">
           <div className="text-xs font-semibold text-neutral-500">Preset (how synthetic people answer from now on)</div>

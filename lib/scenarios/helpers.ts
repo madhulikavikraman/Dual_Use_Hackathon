@@ -21,9 +21,12 @@ export const HELPER_ROSTER: Record<Scenario, Helper[]> = {
     { id: "qrt-2", label: "QRT unit 2 (car)", kind: "qrt", vehicle: "car", note: "Two staff, four seats" },
     { id: "cert-sc", label: "CERT volunteers, San Clemente (2)", kind: "cert", vehicle: "car", note: "One car, three seats" },
   ],
-  usc: [
-    { id: "dps-1", label: "Campus safety unit 1 (car)", kind: "qrt", vehicle: "car", note: "Two officers" },
-    { id: "cert-usc", label: "Campus CERT volunteers (2)", kind: "cert", vehicle: "on_foot", note: "Building check" },
+  // Heat line: a wellness visit is a helper too (door knock, water, a ride to a cooling center).
+  heat: [
+    { id: "van-1", label: "Senior services van (accessible)", kind: "qrt", vehicle: "accessible_van", note: "Wheelchair lift; rides to a cooling center" },
+    { id: "well-rs", label: "Wellness volunteers, Reseda (2)", kind: "cert", vehicle: "car", note: "Door knock, water, check on a person" },
+    { id: "well-wh", label: "Wellness volunteers, Woodland Hills (2)", kind: "cert", vehicle: "car", note: "Door knock, water, check on a person" },
+    { id: "qrt-2", label: "QRT unit 2 (car)", kind: "qrt", vehicle: "car", note: "Two staff, four seats" },
   ],
   altadena: GENERIC,
   chongqing: [

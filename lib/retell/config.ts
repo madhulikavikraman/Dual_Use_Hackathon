@@ -145,7 +145,10 @@ export const POST_CALL_ANALYSIS = [
       "needs_help_leaving: can leave only with help (wheelchair, oxygen, no car, children alone). leaving: will leave. " +
       "staying: refuses or undecided. already_left: out of the zone. hazard_report: reports smoke, fire, damage or injury, " +
       "or a sentinel says the alert matches what they see. no_hazard_seen: a sentinel sees nothing. info_request: only asked a question. " +
-      "wrong_number, not_in_zone, unclear, voicemail, silence: no usable answer.",
+      "wrong_number, not_in_zone, unclear, voicemail, silence: no usable answer. " +
+      "On the heat check-in line (mode heat): needs_help_now = heat-stroke warning signs or feeling unwell in the heat; " +
+      "needs_help_leaving = needs a ride to a cooling center; leaving = going to a cooling center or somewhere cool; " +
+      "already_left = at home and cool; staying = staying home and declining help (or wants a check-in visit).",
     choices: [...PRIMARY_INTENTS],
     required: false,
   },
@@ -191,7 +194,7 @@ export const POST_CALL_ANALYSIS = [
 
 /** Voicemail: leave only approved text (PRD 8.2 / 13: the directive, the evacuation point and the callback number). */
 export const VOICEMAIL_PROMPT =
-  "Leave a voicemail under 30 seconds in {{language}}. Say this is the emergency information line and the verification phrase " +
+  "Leave a voicemail under 30 seconds in {{language}}. Say this is the emergency information line (if the mode {{mode}} is heat: the heat check-in line) and the verification phrase " +
   "{{verification_phrase}}. If {{simulated}} is true, say this is a simulated call for a hackathon demonstration. " +
   "If the purpose {{purpose}} is resident or linked_contact, read exactly, translated faithfully if needed and adding nothing: " +
   "\"{{directive_text}}\" then \"{{move_text}}\" then the evacuation point \"{{evac_point}}\", skipping any that is (none). " +

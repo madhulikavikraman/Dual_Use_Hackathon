@@ -2,7 +2,7 @@ import "server-only";
 import { db, nowIso, uid } from "@/lib/db";
 import { TABLES } from "@/lib/db/tables";
 import { serverEnv } from "@/lib/env";
-import { STATE_LABEL } from "@/lib/directives";
+import { stateLabelFor } from "@/lib/directives";
 import { jurisdictionForScenario } from "@/lib/jurisdictions";
 import { NORTE_SNAPSHOT, liveCalFire, liveNwsAlerts, ptTime } from "./live";
 import { buildScenario, modeFor, SCENARIOS } from "@/lib/scenarios";
@@ -59,7 +59,8 @@ export async function resetScenario(scenario: Scenario) {
   await db().insert("zones", build.zones);
   await db().insert("households", build.households);
   if (build.proposals.length) await db().insert("proposals", build.proposals);
-  await setMeta({ ...defaultMeta(), scenario, mode: modeFor(scenario), jurisdiction: jurisdictionForScenario(scenario) });
+  const mode = modeFor(scenario);
+  await setMeta({ ...defaultMeta(), scenario, mode, jurisdiction: jurisdictionForScenario(scenario) });
 
   const events: ZoneEvent[] = build.zones
     .filter((z) => z.approved_by)
@@ -70,15 +71,22 @@ export async function resetScenario(scenario: Scenario) {
   if (events.length) await db().insert("zone_events", events);
   for (const e of events) {
     const zone = build.zones.find((z) => z.id === e.zone_id)!;
-    await ledger({ actor: e.actor, action: `approve zone: ${STATE_LABEL[e.to_state]}`, target: zone.name, reason: "Scenario start (seeded)" });
+    await ledger({ actor: e.actor, action: `approve zone: ${stateLabelFor(e.to_state, mode)}`, target: zone.name, reason: "Scenario start (seeded)" });
   }
   const label = SCENARIOS.find((s) => s.id === scenario)?.label ?? scenario;
   await feed({ kind: "info", title: `Scenario loaded: ${label}`, detail: "All residents are synthetic except the six volunteer phones. Every send is simulated." });
   if (scenario === "norte") await liveNorteFeed();
   for (const p of build.proposals) {
     const zone = build.zones.find((z) => z.id === p.zone_id)!;
-    await feed({ kind: "proposal", severity: "warn", zone_id: p.zone_id, title: `Model proposes ${STATE_LABEL[p.proposed_state]} for ${zone.name}`,
+    await feed({ kind: "proposal", severity: "warn", zone_id: p.zone_id, title: `Model proposes ${stateLabelFor(p.proposed_state, mode)} for ${zone.name}`,
       detail: `${p.reason} Needs a human.` });
+  }
+  // Heat line: live weather per zone (Open-Meteo, NWS) with a short timeout and the labeled simulated heat wave as the
+  // fallback; the threshold table proposes a level per zone (a named human approves).
+  let heatProposals = 0;
+  if (scenario === "heat") {
+    const { runHeatCheck } = await import("./weather");
+    heatProposals = (await runHeatCheck({ actor: "system", at })).proposals.length;
   }
   await ensureTwists();
   return {
@@ -86,7 +94,7 @@ export async function resetScenario(scenario: Scenario) {
     zones: build.zones.length,
     households: build.households.length,
     devices: build.households.filter((h) => h.has_device).length,
-    proposals: build.proposals.length,
+    proposals: build.proposals.length + heatProposals,
   };
 }
 

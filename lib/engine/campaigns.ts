@@ -1,6 +1,6 @@
 import "server-only";
 import { db, isoIn, nowIso, uid } from "@/lib/db";
-import { STATE_LABEL } from "@/lib/directives";
+import { STATE_LABEL, stateLabelFor } from "@/lib/directives";
 import { RING_M, edgeDistanceM } from "@/lib/geo";
 import { jurisdictionFor } from "@/lib/jurisdictions";
 import type {
@@ -125,11 +125,20 @@ export async function latestStatuses(): Promise<Map<string, HouseholdStatus>> {
 
 const FINAL_LEFT: Status[] = ["safe"];
 
+/** Heat line: people who live alone or have no air conditioning are called first. */
+export const heatRisk = (h: Household) => Boolean(h.heat_profile?.lives_alone || h.heat_profile?.no_ac);
+
 /** Who a campaign calls (PRD 8.2 protocol table). */
-async function rosterFor(zone: Zone, kind: CampaignKind, wave: number | null): Promise<Household[]> {
+async function rosterFor(zone: Zone, kind: CampaignKind, wave: number | null, mode: Meta["mode"]): Promise<Household[]> {
   const people = await db().where("households", { zone_id: zone.id });
   const residents = people.filter((h) => h.role === "resident");
   if (kind === "test") return people.filter((h) => h.role === "sentinel");
+  if (mode === "heat") {
+    // Heat watch: check in with seniors who live alone. Extreme Heat Warning: call everyone again, including people who
+    // said earlier they were home and cool (an air conditioner can fail). Heat Advisory: every registered senior.
+    if (kind === "checkin") return residents.filter((h) => h.heat_profile?.lives_alone);
+    if (kind === "order") return residents;
+  }
   const latest = await latestStatuses();
   const st = (h: Household) => latest.get(h.id)?.status ?? "pending";
   if (kind === "warning" && wave === 2) {
@@ -181,11 +190,13 @@ export async function startCampaign(opts: {
   };
   await db().insert("campaigns", campaign);
 
-  const roster = await rosterFor(zone, kind, wave);
+  const roster = await rosterFor(zone, kind, wave, meta.mode);
+  const heat = meta.mode === "heat";
   const ranked = roster
     .map((h) => {
       const d = edgeDistanceM(h.lng, h.lat, zone.geom, zone.hazard_origin);
-      return { h, d, ring: Math.floor(d / RING_M) };
+      // Heat has no hazard edge: "ring" 0 is the people who live alone or have no air conditioning, ring 1 everyone else.
+      return { h, d, ring: heat ? (heatRisk(h) ? 0 : 1) : Math.floor(d / RING_M) };
     })
     .sort((a, b) => a.ring - b.ring || Number(b.h.afn_flags.length > 0) - Number(a.h.afn_flags.length > 0) || a.d - b.d);
 
@@ -208,8 +219,12 @@ export async function startCampaign(opts: {
   if (purpose === "resident" && ranked.length) {
     await db().upsert("household_status", ranked.map(({ h }) => blankStatus(campaign.id, h.id, "queued")));
   }
-  const what =
-    kind === "warning" ? `Stage ${wave === 2 ? "2 check" : "1 warning"} calls` :
+  const what = heat
+    ? kind === "checkin" ? "heat watch check-ins with seniors who live alone"
+      : kind === "warning" ? "Heat Advisory calls to every registered senior"
+      : kind === "order" ? "Extreme Heat Warning calls to everyone"
+      : `${kind} calls`
+    : kind === "warning" ? `Stage ${wave === 2 ? "2 check" : "1 warning"} calls` :
     kind === "order" ? "Stage 3 order relay calls" :
     kind === "shelter" ? "Shelter-in-place calls" :
     kind === "rollcall" ? "Roll call" :
@@ -218,7 +233,9 @@ export async function startCampaign(opts: {
     actor: started_by,
     action: `start ${what} (${calls.length})`,
     target: zone.name,
-    reason: opts.reason ?? `${STATE_LABEL[zone.state]}; edge-first from the hazard side`,
+    reason: opts.reason ?? (heat
+      ? `${stateLabelFor(zone.state, meta.mode)}; people who live alone or have no air conditioning first`
+      : `${STATE_LABEL[zone.state]}; edge-first from the hazard side`),
     kind: started_by === "system" || started_by === "timer" ? "system" : "decision",
   });
   return campaign;
