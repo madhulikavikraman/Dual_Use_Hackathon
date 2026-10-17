@@ -150,6 +150,8 @@ export interface DemoResetBody {
 }
 
 export interface DemoSimBody {
+  /** Directive vocabulary: civilian (Cal OES), campus (USC DPS), base (installation lockdown). */
+  mode?: "civilian" | "campus" | "base";
   preset?: SimPreset; // switch the simulator preset
   autopilot_devices?: boolean;
   wrong_polygon?: boolean;

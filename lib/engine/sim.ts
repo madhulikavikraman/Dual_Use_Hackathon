@@ -41,7 +41,7 @@ export async function planSim(call: Call, h: Household, meta: Meta): Promise<Sim
   const r = hash(call.id);
   const now = Date.now();
   const at = (ms: number) => new Date(now + ms).toISOString();
-  if (profile === "no_answer" || profile === "silent") return { profile, answer_at: null, done_at: at(18_000 + r * 4000), applied: false };
+  if (profile === "no_answer" || profile === "silent") return { profile, answer_at: null, done_at: at(14_000 + r * 3000), applied: false };
   if (profile === "voicemail") return { profile, answer_at: null, done_at: at(14_000), applied: false };
   if (call.purpose === "sentinel") {
     // Near-edge sentinels see it first; far ones take longer. Devices on autopilot answer mid-hold.

@@ -6,6 +6,7 @@ import { towerDown } from "@/lib/engine/sim";
 import { body, handle, json } from "@/lib/http";
 
 const Body = z.object({
+  mode: z.enum(["civilian", "campus", "base"]).optional(),
   preset: z.enum(["normal", "tower_down", "fire_spreading", "mass_no_answer", "earthquake", "hoax_flood"]).optional(),
   autopilot_devices: z.boolean().optional(),
   wrong_polygon: z.boolean().optional(),
@@ -20,6 +21,7 @@ export async function POST(req: Request) {
   return handle(async () => {
     const b = await body(req, Body);
     const patch: Parameters<typeof setMeta>[0] = {};
+    if (b.mode) patch.mode = b.mode;
     if (b.preset) patch.sim_preset = b.preset;
     if (b.autopilot_devices !== undefined) patch.autopilot_devices = b.autopilot_devices;
     if (b.wrong_polygon !== undefined) patch.wrong_polygon = b.wrong_polygon;

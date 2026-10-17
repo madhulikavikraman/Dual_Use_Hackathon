@@ -31,6 +31,16 @@ export async function approveZone(zoneId: string, body: ApproveZoneBody): Promis
 
   await closeProposals(zone, body.state, body.approved_by, body.reason);
 
+  // Same state again: the human is editing the approved texts. Update and log; no new calls, no new send.
+  if (body.state === zone.state) {
+    await applyZoneState(zone, body.state, {
+      directive_text: directive || null, move_text: move || null, evac_point: evac, actor: body.approved_by, reason: body.reason,
+      evac_point_lat: defaults.evac_point_lat, evac_point_lng: defaults.evac_point_lng,
+    });
+    await ledger({ actor: body.approved_by, action: `re-approve ${STATE_LABEL[body.state]} (texts updated, no new calls)`, target: zone.name, reason: body.reason });
+    return { zone: (await db().get("zones", zoneId))!, campaign: null, hold: null };
+  }
+
   if (body.state === "order") {
     if (body.bypass_hold) {
       await ledger({ actor: body.approved_by, action: "IC order: bypass hold", target: zone.name, reason: body.reason });
