@@ -354,7 +354,7 @@ const CHONGQING = [
   "Colour warnings are hazard levels; only a relocation order (转移指令) moves people. A red warning is never auto-promoted.",
   "Calls say 119. The dose counts 12379 and carrier SMS audiences.",
   "Sentinels are the grid workers China already asks to acknowledge (叫应).",
-  "A CAC-filed domestic model sits behind the same seven tools (no Claude in mainland China). PIPL consent; GCJ-02 maps.",
+  "A CAC-filed domestic model sits behind the same eight tools (no Claude in mainland China). PIPL consent; GCJ-02 maps.",
 ];
 
 function Global() {
@@ -452,8 +452,8 @@ function WhoPays() {
       </p>
       <ul className="mt-[2px] space-y-[2px] text-[30px] leading-[1.26]">
         <li>
-          <span className="font-semibold text-vf-flare">USC Department of Public Safety</span> · campus mode, monthly
-          test calls
+          <span className="font-semibold text-vf-flare">County senior services</span> · heat mode, check-in calls to older
+          residents who live alone
         </li>
         <li>
           <span className="font-semibold text-vf-flare">A military installation&apos;s command post</span> · base mode
