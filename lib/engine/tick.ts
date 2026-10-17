@@ -5,6 +5,7 @@ import { canaryTick, holdTick } from "./holds";
 import { locateTick } from "./locate";
 import { getMeta } from "./log";
 import { runPatternWatch } from "./pattern";
+import { planTick } from "./plans";
 import { simTick } from "./sim";
 
 // Advances every deadline in the database (D-19: serverless has no long-lived timers): the dispatch queue,
@@ -23,6 +24,11 @@ export async function runTick(): Promise<{ advanced: number }> {
       n += await holdTick(nowIso());
       n += await canaryTick();
       n += await campaignTick();
+      // Block-by-block plans: the wave clock starts the next wave unless a human holds it.
+      n += await planTick(nowIso()).catch((e) => {
+        console.error("[plan]", e);
+        return 0;
+      });
       // Live-location links: expiry, help reached, the simulator's pings (never blocks the tick, e.g. before migration 003).
       n += await locateTick().catch((e) => {
         console.error("[locate]", e);

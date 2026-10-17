@@ -114,8 +114,8 @@ export const countHtml = (color: string, text: string) => `<div class="sk-hex-co
 
 export const epHtml = () => `<div class="sk-ep">EP</div>`;
 
-export function holdLabelHtml(label: string, dose: string) {
-  return `<div class="sk-hold-label">HOLD · ${esc(label)}<br/>wakes about ${esc(dose)}</div>`;
+export function holdLabelHtml(label: string, dose: string, wave1: string | null = null) {
+  return `<div class="sk-hold-label">HOLD · ${esc(label)}<br/>wakes about ${esc(dose)}${wave1 ? `<br/><span aria-hidden="true">🏃</span> ${esc(wave1)}` : ""}</div>`;
 }
 
 export function zoneLabelHtml(input: {
@@ -124,10 +124,21 @@ export function zoneLabelHtml(input: {
   color: string;
   text: string;
   proposal: { state: string; color: string; reason: string; more: number } | null;
+  /** Block-by-block plan line, e.g. "🚦 Wave 3 of 10 going now · 34 blocks". */
+  plan?: string | null;
 }) {
   const p = input.proposal;
   const proposal = p
     ? `<div class="sk-proposal" style="--c:${p.color}"><span class="sk-proposal-badge">Proposed by model — needs a human</span><span class="sk-proposal-state">→ ${esc(p.state)}${p.more ? ` <i>+${p.more} more</i>` : ""}</span><span class="sk-proposal-reason">${esc(p.reason)}</span></div>`
     : "";
-  return `<div class="sk-zone-label"><div class="sk-zone-title"><span class="sk-zone-name">${esc(input.name)}</span><span class="sk-zone-state" style="background:${input.color};color:${input.text}">${esc(input.state)}</span></div>${proposal}</div>`;
+  const plan = input.plan ? `<div class="sk-zone-plan">${esc(input.plan)}</div>` : "";
+  return `<div class="sk-zone-label"><div class="sk-zone-title"><span class="sk-zone-name">${esc(input.name)}</span><span class="sk-zone-state" style="background:${input.color};color:${input.text}">${esc(input.state)}</span></div>${plan}${proposal}</div>`;
 }
+
+/** An evacuation block's id at its centre: "🏃 SM-07". Hidden at a far zoom unless the block goes now (map.css). */
+export const blockLabelHtml = (id: string, status: string, emoji: string, color: string) =>
+  `<div class="sk-block-label sk-b-${esc(status)}" style="--c:${color}"><span aria-hidden="true">${emoji}</span>${esc(id)}</div>`;
+
+/** An exit road's load in the wave shown, at its outbound end: "🛣️ Lincoln Blvd 61%". */
+export const routeLabelHtml = (name: string, pct: string, color: string) =>
+  `<div class="sk-route-label" style="--c:${color}"><span aria-hidden="true">🛣️</span>${esc(name)} <b>${esc(pct)}</b></div>`;

@@ -1,5 +1,5 @@
 import type {
-  AlertItem, Call, Campaign, Canary, Cluster, Dispatch, HelpRequest, Hold, Household, HouseholdStatus, Intent,
+  AlertItem, Call, Campaign, Canary, Cluster, Dispatch, EvacPlan, HelpRequest, Hold, Household, HouseholdStatus, Intent,
   LedgerEntry, LocationFix, LocationShare, Meta, PickupRun, Proposal, Report, SimRun, TwistEntry, Zone, ZoneEvent,
 } from "@/lib/types";
 
@@ -26,6 +26,7 @@ export interface Tables {
   reports: Report;
   clusters: Cluster;
   ledger: LedgerEntry;
+  evac_plans: EvacPlan;
   meta: Meta;
 }
 
@@ -34,7 +35,7 @@ export type TableName = keyof Tables;
 export const TABLES: TableName[] = [
   "households", "campaigns", "calls", "household_status", "alerts_feed", "twist_log", "sim_runs",
   "zones", "zone_events", "proposals", "intents", "help_requests", "locations", "location_shares", "dispatches", "pickup_runs",
-  "holds", "canaries", "reports", "clusters", "ledger", "meta",
+  "holds", "canaries", "reports", "clusters", "ledger", "evac_plans", "meta",
 ];
 
 /** Tables whose rows have no `id` column; they are matched by these keys instead. */

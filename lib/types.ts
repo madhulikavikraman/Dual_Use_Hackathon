@@ -634,3 +634,80 @@ export interface Meta {
   wrong_polygon: boolean;
   updated_at: string;
 }
+
+// ---------- Phased evacuation: blocks, exit roads and waves (an Order or Warning zone moves out block by block) ----------
+// The zone's legal state never changes here: an Order stays an Order for the whole zone. The plan only orders the
+// calls and the route advice, a named human approves it, and "Everyone go now" is always one click away.
+
+/** go_now: this block's wave is on; next: the wave after; ready: a later wave; left: its wave is done; hold: next wave held by a human. */
+export type BlockStatus = "go_now" | "next" | "ready" | "left" | "hold";
+export const BLOCK_STATUSES: BlockStatus[] = ["go_now", "next", "ready", "hold", "left"];
+
+/** proposed: the system's plan, waiting for a named human. standby: approved, the zone is not under an Order yet.
+ * active: the wave clock runs. all_go: a human sent everyone at once. rejected / closed: no longer used. */
+export type EvacPlanStatus = "proposed" | "standby" | "active" | "all_go" | "rejected" | "closed";
+
+/** One exit road out of a zone, away from the hazard (a simple polyline of a real street). */
+export interface EvacRoute {
+  id: string; // "sm-lincoln"
+  name: string; // "Lincoln Boulevard south", read in the call
+  short: string; // "Lincoln Blvd", map label
+  line: [number, number][]; // [lng, lat], from inside the zone outward
+  lanes: number; // outbound lanes (OpenStreetMap lane tags)
+  per_lane_vph: number; // planning assumption, cars per lane per hour
+  capacity_vph: number; // lanes x per_lane_vph
+}
+
+export interface EvacBlock {
+  id: string; // "SM-07": zone short code + rank from the hazard (01 is nearest)
+  zone_id: string;
+  geom: GeoJSON.Polygon;
+  centroid: [number, number]; // [lng, lat]
+  hazard_m: number; // meters from the zone's hazard edge (the edge-first sweep's distance)
+  area_km2: number;
+  households: number; // roster households inside (synthetic and volunteer)
+  people_est: number; // the zone's population estimate, shared by area
+  vehicles_est: number; // people_est / people per household x cars per household
+  route_id: string;
+  wave: number; // 1-based
+  status: BlockStatus;
+  /** Why and when this block was moved to an earlier wave (the fire model or a person), else null. */
+  pulled_forward: string | null;
+}
+
+export interface EvacWave {
+  n: number;
+  planned_at: string; // when the wave is planned to start (the wave clock)
+  started_at: string | null;
+  load: Record<string, number>; // route id -> cars planned in this wave
+}
+
+/** The words a named human approves with the plan; {block}, {wave}, {time}, {route}, {to_evac} and {zone} are filled in. */
+export interface EvacTemplates {
+  go_now: string;
+  get_ready: string;
+  all_go: string;
+}
+
+export interface EvacPlan {
+  id: string;
+  zone_id: string;
+  status: EvacPlanStatus;
+  wave_minutes: number;
+  current_wave: number; // 0 before the plan runs
+  wave_started_at: string | null;
+  held: boolean; // the next wave is held by a human (the current wave keeps going)
+  held_by: string | null;
+  held_reason: string | null;
+  routes: EvacRoute[];
+  blocks: EvacBlock[];
+  waves: EvacWave[];
+  templates: EvacTemplates;
+  assumptions: string; // shown on screen with the numbers
+  proposed_by: string;
+  approved_by: string | null;
+  approved_at: string | null;
+  reason: string | null;
+  created_at: string;
+  updated_at: string;
+}

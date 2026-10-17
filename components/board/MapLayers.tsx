@@ -2,8 +2,9 @@
 
 import type { PathOptions } from "leaflet";
 import { Fragment } from "react";
-import { Circle, CircleMarker, Marker, Polygon, Tooltip } from "react-leaflet";
+import { Circle, CircleMarker, Marker, Polygon, Polyline, Tooltip } from "react-leaflet";
 import type { HouseholdView } from "@/lib/contracts";
+import { capPerWave, firstWave, waveCount } from "@/lib/engine/blocks";
 import { STATE_COLOR, STATE_RANK } from "@/lib/directives";
 import { hexPolygon } from "@/lib/geo";
 import { fmtAgo, fmtPeople, isFresh } from "@/lib/client/format";
@@ -24,8 +25,12 @@ import {
   STATUS_COLOR,
   statusLabel,
 } from "@/lib/client/labels";
-import type { Canary, Cluster, HelpRequest, Hold, Mode, Proposal, Report, Zone, ZoneState } from "@/lib/types";
+import type { Canary, Cluster, EvacPlan, HelpRequest, Hold, Mode, Proposal, Report, Zone, ZoneState } from "@/lib/types";
+import { useBoard } from "./BoardContext";
+import { BLOCK_COLOR, BLOCK_EMOJI, BLOCK_FILL, BLOCK_LABEL, fmtN, loadColor, shownWave } from "./blockLabels";
+import { usePlans, useZonePlan } from "./usePlans";
 import {
+  blockLabelHtml,
   centre,
   countHtml,
   diamondHtml,
@@ -36,6 +41,7 @@ import {
   latLngs,
   liveHelpPinHtml,
   pathStyle,
+  routeLabelHtml,
   triangleHtml,
   zoneLabelHtml,
 } from "./mapMarks";
@@ -71,18 +77,91 @@ const needsText = (needs: HelpRequest["needs"]) => needs.map((n) => NEED_LABEL[n
 
 // ---------- Zones and proposals ----------
 
+/**
+ * Zones, and for a zone with a block-by-block plan its blocks colored by wave status instead of one solid fill (the zone
+ * outline stays), plus its exit roads with each road's load in the wave shown.
+ */
 export function ZoneShapes({ zones, faint }: { zones: Zone[]; faint: boolean }) {
+  const plans = usePlans();
   return zones.map((z) => {
     const color = STATE_COLOR[z.state];
+    const plan = plans.find((p) => p.zone_id === z.id);
+    const blocks = plan && plan.status !== "proposed" && !faint; // approved: blocks replace the solid fill
     const style = pathStyle({
       color,
-      weight: 2,
+      weight: blocks ? 2.5 : 2,
       opacity: 0.9,
       fillColor: color,
-      fillOpacity: ZONE_FILL[z.state] * (faint ? 0.5 : 1),
+      fillOpacity: blocks ? 0 : ZONE_FILL[z.state] * (faint ? 0.5 : 1),
     });
-    return <Polygon key={z.id} positions={latLngs(z.geom)} interactive={false} {...style} pathOptions={style} />;
+    return (
+      <Fragment key={z.id}>
+        <Polygon positions={latLngs(z.geom)} interactive={false} {...style} pathOptions={style} />
+        {plan && !faint ? <BlockShapes plan={plan} zone={z} /> : null}
+      </Fragment>
+    );
   });
+}
+
+function BlockShapes({ plan, zone }: { plan: EvacPlan; zone: Zone }) {
+  const proposed = plan.status === "proposed";
+  const total = waveCount(plan);
+  const wave = shownWave(plan, total);
+  const load = plan.waves.find((w) => w.n === wave)?.load ?? {};
+  return (
+    <>
+      {plan.blocks.map((b) => {
+        const c = BLOCK_COLOR[b.status];
+        // A proposed plan shows only its dashed block lines over the zone's usual fill.
+        const style = proposed
+          ? pathStyle({ color: STATE_COLOR[zone.state], weight: 1, opacity: 0.8, dashArray: "4 4", fill: false })
+          : pathStyle({ color: "#ffffff", weight: 1, opacity: 0.9, fillColor: c, fillOpacity: BLOCK_FILL[b.status] });
+        const route = plan.routes.find((r) => r.id === b.route_id);
+        return (
+          <Polygon key={b.id} positions={latLngs(b.geom)} {...style} pathOptions={style}>
+            <Tooltip className="sk-tip" sticky>
+              <b>{b.id}</b> · <span aria-hidden="true">{BLOCK_EMOJI[b.status]}</span> {proposed ? "Proposed" : BLOCK_LABEL[b.status]} · wave {b.wave} of {total}
+              <br />
+              <span aria-hidden="true">🛣️</span> {route?.name ?? "no road set"}
+              <br />
+              <span aria-hidden="true">👥</span> about {fmtN(b.people_est)} people · <span aria-hidden="true">🚗</span> about {fmtN(b.vehicles_est)} cars (estimates)
+              {b.households ? ` · ${b.households} on the roster` : ""}
+              {b.pulled_forward ? (
+                <>
+                  <br />
+                  <span aria-hidden="true">🔥</span> Pulled forward: {b.pulled_forward}
+                </>
+              ) : null}
+            </Tooltip>
+          </Polygon>
+        );
+      })}
+      {plan.routes.map((r) => {
+        const cars = load[r.id] ?? 0;
+        const cap = capPerWave(r, plan.wave_minutes);
+        const pct = cap ? Math.round((cars / cap) * 100) : 0;
+        const casing = pathStyle({ color: "#ffffff", weight: 7, opacity: 0.9 });
+        const line = pathStyle({ color: loadColor(pct), weight: 4, opacity: proposed ? 0.6 : 0.95, dashArray: proposed ? "8 6" : undefined });
+        const pts = r.line.map(([lng, lat]) => [lat, lng] as [number, number]);
+        return (
+          <Fragment key={r.id}>
+            <Polyline positions={pts} interactive={false} {...casing} pathOptions={casing} />
+            <Polyline positions={pts} {...line} pathOptions={line}>
+              <Tooltip className="sk-tip" sticky>
+                <b>
+                  <span aria-hidden="true">🛣️</span> {r.name}
+                </b>
+                <br />
+                {r.lanes} outbound lane{r.lanes === 1 ? "" : "s"} × {fmtN(r.per_lane_vph)} cars an hour = {fmtN(r.capacity_vph)} cars an hour (planning assumption)
+                <br />
+                Wave {wave}: {fmtN(cars)} of {fmtN(cap)} cars ({pct}%)
+              </Tooltip>
+            </Polyline>
+          </Fragment>
+        );
+      })}
+    </>
+  );
 }
 
 export function ProposalShapes({ proposals, zoneById }: { proposals: Proposal[]; zoneById: Map<string, Zone> }) {
@@ -103,12 +182,14 @@ export function ProposalShapes({ proposals, zoneById }: { proposals: Proposal[];
 }
 
 export function ZoneLabels({ zones, proposals, mode }: { zones: Zone[]; proposals: Proposal[]; mode: Mode }) {
+  const plans = usePlans();
   return zones.map((z) => {
     // One badge per zone: the most severe open proposal, with a count of the others.
     const mine = proposals
       .filter((x) => x.zone_id === z.id)
       .sort((a, b) => STATE_RANK[b.proposed_state] - STATE_RANK[a.proposed_state]);
     const p = mine[0];
+    const plan = plans.find((x) => x.zone_id === z.id);
     const html = zoneLabelHtml({
       name: z.name,
       state: stateShort(z.state, mode),
@@ -117,9 +198,62 @@ export function ZoneLabels({ zones, proposals, mode }: { zones: Zone[]; proposal
       proposal: p
         ? { state: stateLabel(p.proposed_state, mode), color: STATE_COLOR[p.proposed_state], reason: p.reason, more: mine.length - 1 }
         : null,
+      plan: plan ? planLine(plan) : null,
     });
-    return <Marker key={z.id} position={centre(z.geom)} icon={icon(html)} interactive={false} keyboard={false} />;
+    return (
+      <Fragment key={z.id}>
+        <Marker position={centre(z.geom)} icon={icon(html)} interactive={false} keyboard={false} />
+        {plan ? <BlockLabels plan={plan} /> : null}
+      </Fragment>
+    );
   });
+}
+
+/** "🚦 Wave 3 of 10 · 34 blocks" under the zone's name. */
+function planLine(plan: EvacPlan): string {
+  const total = waveCount(plan);
+  if (plan.status === "proposed") return `📝 Block plan proposed: ${plan.blocks.length} blocks, ${total} waves`;
+  if (plan.status === "standby") return `🕒 ${plan.blocks.length} blocks, ${total} waves: ready if an Order comes`;
+  if (plan.status === "all_go") return `🚨 Everyone go now · ${plan.blocks.length} blocks`;
+  if (plan.current_wave > total) return `✅ All ${total} waves done · ${plan.blocks.length} blocks`;
+  return `🚦 Wave ${plan.current_wave} of ${total} going now${plan.held ? " · next held" : ""} · ${plan.blocks.length} blocks`;
+}
+
+/** Block ids at each block (only the blocks going now at a far zoom), and each road's load at its outbound end. */
+function BlockLabels({ plan }: { plan: EvacPlan }) {
+  const proposed = plan.status === "proposed";
+  const wave = shownWave(plan, waveCount(plan));
+  const load = plan.waves.find((w) => w.n === wave)?.load ?? {};
+  return (
+    <>
+      {proposed
+        ? null
+        : plan.blocks.map((b) => (
+            <Marker
+              key={b.id}
+              position={[b.centroid[1], b.centroid[0]]}
+              icon={icon(blockLabelHtml(b.id, b.status, BLOCK_EMOJI[b.status], BLOCK_COLOR[b.status]))}
+              interactive={false}
+              keyboard={false}
+            />
+          ))}
+      {plan.routes.map((r) => {
+        const end = r.line[r.line.length - 1];
+        if (!end) return null;
+        const cap = capPerWave(r, plan.wave_minutes);
+        const pct = cap ? Math.round(((load[r.id] ?? 0) / cap) * 100) : 0;
+        return (
+          <Marker
+            key={r.id}
+            position={[end[1], end[0]]}
+            icon={icon(routeLabelHtml(r.short, `${pct}%`, loadColor(pct)))}
+            interactive={false}
+            keyboard={false}
+          />
+        );
+      })}
+    </>
+  );
 }
 
 // ---------- Pattern watch ----------
@@ -179,10 +313,14 @@ export function HoldShape({ hold }: { hold: Hold }) {
 export function HoldLabel({ hold }: { hold: Hold }) {
   // Under the polygon's northernmost vertex, so it never sits on the zone label at the centroid.
   const top = hold.polygon.coordinates[0].reduce((a, b) => (b[1] > a[1] ? b : a));
+  // The dose keeps the zone total; a block plan adds how many move in wave 1 (only when the hold's polygon is the zone's).
+  const plan = useZonePlan(hold.zone_id);
+  const { zoneById } = useBoard();
+  const w1 = plan && hold.polygon_label === zoneById.get(hold.zone_id)?.name ? firstWave(plan) : null;
   return (
     <Marker
       position={[top[1], top[0]]}
-      icon={icon(holdLabelHtml(hold.polygon_label, `${fmtPeople(hold.population_est)} people`))}
+      icon={icon(holdLabelHtml(hold.polygon_label, `${fmtPeople(hold.population_est)} people`, w1 ? `wave ${w1.wave} now: ${fmtPeople(w1.people)}` : null))}
       interactive={false}
       keyboard={false}
     />

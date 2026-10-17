@@ -4,7 +4,7 @@
 // Isomorphic: the board's overlay (components/autoplay) and scripts/autoplay-check.ts run the same beats.
 // No server-only imports: only types from the contracts, plus fetch and timers.
 import type { BoardSnapshot, CallView, HouseholdView } from "@/lib/contracts";
-import type { Canary, HelpRequest, Hold, Zone } from "@/lib/types";
+import type { Canary, EvacPlan, HelpRequest, Hold, Zone } from "@/lib/types";
 
 /** Every decision autoplay makes is signed with this name; metrics never count it as a human decision. */
 export const AUTOPLAY_ACTOR = "Autoplay supervisor (simulated)";
@@ -240,6 +240,17 @@ const holdLeftMs = (snap: BoardSnapshot, memo: Memo) => {
 
 const sign = (reason: string) => ({ actor: AUTOPLAY_ACTOR, reason });
 
+/** "Wave 1 goes now: CC-01, CC-02 and CC-05, about 4,540 people. 42 blocks in 11 waves of 20 min; busiest road 95%." */
+function planLine(p: EvacPlan): string {
+  const wave = Math.max(1, p.current_wave);
+  const now = p.blocks.filter((b) => b.wave === wave);
+  const total = Math.max(0, ...p.blocks.map((b) => b.wave));
+  const load = p.waves.find((w) => w.n === wave)?.load ?? {};
+  const busiest = Math.max(0, ...p.routes.map((r) => ((load[r.id] ?? 0) / Math.max(1, Math.floor((r.capacity_vph * p.wave_minutes) / 60))) * 100));
+  return `Wave ${wave} goes now: ${list(now.map((b) => b.id))}, about ${fmtN(now.reduce((t, b) => t + b.people_est, 0))} people (estimate). ` +
+    `${p.blocks.length} blocks in ${total} waves of ${p.wave_minutes} min; the busiest road is at ${Math.round(busiest)}% of what it carries.`;
+}
+
 /** The parts of GET /api/registry/live (helper dispatch, built in parallel) this script reads. Kept local on purpose. */
 interface LiveRegistryLite {
   roster?: { id: string; label: string; vehicle?: string }[];
@@ -254,7 +265,7 @@ export const BEATS: Beat[] = [
     rung: "watch",
     title: "The Westside Fire (simulated)",
     caption:
-      "Santa Monica is under an Evacuation Order and Venice under a Warning. Every resident and every send here is simulated; autopilot answers for the six volunteer phones.",
+      "Santa Monica is under an Evacuation Order, moving out block by block: gray blocks are done, red ones go now, yellow ones get ready. Venice is under a Warning. Everything here is simulated; autopilot answers for the six volunteer phones.",
     focus: { tab: "zones", target: '[data-tour="map"]' },
     dwellMs: 7000,
     async act({ env, memo, snap, signal }) {
@@ -568,6 +579,45 @@ export const BEATS: Beat[] = [
     timeoutNote: "The send is slow to show; going on.",
   },
   {
+    // Block by block (lib/engine/plans.ts): the hold proposed a plan; a named person approves it after the Send.
+    id: "block-plan",
+    rung: "slow",
+    title: "Block by block, not the whole zone at once",
+    caption:
+      "The Order stays the Order for all of Culver City and Palms. The supervisor approves the block plan: blocks nearest the fire go first, each on its own road, so no road gets more cars than it carries. Later blocks hear when to get ready, and to leave at once if they see fire or smoke.",
+    focus: { target: ['[data-tour="block-plan"]', '[data-tour="map"]'] },
+    dwellMs: 11_000,
+    optional: true,
+    async skip({ env, signal }) {
+      try {
+        const r = await api<{ plan: EvacPlan | null }>(env, "GET", `/api/zones/${ZONE}/plan`, undefined, signal);
+        return r.plan ? null : "No block plan for Culver City";
+      } catch (e) {
+        if (isAbort(e)) throw e;
+        return e instanceof AutoplayHttpError && e.missing ? "Placeholder: no block plan API yet" : `Block plan not ready: ${e instanceof Error ? e.message : String(e)}`;
+      }
+    },
+    async act({ env, signal }) {
+      const r = await api<{ plan: EvacPlan | null }>(env, "GET", `/api/zones/${ZONE}/plan`, undefined, signal);
+      if (r.plan?.status === "proposed") {
+        await api(env, "POST", `/api/zones/${ZONE}/plan/approve`, { approved_by: AUTOPLAY_ACTOR, reason: "Exit roads checked; nearest the fire first" }, signal);
+      }
+    },
+    async until(_snap, memo, { env, signal }) {
+      const r = await api<{ plan: EvacPlan | null }>(env, "GET", `/api/zones/${ZONE}/plan`, undefined, signal).catch((e) => {
+        if (isAbort(e)) throw e;
+        return null;
+      });
+      const p = r?.plan;
+      if (!p || (p.status !== "active" && p.status !== "all_go")) return false;
+      memo.marks.planLine = planLine(p);
+      return true;
+    },
+    outcome: (_snap, memo) => memo.marks.planLine ?? null,
+    timeoutMs: 15_000,
+    timeoutNote: "The block plan is slow to show; going on.",
+  },
+  {
     id: "canary",
     rung: "watch",
     title: "The canary confirms delivery",
@@ -646,6 +696,45 @@ export const BEATS: Beat[] = [
     },
     timeoutMs: 120_000,
     timeoutNote: "Janet's Stage 3 call has not finished; going on.",
+  },
+  {
+    // Played after Janet's call so the wave-2 calls do not queue ahead of hers.
+    id: "next-wave",
+    rung: "hand",
+    title: "A person starts the next wave",
+    caption:
+      "The roads are moving, so the supervisor starts wave 2 early, with a name and a reason. Its blocks hear “leave now” on their roads. Hold next wave and Everyone go now are one click away too.",
+    focus: { target: ['[data-tour="block-plan"]', '[data-tour="map"]'] },
+    dwellMs: 9000,
+    optional: true,
+    quiet: true,
+    async skip({ env, memo, signal }) {
+      const r = await api<{ plan: EvacPlan | null }>(env, "GET", `/api/zones/${ZONE}/plan`, undefined, signal).catch((e) => {
+        if (isAbort(e)) throw e;
+        return null;
+      });
+      const p = r?.plan;
+      if (!p || p.status !== "active") return "No running block plan for Culver City";
+      memo.marks.waveBefore = String(p.current_wave);
+      return null;
+    },
+    async act({ env, signal }) {
+      await api(env, "POST", `/api/zones/${ZONE}/plan/advance`, sign("Wave 1 roads are moving; start the next wave early"), signal);
+    },
+    async until(_snap, memo, { env, signal }) {
+      const r = await api<{ plan: EvacPlan | null }>(env, "GET", `/api/zones/${ZONE}/plan`, undefined, signal).catch((e) => {
+        if (isAbort(e)) throw e;
+        return null;
+      });
+      const p = r?.plan;
+      if (!p || p.current_wave <= Number(memo.marks.waveBefore ?? 0)) return false;
+      const ids = p.blocks.filter((b) => b.wave === p.current_wave).map((b) => b.id);
+      memo.marks.nextWaveLine = `Wave ${p.current_wave} goes now: ${list(ids)}. The ledger has the supervisor's name and reason.`;
+      return true;
+    },
+    outcome: (_snap, memo) => memo.marks.nextWaveLine ?? null,
+    timeoutMs: 15_000,
+    timeoutNote: "The next wave is slow to show; going on.",
   },
   {
     // Helper dispatch (built in parallel): POST /api/registry/[id]/dispatch. Skipped quietly until that route exists.
@@ -737,7 +826,7 @@ export function recap(memo: Memo): Record<Rung, string> {
   return {
     watch: "The fire model proposed and nothing rang. After the send, the canary and the silence watch kept checking.",
     ask: "Sentinels at the edge and residents were asked what they see and need, each in their own language.",
-    slow: `Calls went out edge-first in waves, and the dose showed before anything was sent.${dose}`,
+    slow: `Calls went out edge-first in waves, and the dose showed before anything was sent.${dose} The zone moved out block by block, nearest the fire first, so no road jammed.`,
     hold: "The Order waited in a 90-second hold that sends on time, long enough to catch a wrong polygon.",
     hand: "Every decision has a name and a reason. People who need a person went to the registry and the pickup runs.",
   };
