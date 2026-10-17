@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VoiceFlare Pitch Deck</title>
+<meta name="description" content="VoiceFlare pitch deck for the USC Viterbi x InnovateLA Dual-Use Hackathon, Resilience Comms track with Retell AI." />
+<link rel="icon" href="assets/voiceflare-mark.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400..600&family=Saira:wght@400..800&display=swap" rel="stylesheet" />
+<script>
+  // Defined before the body so the inline onerror handlers below always exist, even for images that fail early.
+  // An <img data-fallback="..."> tries its fallback first; after that its .shot frame shows the styled placeholder.
+  function vfImg(img) {
+    var fb = img.getAttribute('data-fallback');
+    if (fb) { img.removeAttribute('data-fallback'); img.src = fb; return; }
+    var frame = img.closest('.shot');
+    if (frame) frame.classList.add('missing');
+    img.hidden = true;
+  }
+  // The demo video hides itself and shows the screenshot fallback when assets/demo.mp4 is missing or unplayable.
+  function vfVid(v) {
+    var wrap = v.closest('.video-wrap');
+    if (wrap) wrap.classList.add('no-video');
+    v.hidden = true;
+  }
+</script>
+<style>
+  /* ─── TOKENS (from app/globals.css, VoiceFlare brand) ───────────────────────────── */
+  @font-face { font-family: 'Saira Local'; font-style: normal; font-weight: 100 900; font-display: swap;
+    src: url(assets/fonts/saira-latin.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: 'Saira Local'; font-style: normal; font-weight: 100 900; font-display: swap;
+    src: url(assets/fonts/saira-latin-ext.woff2) format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+  @font-face { font-family: 'Geist Local'; font-style: normal; font-weight: 100 900; font-display: swap;
+    src: url(assets/fonts/geist-latin.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: 'Geist Local'; font-style: normal; font-weight: 100 900; font-display: swap;
+    src: url(assets/fonts/geist-latin-ext.woff2) format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+  @font-face { font-family: 'Geist Mono Local'; font-style: normal; font-weight: 400 600; font-display: swap;
+    src: url(assets/fonts/geistmono-latin.woff2) format('woff2'); }
+
+  :root {
+    --vf-ink: #050505;
+    --vf-coal: #0e0e11;
+    --vf-ash: #1c1c21;
+    --vf-smoke: #a3a3ad;
+    --vf-bone: #f5f5f4;
+    --vf-flare: #ff2a12;
+    --vf-ember: #ff6b3d;
+    --vf-blood: #a8120a;
+    --vf-amber: #fbbf24;
+    --line: rgba(255, 255, 255, 0.1);
+    --line-2: rgba(255, 255, 255, 0.16);
+    --ff-display: 'Saira', 'Saira Local', 'Geist', 'Geist Local', system-ui, sans-serif;
+    --ff-body: 'Geist', 'Geist Local', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --ff-mono: 'Geist Mono', 'Geist Mono Local', ui-monospace, Consolas, monospace;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; color: var(--vf-bone); }
+  body { font-family: var(--ff-body); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  ul, ol { list-style: none; }
+  img { display: block; max-width: 100%; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  body.idle { cursor: none; }
+
+  /* ─── STAGE: a fixed 1600 x 900 canvas, scaled to fit and letterboxed ─────────────── */
+  #viewport { position: fixed; inset: 0; overflow: hidden; background: #000; }
+  #stage {
+    position: absolute; left: 50%; top: 50%;
+    width: 1600px; height: 900px;
+    transform: translate(-50%, -50%) scale(var(--s, 1));
+    transform-origin: center center;
+    overflow: hidden;
+    background: var(--vf-ink);
+  }
+
+  /* ─── SLIDES ───────────────────────────────────────────────────────────────────── */
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    padding: 64px 96px 108px;
+    opacity: 0; pointer-events: none;
+    transform: translateY(20px);
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .slide.active { opacity: 1; pointer-events: auto; transform: translateY(0); }
+  .slide.exit { opacity: 0; transform: translateY(-20px); }
+  .no-anim .slide, .no-anim .slide * { transition: none !important; }
+  .notes { display: none; }
+
+  @keyframes float-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .slide.active .animate-in {
+    animation: float-in 0.6s var(--ease) both;
+    animation-delay: calc(80ms + var(--i, 0) * 80ms);
+  }
+
+  /* Background glows, as on the landing page */
+  .glow { position: absolute; z-index: -1; border-radius: 50%; pointer-events: none; }
+  .glow-a { width: 980px; height: 980px; left: -360px; top: -420px; background: radial-gradient(closest-side, rgba(255,42,18,0.2), rgba(255,42,18,0.05) 60%, transparent); }
+  .glow-b { width: 860px; height: 860px; right: -320px; bottom: -460px; background: radial-gradient(closest-side, rgba(255,107,61,0.12), transparent); }
+  .glow-c { width: 1100px; height: 1100px; left: 50%; top: 50%; transform: translate(-50%, -50%); background: radial-gradient(closest-side, rgba(255,42,18,0.16), rgba(255,42,18,0.04) 55%, transparent); }
+  .glow-d { width: 900px; height: 900px; right: -300px; top: -380px; background: radial-gradient(closest-side, rgba(255,42,18,0.16), rgba(255,42,18,0.03) 60%, transparent); }
+
+  /* Shared type */
+  .eyebrow {
+    display: flex; align-items: center; gap: 14px;
+    font: 600 17px/1 var(--ff-body); letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--vf-ember); margin-bottom: 22px;
+  }
+  .eyebrow::before { content: ''; width: 30px; height: 2px; background: var(--vf-flare); border-radius: 2px; }
+  .h2 {
+    font: 600 66px/1.04 var(--ff-display); letter-spacing: -0.02em; color: var(--vf-bone);
+    text-wrap: balance;
+  }
+  .lede { font: 400 25px/1.45 var(--ff-body); color: var(--vf-smoke); }
+  .hot { color: var(--vf-ember); }
+  .mono { font-family: var(--ff-mono); }
+
+  /* Slide footer: brand left, number right (sits under the nav pill when it shows) */
+  .foot {
+    position: absolute; left: 96px; right: 96px; bottom: 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    font: 500 15px/1 var(--ff-body); color: rgba(163,163,173,0.75); letter-spacing: 0.04em;
+    pointer-events: none;
+  }
+  .foot .brand { display: flex; align-items: center; gap: 10px; }
+  .foot .brand img { width: 24px; height: 24px; }
+  .foot .num { font: 600 16px/1 var(--ff-display); letter-spacing: 0.08em; }
+
+  /* The amber SIMULATED chip, as on the landing page */
+  .sim {
+    display: inline-flex; align-items: center; gap: 12px;
+    font: 400 16px/1.2 var(--ff-body); color: var(--vf-smoke);
+  }
+  .sim b {
+    font: 900 13px/1 var(--ff-body); letter-spacing: 0.12em; color: var(--vf-ink);
+    background: var(--vf-amber); padding: 5px 8px; border-radius: 3px;
+  }
+  .sim-corner { position: absolute; top: 64px; right: 96px; }
+
+  /* Screenshot frames with a browser bar; a styled placeholder replaces a missing image */
+  .shot {
+    position: relative; display: flex; flex-direction: column;
+    background: var(--vf-coal); border: 1px solid var(--line-2); border-radius: 14px; overflow: hidden;
+    box-shadow: 0 40px 90px -40px rgba(0,0,0,0.9), 0 0 60px -30px rgba(255,42,18,0.35);
+  }
+  .shot .bar {
+    flex: 0 0 34px; display: flex; align-items: center; gap: 7px; padding: 0 14px;
+    background: #141418; border-bottom: 1px solid var(--line);
+  }
+  .shot .bar i { width: 10px; height: 10px; border-radius: 50%; background: #3a3a43; }
+  .shot .bar span {
+    margin-left: 10px; flex: 1; padding: 4px 12px; border-radius: 6px; background: #1f1f25;
+    font: 500 13px/1.2 var(--ff-mono); color: var(--vf-smoke); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .shot .view { position: relative; flex: 1; min-height: 0; background: #0b0b0e; }
+  .shot .view img { width: 100%; height: 100%; object-fit: contain; object-position: center top; }
+  .shot .ph {
+    display: none; position: absolute; inset: 0;
+    flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    background:
+      linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px) 0 0 / 32px 32px,
+      linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px) 0 0 / 32px 32px,
+      radial-gradient(closest-side, rgba(255,42,18,0.12), transparent) center / 100% 100% no-repeat,
+      #0b0b0e;
+    text-align: center; padding: 18px;
+  }
+  .shot.missing .ph { display: flex; }
+  .shot .ph svg { max-width: 92%; max-height: 74%; }
+  .shot .ph .cap { font: 500 15px/1.35 var(--ff-body); color: var(--vf-smoke); }
+  .shot .ph .cap b { color: var(--vf-bone); font-weight: 600; }
+
+  /* ════════════ 1. TITLE ════════════ */
+  #s1 { align-items: center; justify-content: center; text-align: center; padding-top: 40px; }
+  .logo-hero { position: relative; width: 330px; margin: 0 auto 34px; }
+  .logo-hero::before {
+    content: ''; position: absolute; left: 50%; top: 44%; width: 160%; height: 160%; transform: translate(-50%, -50%);
+    background: radial-gradient(closest-side, rgba(255,42,18,0.3), rgba(255,42,18,0.08) 55%, transparent); z-index: -1;
+  }
+  .logo-hero .arcs { position: absolute; left: 50%; top: 45%; width: 82%; transform: translate(-50%, -50%); color: var(--vf-flare); filter: drop-shadow(0 0 5px rgba(255,42,18,0.75)); }
+  .logo-hero img { position: relative; width: 100%; height: auto; }
+  #s1 h1 {
+    font: 600 58px/1.06 var(--ff-display); letter-spacing: -0.025em; color: var(--vf-bone);
+    max-width: 1220px; margin: 0 auto 22px; text-wrap: balance;
+  }
+  #s1 .lede { font-size: 26px; max-width: 900px; margin: 0 auto; }
+  .badges { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 44px; }
+  .badges li {
+    font: 600 15px/1 var(--ff-body); letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 11px 20px; border-radius: 999px; border: 1.5px solid rgba(255,107,61,0.4);
+    color: var(--vf-bone); background: rgba(255,255,255,0.03);
+  }
+  .badges li.fill { background: var(--vf-flare); border-color: var(--vf-flare); color: #fff; }
+
+  @keyframes vf-arc { 0%, 100% { opacity: 0.12; } 35% { opacity: 0.85; } }
+  .arcs g { animation: vf-arc 3.6s ease-in-out infinite; }
+  .arcs g:nth-child(2) { animation-delay: 0.5s; }
+  .arcs g:nth-child(3) { animation-delay: 1s; }
+
+  /* ════════════ 2. PROBLEM ════════════ */
+  #s2 .h2 { font-size: 76px; margin-bottom: 10px; }
+  #s2 .lede { margin-bottom: 40px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-bottom: 22px; }
+  .stat {
+    background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+    border: 1px solid var(--line); border-top: 3px solid var(--vf-flare);
+    border-radius: 14px; padding: 26px 28px 22px; display: flex; flex-direction: column;
+  }
+  .stat .v { font: 700 64px/1 var(--ff-display); letter-spacing: -0.02em; color: var(--vf-bone); margin-bottom: 6px; }
+  .stat .k { font: 600 17px/1.2 var(--ff-body); letter-spacing: 0.14em; text-transform: uppercase; color: var(--vf-ember); margin-bottom: 12px; }
+  .stat p { font: 400 20px/1.42 var(--ff-body); color: rgba(245,245,244,0.86); }
+  .stat .src { margin-top: auto; padding-top: 14px; font: 500 14px/1.2 var(--ff-mono); color: rgba(163,163,173,0.8); }
+  .live-strip {
+    display: flex; align-items: center; gap: 18px;
+    border: 1px solid rgba(255,42,18,0.4); background: rgba(255,42,18,0.07);
+    border-radius: 12px; padding: 16px 22px; margin-bottom: 22px;
+  }
+  .live-dot { position: relative; flex: 0 0 14px; height: 14px; border-radius: 50%; background: var(--vf-flare); }
+  .live-dot::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--vf-flare); animation: ping 1.6s cubic-bezier(0,0,0.2,1) infinite; }
+  @keyframes ping { 0% { transform: scale(1); opacity: 0.7; } 80%, 100% { transform: scale(2.6); opacity: 0; } }
+  .live-strip p { font: 400 20px/1.4 var(--ff-body); color: rgba(245,245,244,0.9); }
+  .live-strip p b { font-weight: 600; color: var(--vf-bone); }
+  .live-strip .src { margin-left: auto; white-space: nowrap; font: 500 14px/1.2 var(--ff-mono); color: rgba(163,163,173,0.8); }
+  .quote { font: 500 30px/1.3 var(--ff-display); color: var(--vf-bone); border-left: 3px solid var(--vf-flare); padding-left: 22px; }
+  .quote span { font: 400 17px/1.3 var(--ff-body); color: var(--vf-smoke); margin-left: 12px; }
+
+  /* ════════════ 3. WHY TOOLS FAIL ════════════ */
+  #s3 { align-items: center; text-align: center; }
+  #s3 .eyebrow { justify-content: center; }
+  #s3 .h2 { font-size: 80px; margin-bottom: 56px; }
+  .tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; width: 100%; margin-bottom: 30px; }
+  .tool {
+    background: var(--vf-coal); border: 1px solid var(--line); border-radius: 18px;
+    padding: 38px 26px 36px; display: flex; flex-direction: column; align-items: center; gap: 16px;
+  }
+  .tool .ic {
+    width: 60px; height: 60px; border-radius: 16px; display: grid; place-items: center;
+    background: rgba(255,255,255,0.05); color: var(--vf-smoke);
+  }
+  .tool .ic svg { width: 30px; height: 30px; }
+  .tool .name { font: 600 32px/1.1 var(--ff-display); color: var(--vf-bone); }
+  .tool .tag {
+    font: 700 13px/1 var(--ff-body); letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 7px 12px; border-radius: 999px; background: rgba(255,255,255,0.06); color: var(--vf-smoke);
+  }
+  .tool p { font: 400 22px/1.4 var(--ff-body); color: var(--vf-smoke); text-wrap: balance; }
+  .gap-card {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 26px;
+    border: 2px solid var(--vf-flare); border-radius: 18px; padding: 32px 36px;
+    background: linear-gradient(135deg, rgba(255,42,18,0.16), rgba(255,107,61,0.06));
+    animation: pulse-glow 2.6s ease-in-out infinite;
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(255,42,18,0.10), 0 10px 40px rgba(255,42,18,0.18); }
+    50% { box-shadow: 0 0 0 9px rgba(255,42,18,0.16), 0 14px 60px rgba(255,42,18,0.3); }
+  }
+  .gap-card .ic { flex: 0 0 64px; height: 64px; border-radius: 16px; display: grid; place-items: center; background: var(--vf-flare); color: #fff; }
+  .gap-card .ic svg { width: 32px; height: 32px; }
+  .gap-card .t { font: 600 46px/1.1 var(--ff-display); color: var(--vf-bone); letter-spacing: -0.015em; text-align: left; }
+  .gap-card .tag { font: 700 13px/1 var(--ff-body); letter-spacing: 0.12em; text-transform: uppercase; color: #fff; background: var(--vf-flare); padding: 7px 12px; border-radius: 999px; }
+
+  /* ════════════ 4. INSIGHT ════════════ */
+  #s4 { flex-direction: row; align-items: center; gap: 40px; }
+  #s4 .left { flex: 1; }
+  .manifesto { font: 700 96px/1.02 var(--ff-display); letter-spacing: -0.03em; margin-bottom: 44px; }
+  .manifesto .dim { color: #55555e; display: block; }
+  .manifesto .strike { position: relative; display: inline-block; }
+  .manifesto .strike::after { content: ''; position: absolute; left: -4px; right: -4px; top: 54%; height: 7px; border-radius: 4px; background: var(--vf-flare); transform: rotate(-3deg); }
+  .manifesto .alive { color: var(--vf-bone); display: block; margin-top: 10px; text-shadow: 0 0 60px rgba(255,42,18,0.55); }
+  .manifesto .alive em { font-style: normal; color: var(--vf-flare); }
+  .pills { display: flex; flex-wrap: wrap; gap: 12px; max-width: 720px; }
+  .pill {
+    font: 500 19px/1 var(--ff-body); color: var(--vf-smoke); padding: 13px 20px;
+    border: 1.5px solid var(--line-2); border-radius: 999px; background: rgba(255,255,255,0.025);
+  }
+  .pill.key { color: var(--vf-bone); border-color: rgba(255,42,18,0.6); background: rgba(255,42,18,0.12); font-weight: 600; }
+  #s4 .right { flex: 0 0 600px; display: flex; flex-direction: column; align-items: center; }
+  .zone-svg { width: 600px; height: auto; overflow: visible; }
+  .zone-svg .res circle { fill: #5d5d66; }
+  .zone-svg .ping { transform-box: fill-box; transform-origin: center; animation: ping 2s cubic-bezier(0,0,0.2,1) infinite; }
+  .zone-svg .ping.d2 { animation-delay: 0.5s; } .zone-svg .ping.d3 { animation-delay: 1s; } .zone-svg .ping.d4 { animation-delay: 1.5s; }
+  .zone-cap { margin-top: 6px; font: 400 19px/1.4 var(--ff-body); color: var(--vf-smoke); text-align: center; max-width: 520px; }
+  .zone-cap b { color: var(--vf-bone); font-weight: 600; }
+
+  /* ════════════ 5. INTRODUCING ════════════ */
+  #s5 { align-items: center; text-align: center; }
+  .logo-row { display: flex; align-items: center; gap: 18px; margin: 22px 0 26px; }
+  .logo-row .mark { width: 76px; height: 76px; }
+  .logo-row .word { width: 470px; height: auto; }
+  #s5 .sub { font: 500 36px/1.2 var(--ff-display); color: var(--vf-bone); margin-bottom: 12px; letter-spacing: -0.01em; }
+  #s5 .lede { font-size: 23px; margin-bottom: 48px; }
+  .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; width: 100%; text-align: left; }
+  .pillar {
+    position: relative; background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+    border: 1px solid var(--line-2); border-radius: 20px; padding: 32px 30px 34px;
+  }
+  .pillar .top { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; padding-right: 34px; min-height: 76px; }
+  .pillar .ic {
+    flex: 0 0 58px; height: 58px; border-radius: 16px; display: grid; place-items: center;
+    background: rgba(255,42,18,0.14); color: var(--vf-ember); border: 1px solid rgba(255,42,18,0.35);
+  }
+  .pillar .ic svg { width: 30px; height: 30px; }
+  .pillar h3 { font: 600 31px/1.08 var(--ff-display); color: var(--vf-bone); letter-spacing: -0.01em; }
+  .pillar li { position: relative; padding-left: 22px; font: 400 21px/1.42 var(--ff-body); color: rgba(245,245,244,0.86); }
+  .pillar li + li { margin-top: 12px; }
+  .pillar li::before { content: ''; position: absolute; left: 0; top: 11px; width: 8px; height: 8px; border-radius: 2px; background: var(--vf-flare); transform: rotate(45deg); }
+  .pillar .n { position: absolute; top: 24px; right: 26px; font: 600 17px/1 var(--ff-display); color: rgba(163,163,173,0.6); letter-spacing: 0.1em; }
+  .pillar.new { border-color: rgba(255,42,18,0.55); box-shadow: 0 0 0 4px rgba(255,42,18,0.08); }
+  .launch { margin-top: 36px; font: 600 16px/1 var(--ff-body); letter-spacing: 0.14em; text-transform: uppercase; color: var(--vf-smoke); }
+
+  /* ════════════ 6. HOW IT WORKS ════════════ */
+  #s6 .h2 { margin-bottom: 46px; }
+  .ladder { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: 22px; margin-bottom: 40px; }
+  .ladder::before {
+    content: ''; position: absolute; left: 30px; right: 30px; top: 28px; height: 3px; border-radius: 3px; z-index: -1;
+    background: linear-gradient(90deg, #a3a3ad, #fbbf24 25%, #ff8a3d 50%, #ff2a12 75%, #f5f5f4);
+    opacity: 0.6;
+  }
+  .rung .dot {
+    width: 58px; height: 58px; border-radius: 50%; border: 2.5px solid currentColor; background: var(--vf-ink);
+    display: grid; place-items: center; font: 600 24px/1 var(--ff-display); margin-bottom: 18px;
+    box-shadow: 0 0 30px -6px currentColor;
+  }
+  .rung h3 { font: 600 36px/1.05 var(--ff-display); color: var(--vf-bone); letter-spacing: -0.015em; margin-bottom: 10px; }
+  .rung p { font: 400 19px/1.42 var(--ff-body); color: var(--vf-smoke); }
+  .rung p b { color: var(--vf-bone); font-weight: 600; }
+  .rung.r1 { color: #a3a3ad; } .rung.r2 { color: #fbbf24; } .rung.r3 { color: #ff8a3d; } .rung.r4 { color: #ff2a12; } .rung.r5 { color: #f5f5f4; }
+  .who { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 20px; }
+  .who > div { border: 1px solid var(--line); background: var(--vf-coal); border-radius: 16px; padding: 22px 26px; }
+  .who .k { font: 700 14px/1 var(--ff-body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--vf-ember); margin-bottom: 12px; }
+  .who p { font: 500 24px/1.3 var(--ff-display); color: var(--vf-bone); }
+  .who .never { border-color: rgba(255,42,18,0.5); background: rgba(255,42,18,0.07); }
+  .who .never ul { display: flex; flex-direction: column; gap: 6px; }
+  .who .never li { font: 500 22px/1.25 var(--ff-display); color: var(--vf-bone); display: flex; align-items: center; gap: 12px; }
+  .who .never li::before { content: ''; flex: 0 0 16px; height: 2.5px; background: var(--vf-flare); border-radius: 2px; }
+
+  /* ════════════ 7. THE RUN ════════════ */
+  #s7 .h2 { margin-bottom: 34px; }
+  .beats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 26px; }
+  .beat {
+    position: relative; background: var(--vf-coal); border: 1px solid var(--line); border-radius: 16px;
+    padding: 20px 22px 22px; min-height: 186px;
+  }
+  .beat .t { display: inline-block; font: 600 16px/1 var(--ff-mono); color: var(--vf-ember); background: rgba(255,107,61,0.1); border: 1px solid rgba(255,107,61,0.3); padding: 6px 9px; border-radius: 6px; margin-bottom: 14px; }
+  .beat .i { position: absolute; top: 20px; right: 22px; font: 600 16px/1 var(--ff-display); color: rgba(163,163,173,0.55); }
+  .beat h3 { font: 600 27px/1.1 var(--ff-display); color: var(--vf-bone); margin-bottom: 8px; letter-spacing: -0.01em; }
+  .beat p { font: 400 18px/1.4 var(--ff-body); color: var(--vf-smoke); }
+  .beat p b { color: var(--vf-bone); font-weight: 600; }
+  .beat.key { border-color: rgba(255,42,18,0.6); background: linear-gradient(180deg, rgba(255,42,18,0.14), rgba(255,42,18,0.04)); }
+  .beat .big { font: 700 30px/1 var(--ff-display); color: var(--vf-bone); letter-spacing: -0.01em; margin: 2px 0 8px; }
+  .beat .big s { color: #b4b4bd; font-weight: 600; text-decoration-thickness: 2px; text-decoration-color: var(--vf-flare); }
+  .autoplay { display: flex; align-items: center; gap: 22px; }
+  .cta {
+    position: relative; isolation: isolate; display: inline-flex; align-items: center; gap: 14px;
+    padding: 16px 26px; font: 600 24px/1 var(--ff-display); color: #fff; filter: drop-shadow(0 6px 22px rgba(255,42,18,0.35));
+  }
+  .cta::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--vf-flare); clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px); }
+  .cta svg { width: 22px; height: 22px; }
+  .cta code { font: 600 22px/1 var(--ff-mono); }
+  .autoplay p { font: 400 20px/1.4 var(--ff-body); color: var(--vf-smoke); }
+
+  /* ════════════ 8. VIDEO ════════════ */
+  #s8 { background: #000; align-items: center; padding-top: 54px; }
+  .video-wrap { position: relative; width: 1180px; height: 664px; }
+  .video-wrap video {
+    width: 100%; height: 100%; background: #000; border-radius: 16px; border: 1px solid var(--line);
+    box-shadow: 0 8px 60px rgba(0,0,0,0.6), 0 0 80px -30px rgba(255,42,18,0.45);
+  }
+  .video-wrap video:focus-visible { outline: 3px solid var(--vf-ember); outline-offset: 4px; }
+  .video-fallback { display: none; position: absolute; inset: 0; }
+  .video-wrap.no-video .video-fallback { display: flex; flex-direction: column; }
+  .video-fallback .shot { flex: 1; }
+  .video-fallback .liveline {
+    position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 16px; white-space: nowrap;
+    background: rgba(5,5,5,0.88); border: 1px solid rgba(255,42,18,0.6); border-radius: 14px; padding: 16px 26px;
+    font: 600 34px/1 var(--ff-display); color: var(--vf-bone);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+    backdrop-filter: blur(6px);
+  }
+  .video-fallback .liveline code { font: 600 32px/1 var(--ff-mono); color: var(--vf-ember); }
+  .video-cap { margin-top: 22px; display: flex; align-items: center; gap: 22px; }
+  .video-cap p { font: 400 19px/1.3 var(--ff-body); color: var(--vf-smoke); }
+  .video-cap code { font-family: var(--ff-mono); color: var(--vf-bone); }
+
+  /* ════════════ 9. LIVE LOCATION ════════════ */
+  #s9 { flex-direction: row; gap: 48px; }
+  #s9 .left { flex: 0 0 640px; }
+  #s9 .h2 { font-size: 56px; margin-bottom: 34px; }
+  .steps { display: flex; flex-direction: column; gap: 18px; }
+  .steps li { display: grid; grid-template-columns: 46px 1fr; gap: 0 18px; align-items: start; }
+  .steps .n {
+    grid-row: span 2; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center;
+    font: 600 20px/1 var(--ff-display); color: var(--vf-ember); border: 2px solid rgba(255,107,61,0.55); background: rgba(255,107,61,0.08);
+  }
+  .steps h3 { font: 600 25px/1.15 var(--ff-display); color: var(--vf-bone); margin-top: 1px; }
+  .steps p { font: 400 19px/1.4 var(--ff-body); color: var(--vf-smoke); }
+  .steps p q { color: rgba(245,245,244,0.92); }
+  .steps li.stop .n { color: var(--vf-bone); border-color: rgba(245,245,244,0.5); background: rgba(245,245,244,0.06); }
+  #s9 .right { position: relative; flex: 1; margin-top: 8px; }
+  #s9 .shot.map { position: absolute; left: 0; top: 0; width: 680px; height: 418px; }
+  #s9 .shot.phone {
+    position: absolute; right: -6px; top: 300px; width: 236px; height: 430px; border-radius: 30px;
+    border: 6px solid #26262d; box-shadow: 0 30px 80px rgba(0,0,0,0.85), 0 0 50px -20px rgba(255,42,18,0.5);
+  }
+  #s9 .shot.phone .view img { object-position: center top; }
+  .shot-label { position: absolute; font: 500 15px/1.3 var(--ff-body); color: var(--vf-smoke); }
+  .shot-label code { font-family: var(--ff-mono); color: var(--vf-bone); }
+  #s9 .label-map { left: 0; top: 432px; max-width: 470px; }
+  #s9 .label-phone { right: 250px; top: 690px; text-align: right; }
+  #s9 .privacy {
+    position: absolute; left: 0; top: 480px; width: 400px;
+    border: 1px solid var(--line-2); background: var(--vf-coal); border-radius: 14px; padding: 16px 20px;
+    font: 400 17px/1.4 var(--ff-body); color: var(--vf-smoke);
+  }
+  #s9 .privacy b { color: var(--vf-bone); font-weight: 600; }
+
+  /* ════════════ 10. NOVELTY ════════════ */
+  #s10 .h2 { margin-bottom: 34px; }
+  .compare { border: 1px solid var(--line-2); border-radius: 18px; overflow: hidden; }
+  .compare .row { display: grid; grid-template-columns: 0.85fr 1.15fr; }
+  .compare .row + .row { border-top: 1px solid var(--line); }
+  .compare .row > div { padding: 21px 30px; display: flex; align-items: center; gap: 16px; }
+  .compare .today { font: 400 25px/1.3 var(--ff-body); color: #8d8d97; background: rgba(255,255,255,0.015); }
+  .compare .vf { font: 600 30px/1.2 var(--ff-display); color: var(--vf-bone); background: rgba(255,42,18,0.05); border-left: 1px solid rgba(255,42,18,0.35); }
+  .compare .head > div { padding: 14px 28px; font: 700 15px/1 var(--ff-body); letter-spacing: 0.16em; text-transform: uppercase; }
+  .compare .head .today { color: var(--vf-smoke); }
+  .compare .head .vf { color: var(--vf-ember); }
+  .compare .x { flex: 0 0 22px; height: 22px; color: #6b6b74; }
+  .compare .ok { flex: 0 0 26px; height: 26px; color: var(--vf-flare); }
+
+  /* ════════════ 11. USEFULNESS ════════════ */
+  #s11 .h2 { margin-bottom: 34px; }
+  .use { display: grid; grid-template-columns: 1fr 470px; gap: 28px; }
+  .cust { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .cust li { background: var(--vf-coal); border: 1px solid var(--line); border-radius: 16px; padding: 22px 24px; }
+  .cust .mode { font: 700 13px/1 var(--ff-body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--vf-ember); margin-bottom: 10px; }
+  .cust h3 { font: 600 27px/1.1 var(--ff-display); color: var(--vf-bone); margin-bottom: 8px; }
+  .cust p { font: 400 18px/1.4 var(--ff-body); color: var(--vf-smoke); }
+  .nums { border: 1px solid rgba(255,42,18,0.45); background: linear-gradient(180deg, rgba(255,42,18,0.1), rgba(255,42,18,0.02)); border-radius: 18px; padding: 24px 28px; display: flex; flex-direction: column; }
+  .nums .k { font: 700 13px/1 var(--ff-body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--vf-ember); margin-bottom: 16px; }
+  .nums .n + .n { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 14px; }
+  .nums .v { font: 700 54px/1 var(--ff-display); color: var(--vf-bone); letter-spacing: -0.02em; }
+  .nums .v small { font-size: 30px; color: var(--vf-smoke); font-weight: 600; }
+  .nums p { margin-top: 6px; font: 400 18px/1.35 var(--ff-body); color: var(--vf-smoke); }
+  .nums .src { margin-top: auto; padding-top: 14px; font: 500 13px/1.35 var(--ff-mono); color: rgba(163,163,173,0.75); }
+  .fund { margin-top: 22px; display: flex; align-items: center; gap: 16px; font: 400 20px/1.4 var(--ff-body); color: var(--vf-smoke); }
+  .fund b { color: var(--vf-bone); font-weight: 600; }
+  .fund .tag { flex: none; font: 700 13px/1 var(--ff-body); letter-spacing: 0.14em; text-transform: uppercase; color: var(--vf-ink); background: var(--vf-bone); padding: 7px 11px; border-radius: 4px; }
+
+  /* ════════════ 12. ADAPT ════════════ */
+  #s12 .h2 { font-size: 62px; margin-bottom: 34px; }
+  #s12 .h2 .quiet { color: #7d7d87; }
+  .adapt { display: grid; grid-template-columns: 1fr 600px; gap: 44px; }
+  .pool-ladder { display: flex; flex-direction: column; gap: 14px; }
+  .pool-ladder li { display: grid; grid-template-columns: 228px 1fr; gap: 18px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .pool-ladder .w { font: 600 28px/1 var(--ff-display); }
+  .pool-ladder p { font: 400 20px/1.4 var(--ff-body); color: rgba(245,245,244,0.88); }
+  .pool-ladder .r1 .w { color: #a3a3ad; } .pool-ladder .r2 .w { color: #fbbf24; } .pool-ladder .r5 .w { color: var(--vf-bone); }
+  .pool-ladder .human { border: 1px solid rgba(255,42,18,0.55); background: rgba(255,42,18,0.08); border-radius: 12px; padding: 16px 20px; display: block; }
+  .pool-ladder .human p { font: 600 25px/1.2 var(--ff-display); color: var(--vf-bone); }
+  .pool-note { margin-top: 18px; font: 400 18px/1.4 var(--ff-body); color: var(--vf-smoke); }
+  .pool-note b { color: var(--vf-bone); font-weight: 600; }
+  #s12 .shot { height: 372px; }
+  .adapters { margin-top: 18px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .adapters span.l { font: 400 18px/1 var(--ff-body); color: var(--vf-smoke); margin-right: 4px; }
+  .chip { font: 600 18px/1 var(--ff-body); color: var(--vf-bone); border: 1.5px solid var(--line-2); border-radius: 999px; padding: 10px 16px; background: rgba(255,255,255,0.03); }
+
+  /* ════════════ 13. UNDER THE HOOD + CLOSE ════════════ */
+  #s13 { padding-top: 56px; }
+  .close { display: grid; grid-template-columns: 1fr 500px; gap: 0 40px; }
+  .stack { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-bottom: 18px; }
+  .stack li { display: flex; align-items: baseline; gap: 10px; background: var(--vf-coal); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
+  .stack b { font: 600 20px/1.2 var(--ff-display); color: var(--vf-bone); white-space: nowrap; }
+  .stack span { font: 400 16px/1.3 var(--ff-body); color: var(--vf-smoke); }
+  .resp { border: 1px solid var(--line-2); border-radius: 16px; padding: 18px 22px; background: rgba(255,255,255,0.02); }
+  .resp h3 { font: 700 13px/1 var(--ff-body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--vf-ember); margin-bottom: 10px; }
+  .resp p { font: 400 16px/1.45 var(--ff-body); color: var(--vf-smoke); }
+  .resp p + p { margin-top: 8px; }
+  .resp p b { color: var(--vf-bone); font-weight: 600; }
+  .close .right { display: flex; flex-direction: column; padding-top: 39px; }
+  #s13 .shot { height: 318px; }
+  .try { margin-top: 12px; font: 400 16px/1.5 var(--ff-body); color: var(--vf-smoke); }
+  .try code { font-family: var(--ff-mono); color: var(--vf-bone); }
+  .final { margin-top: 26px; padding-top: 24px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 28px; }
+  .final .line { font: 700 50px/1.05 var(--ff-display); letter-spacing: -0.025em; color: var(--vf-bone); }
+  .final .line em { font-style: normal; color: var(--vf-flare); text-shadow: 0 0 40px rgba(255,42,18,0.45); }
+  .team { display: grid; grid-template-columns: auto auto; gap: 10px; flex: none; }
+  .team li { font: 600 13px/1 var(--ff-body); letter-spacing: 0.12em; text-transform: uppercase; padding: 9px 14px; border-radius: 999px; border: 1.5px solid rgba(255,107,61,0.4); color: var(--vf-bone); text-align: center; white-space: nowrap; }
+  .team li.fill { background: var(--vf-flare); border-color: var(--vf-flare); color: #fff; }
+
+  /* ─── NAV PILL ─────────────────────────────────────────────────────────────────── */
+  #nav {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 14px; z-index: 100;
+    background: rgba(14,14,17,0.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.14); border-radius: 40px; padding: 8px 14px;
+    transition: opacity 0.35s ease;
+  }
+  #nav.idle:not(:hover):not(:focus-within) { opacity: 0; }
+  #nav button {
+    background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.8);
+    font: 500 20px/1 var(--ff-body); padding: 6px 10px; border-radius: 10px;
+    transition: color 0.2s, background 0.2s;
+  }
+  #nav button:hover { color: #fff; background: rgba(255,255,255,0.1); }
+  #nav button:focus-visible, .dot:focus-visible { outline: 2px solid var(--vf-ember); outline-offset: 2px; }
+  #counter { font: 500 14px/1 var(--ff-mono); color: rgba(255,255,255,0.7); min-width: 58px; text-align: center; }
+  .dot-row { display: flex; gap: 4px; align-items: center; }
+  #nav .dot { width: 16px; height: 16px; padding: 0; display: grid; place-items: center; border-radius: 50%; }
+  #nav .dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.28); transition: background 0.3s, transform 0.3s; }
+  #nav .dot[aria-current="true"]::before { background: var(--vf-flare); transform: scale(1.4); }
+  #nav .dot:hover { background: none; }
+  #nav .tools-btn { font-size: 13px; letter-spacing: 0.08em; font-family: var(--ff-mono); color: rgba(255,255,255,0.6); }
+
+  /* ─── SPEAKER NOTES (N) ────────────────────────────────────────────────────────── */
+  #notes {
+    position: fixed; right: 18px; bottom: 80px; z-index: 101; width: min(460px, calc(100vw - 36px));
+    max-height: calc(100vh - 110px); overflow: auto;
+    background: rgba(14,14,17,0.94); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,42,18,0.45); border-radius: 16px; padding: 18px 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+  #notes[hidden] { display: none; }
+  #notes .meta { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  #notes .ttl { font: 600 18px/1.2 var(--ff-display); color: var(--vf-bone); }
+  #notes .time { font: 500 13px/1.3 var(--ff-mono); color: var(--vf-ember); white-space: nowrap; text-align: right; }
+  #notes .body { font: 400 16px/1.5 var(--ff-body); color: rgba(245,245,244,0.9); }
+  #notes .body p + p { margin-top: 6px; }
+  #notes .next { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); font: 400 13px/1.4 var(--ff-body); color: var(--vf-smoke); display: flex; justify-content: space-between; gap: 10px; }
+  #notes .keys { margin-top: 8px; font: 400 12px/1.4 var(--ff-mono); color: rgba(163,163,173,0.75); }
+
+  /* Portrait phones: the deck still fits (scaled), with a hint to turn the phone */
+  #rotate { display: none; }
+  @media (orientation: portrait) and (max-width: 700px) {
+    #rotate {
+      display: block; position: fixed; left: 16px; right: 16px; top: 16px; z-index: 102; text-align: center;
+      font: 500 14px/1.4 var(--ff-body); color: var(--vf-smoke);
+    }
+  }
+
+  /* ─── REDUCED MOTION ───────────────────────────────────────────────────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    .slide, .slide.active, .slide.exit { transform: none !important; transition: opacity 0.2s linear; }
+    .slide.active .animate-in { animation: fade 0.2s linear both; animation-delay: 0s; }
+    .arcs g, .gap-card, .live-dot::after, .zone-svg .ping { animation: none !important; }
+    .arcs g { opacity: 0.45; }
+    .live-dot::after, .zone-svg .ping { opacity: 0; }
+    #nav { transition: none; }
+  }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+</style>
+</head>
+<body class="no-anim">
+<p id="rotate">Turn your phone sideways for a bigger view.</p>
+
+<div id="viewport">
+<main id="stage" aria-roledescription="carousel" aria-label="VoiceFlare pitch deck">
+
+  <!-- ═══════════════ 1. TITLE ═══════════════ -->
+  <section class="slide active" id="s1" data-title="VoiceFlare" data-time="10">
+    <div class="glow glow-a"></div><div class="glow glow-b"></div>
+    <div class="logo-hero animate-in">
+      <svg class="arcs" viewBox="-100 -100 200 200" fill="none" aria-hidden="true" focusable="false">
+        <g stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M-24.51 -52.57A58 58 0 0 0 -50.23 -29"/><path d="M50.23 -29A58 58 0 0 0 24.51 -52.57"/></g>
+        <g stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M-32.12 -68.88A76 76 0 0 0 -65.82 -38"/><path d="M65.82 -38A76 76 0 0 0 32.12 -68.88"/></g>
+        <g stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M-39.73 -85.19A94 94 0 0 0 -81.41 -47"/><path d="M81.41 -47A94 94 0 0 0 39.73 -85.19"/></g>
+      </svg>
+      <img src="assets/voiceflare-logo.png" alt="VoiceFlare" width="989" height="666" />
+    </div>
+    <h1 class="animate-in">Before an alert wakes 10 million phones, ask 4 neighbors at the edge of the zone.</h1>
+    <p class="lede animate-in">A supervisor&rsquo;s board for the gentlest alert that still works.</p>
+    <ul class="badges animate-in" aria-label="Event and track">
+      <li>USC Viterbi &times; InnovateLA Dual-Use Hackathon</li>
+      <li>Resilience Comms</li>
+      <li class="fill">Retell AI</li>
+    </ul>
+    <aside class="notes">
+      <p>We&rsquo;re VoiceFlare. Before an alert wakes a whole county, we ask four neighbors at the edge of the zone.</p>
+      <p>We built it for one seat: the overnight supervisor of a call line during a wildfire.</p>
+    </aside>
+  </section>
+
+  <!-- ═══════════════ 2. THE PROBLEM ═══════════════ -->
+  <section class="slide" id="s2" data-title="The problem" data-time="20">
+    <div class="glow glow-d"></div>
+    <p class="eyebrow animate-in">The problem &middot; Los Angeles, January 2025</p>
+    <h2 class="h2 animate-in">Too late, or to everyone.</h2>
+    <p class="lede animate-in">Today&rsquo;s alerts answer with a bang: one message, one way.</p>
+    <div class="stats">
+      <div class="stat animate-in">
+        <div class="v">8 hours</div>
+        <div class="k">Eaton fire</div>
+        <p>West of Lake Avenue, orders came about 8 hours after the east side. 18 of the 19 who died lived there.</p>
+        <div class="src">LA County after-action review</div>
+      </div>
+      <div class="stat animate-in">
+        <div class="v">40&ndash;90 min</div>
+        <div class="k">Palisades fire</div>
+        <p>Some residents nearest the ignition got their first alert after homes had begun burning.</p>
+        <div class="src">UL FSRI incident analysis</div>
+      </div>
+      <div class="stat animate-in">
+        <div class="v">10 million</div>
+        <div class="k">January 9</div>
+        <p>phones got an evacuation warning meant for one fire area.</p>
+        <div class="src">robertgarcia.house.gov report</div>
+      </div>
+    </div>
+    <div class="live-strip animate-in">
+      <span class="live-dot" aria-hidden="true"></span>
+      <p><b>Burning this weekend: Norte Fire, San Clemente.</b> Orders for five zones came 81 minutes after the 911 call, with no Warning first.</p>
+      <span class="src">CAL FIRE, Oct 17, 9:47 AM: 570 acres, 5% contained</span>
+    </div>
+    <p class="quote animate-in">&ldquo;Residents are your earliest sensor and your biggest flood.&rdquo;<span>Resilience Comms brief</span></p>
+    <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">02</span></div>
+    <aside class="notes">
+      <p>January 2025. In Eaton, the west side got orders about 8 hours after the east, and 18 of the 19 who died lived there. In the Palisades, first alerts came after homes were burning. Then a warning for one fire reached 10 million phones.</p>
+      <p>This weekend, Norte: Orders with no Warning first. Residents are the earliest sensor and the biggest flood.</p>
+    </aside>
+  </section>
+
+  <!-- ═══════════════ 3. WHY TOOLS FAIL ═══════════════ -->
+  <section class="slide" id="s3" data-title="Why today's tools fail" data-time="15">
+    <div class="glow glow-b"></div>
+    <p class="eyebrow animate-in">Why today&rsquo;s tools fail</p>
+    <h2 class="h2 animate-in">Loud, late, one-way.</h2>
+    <div class="tools">
+      <div class="tool animate-in">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="10" r="2"/><path d="M12 12v9M8.5 21h7M7.8 5.8a6 6 0 0 0 0 8.4M16.2 5.8a6 6 0 0 1 0 8.4M5 3a10 10 0 0 0 0 14M19 3a10 10 0 0 1 0 14"/></svg></div>
+        <div class="name">Mass alerts</div>
+        <div class="tag">One-way</div>
+        <p>Wake a whole county. Cannot hear a reply.</p>
+      </div>
+      <div class="tool animate-in">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+        <div class="name">Robocalls</div>
+        <div class="tag">Never listen</div>
+        <p>Read a script, then hang up.</p>
+      </div>
+      <div class="tool animate-in">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3z"/><path d="M9 3v15M15 6v15"/></svg></div>
+        <div class="name">Zone maps</div>
+        <div class="tag">Look it up</div>
+        <p>You find your own zone, at 3&nbsp;AM.</p>
+      </div>
+      <div class="tool animate-in">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></div>
+        <div class="name">Phone lines</div>
+        <div class="tag">Overwhelmed</div>
+        <p>Everyone calls at once. The line jams.</p>
+      </div>
+    </div>
+    <div class="gap-card animate-in">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></div>
+      <div class="t">Nothing asks first. Nothing listens back.</div>
+      <div class="tag">The gap</div>
+    </div>
+    <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">03</span></div>
+    <aside class="notes">
+      <p>Every tool we have is one-way. Mass alerts broadcast, robocalls read a script, zone maps make you look it up, and the phone lines jam.</p>
+      <p>Nothing asks the people who can see the fire.</p>
+    </aside>
+  </section>
+
+  <!-- ═══════════════ 4. THE INSIGHT ═══════════════ -->
+  <section class="slide" id="s4" data-title="The insight" data-time="10">
+    <div class="glow glow-c" style="left:72%"></div>
+    <div class="left">
+      <p class="eyebrow animate-in">The insight</p>
+      <h2 class="manifesto animate-in">
+        <span class="dim">Don&rsquo;t <span class="strike">shout</span><br />at a zone.</span>
+        <span class="alive">Ask its <em>edge.</em></span>
+      </h2>
+      <div class="pills animate-in">
+        <span class="pill">The edge sees it first</span>
+        <span class="pill">4 sentinels, 90 seconds</span>
+        <span class="pill key">A named human decides</span>
+        <span class="pill">The hold never stops a send</span>
+      </div>
+    </div>
+    <div class="right animate-in">
+      <svg class="zone-svg" viewBox="0 0 580 500" role="img" aria-labelledby="zoneT zoneD">
+        <title id="zoneT">A zone with four sentinels on its edge</title>
+        <desc id="zoneD">A fire sits outside the zone's north-west edge. Four sentinel phones on the edge are asked first; the residents inside wait for a named human's decision.</desc>
+        <defs>
+          <radialGradient id="fireG"><stop offset="0" stop-color="#ffb199"/><stop offset="0.35" stop-color="#ff2a12"/><stop offset="1" stop-color="#ff2a12" stop-opacity="0"/></radialGradient>
+        </defs>
+        <circle cx="52" cy="58" r="70" fill="url(#fireG)" opacity="0.85"/>
+        <path d="M44 66c-8-10-2-22 6-30 0 8 6 10 9 4 7 7 9 18 3 26-4 5-14 6-18 0z" fill="#fff4ee" opacity="0.9"/>
+        <polygon points="110,130 310,70 470,150 500,330 380,450 170,440 80,300" fill="rgba(255,42,18,0.07)" stroke="#ff6b3d" stroke-width="2.5" stroke-dasharray="10 8" stroke-linejoin="round"/>
+        <g class="res"><circle cx="216" cy="126" r="3.6"/><circle cx="266" cy="121" r="3.6"/><circle cx="304" cy="123" r="3.6"/><circle cx="347" cy="114" r="3.6"/><circle cx="132" cy="158" r="3.6"/><circle cx="189" cy="162" r="3.6"/><circle cx="223" cy="160" r="3.6"/><circle cx="269" cy="167" r="3.6"/><circle cx="297" cy="154" r="3.6"/><circle cx="347" cy="154" r="3.6"/><circle cx="372" cy="154" r="3.6"/><circle cx="418" cy="153" r="3.6"/><circle cx="130" cy="191" r="3.6"/><circle cx="181" cy="196" r="3.6"/><circle cx="218" cy="189" r="3.6"/><circle cx="269" cy="186" r="3.6"/><circle cx="297" cy="193" r="3.6"/><circle cx="344" cy="205" r="3.6"/><circle cx="380" cy="189" r="3.6"/><circle cx="418" cy="191" r="3.6"/><circle cx="457" cy="194" r="3.6"/><circle cx="143" cy="228" r="3.6"/><circle cx="189" cy="233" r="3.6"/><circle cx="228" cy="237" r="3.6"/><circle cx="263" cy="234" r="3.6"/><circle cx="300" cy="238" r="3.6"/><circle cx="350" cy="232" r="3.6"/><circle cx="385" cy="229" r="3.6"/><circle cx="422" cy="231" r="3.6"/><circle cx="456" cy="232" r="3.6"/><circle cx="106" cy="280" r="3.6"/><circle cx="131" cy="279" r="3.6"/><circle cx="171" cy="270" r="3.6"/><circle cx="212" cy="263" r="3.6"/><circle cx="271" cy="266" r="3.6"/><circle cx="303" cy="264" r="3.6"/><circle cx="339" cy="274" r="3.6"/><circle cx="372" cy="281" r="3.6"/><circle cx="428" cy="281" r="3.6"/><circle cx="468" cy="281" r="3.6"/><circle cx="129" cy="304" r="3.6"/><circle cx="171" cy="299" r="3.6"/><circle cx="223" cy="304" r="3.6"/><circle cx="265" cy="310" r="3.6"/><circle cx="304" cy="304" r="3.6"/><circle cx="348" cy="304" r="3.6"/><circle cx="377" cy="319" r="3.6"/><circle cx="412" cy="310" r="3.6"/><circle cx="449" cy="319" r="3.6"/><circle cx="173" cy="358" r="3.6"/><circle cx="221" cy="352" r="3.6"/><circle cx="255" cy="342" r="3.6"/><circle cx="294" cy="349" r="3.6"/><circle cx="330" cy="354" r="3.6"/><circle cx="384" cy="353" r="3.6"/><circle cx="420" cy="338" r="3.6"/><circle cx="188" cy="394" r="3.6"/><circle cx="231" cy="396" r="3.6"/><circle cx="266" cy="384" r="3.6"/><circle cx="294" cy="391" r="3.6"/><circle cx="348" cy="384" r="3.6"/><circle cx="374" cy="384" r="3.6"/><circle cx="309" cy="417" r="3.6"/><circle cx="343" cy="416" r="3.6"/></g>
+        <g fill="#fbbf24">
+          <circle class="ping" cx="200" cy="103" r="9" opacity="0.6"/><circle cx="200" cy="103" r="9"/>
+          <circle class="ping d2" cx="95" cy="215" r="9" opacity="0.6"/><circle cx="95" cy="215" r="9"/>
+          <circle class="ping d3" cx="485" cy="240" r="9" opacity="0.6"/><circle cx="485" cy="240" r="9"/>
+          <circle class="ping d4" cx="275" cy="445" r="9" opacity="0.6"/><circle cx="275" cy="445" r="9"/>
+        </g>
+        <g font-family="Geist, 'Geist Local', system-ui, sans-serif" font-size="17" font-weight="600">
+          <line x1="210" y1="96" x2="268" y2="40" stroke="#fbbf24" stroke-width="1.5"/>
+          <rect x="262" y="12" width="300" height="34" rx="8" fill="#141418" stroke="#fbbf24" stroke-opacity="0.6"/>
+          <text x="276" y="35" fill="#f5f5f4">&ldquo;Does this match what you see?&rdquo;</text>
+        </g>
+      </svg>
+      <p class="zone-cap"><b>Ask 4 people at the edge first.</b> Wake the zone only when a named human decides.</p>
+    </div>
+    <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">04</span></div>
+    <aside class="notes">
+      <p>So the insight: don&rsquo;t shout at a zone. Ask its edge.</p>
+      <p>Four sentinels at the edge get 90 seconds to say whether the alert matches what they see. A named human decides.</p>
+    </aside>
+  </section>
+
+  <!-- ═══════════════ 5. INTRODUCING VOICEFLARE ═══════════════ -->
+  <section class="slide" id="s5" data-title="Introducing VoiceFlare" data-time="15">
+    <div class="glow glow-a"></div>
+    <div class="logo-row animate-in">
+      <img class="mark" src="assets/voiceflare-mark.png" alt="" />
+      <img class="word" src="assets/voiceflare-wordmark.png" alt="VoiceFlare" width="941" height="94" />
+    </div>
+    <p class="sub animate-in">The gentlest alert that still works.</p>
+    <p class="lede animate-in">Three jobs on one supervisor&rsquo;s board.</p>
+    <div class="pillars">
+      <div class="pillar animate-in">
+        <span class="n">01</span>
+        <div class="top">
+          <div class="ic"><svg viewBox="-100 -100 200 200" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path stroke-width="14" d="M-24.51 -22.57A58 58 0 0 0 -50.23 1"/><path stroke-width="14" d="M50.23 1A58 58 0 0 0 24.51 -22.57"/><path stroke-width="12" d="M-39.73 -55.19A94 94 0 0 0 -81.41 -17"/><path stroke-width="12" d="M81.41 -17A94 94 0 0 0 39.73 -55.19"/><circle cx="0" cy="30" r="16" fill="currentColor" stroke="none"/></svg></div>
+          <h3>Ask the edge</h3>
+        </div>
+        <ul>
+          <li>Sentinels at the zone&rsquo;s edge: does this match what you see?</li>
+          <li>A 90 s hold shows the dose: how many phones it wakes.</li>
+          <li>A canary confirms delivery.</li>
+        </ul>
+      </div>
+      <div class="pillar animate-in">
+        <span class="n">02</span>
+        <div class="top">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg></div>
+          <h3>Call everyone, in their language</h3>
+        </div>
+        <ul>
+          <li>Edge-first waves, 5 calls at a time.</li>
+          <li>Only the words a named human approved, read verbatim.</li>
+          <li>Teach-back checks they understood.</li>
+        </ul>
+      </div>
+      <div class="pillar new animate-in">
+        <span class="n">03</span>
+        <div class="top">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <h3>Hand to a person</h3>
+        </div>
+        <ul>
+          <li>A help registry, priorities 1 to 4.</li>
+          <li>Live location, only with consent.</li>
+          <li>A helper sent to the exact spot.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="launch animate-in">Retell AI on the phone network &middot; a browser phone as fallback &middot; 8 languages</p>
+    <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">05</span></div>
+    <aside class="notes">
+      <p>VoiceFlare does three jobs. It asks the edge before an Order. It calls everyone in their language, with only the words a named human approved.</p>
+      <p>And it hands each person who needs help to a person.</p>
+    </aside>
+  </section>
+
+  <!-- ═══════════════ 6. HOW IT WORKS ═══════════════ -->
+  <section class="slide" id="s6" data-title="How it works" data-time="15">
+    <div class="glow glow-d"></div>
+    <p class="eyebrow animate-in">How it works</p>
+    <h2 class="h2 animate-in">The ladder, on one board.</h2>
+    <ol class="ladder">
+      <li class="rung r1 animate-in"><div class="dot">1</div><h3>Watch</h3><p>Models and feeds <b>only propose</b>. A dashed zone waits for a human.</p></li>
+      <li class="rung r2 animate-in"><div class="dot">2</div><h3>Ask</h3><p>Sentinels at the edge: <b>does this match what you see?</b></p></li>
+      <li class="rung r3 animate-in"><div class="dot">3</div><h3>Slow</h3><p>The <b>dose</b> shows first. Calls go edge-first, 5 at a time.</p></li>
+      <li class="rung r4 animate-in"><div class="dot">4</div><h3>Hold</h3><p>An Order waits <b>90 s</b>. Then it sends on time.</p></li>
+      <li class="rung r5 animate-in"><div class="dot">5</div><h3>Hand to a person</h3><p>Every exit is <b>a named human</b>: registry, helpers, ledger.</p></li>
+    </ol>
+    <div class="who">
+      <div class="animate-in"><div class="k">The decider</div><p>The overnight supervisor of the call line.</p></div>
+      <div class="animate-in"><div class="k">The moment</div><p>An Evacuation Order about to wake a zone.</p></div>
+      <div class="never animate-in"><div class="k">Never automated</div>
+        <ul><li>Choosing a zone&rsquo;s state</li><li>Declaring anyone safe</li><li>Giving an ETA</li></ul>
+      </div>
+    </div>
+    <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">06</span></div>
+    <aside class="notes">
+      <p>This is the hackathon&rsquo;s ladder on one board: watch, ask, slow, hold, hand to a person.</p>
+      <p>The decider is the overnight supervisor; the moment is an Order about to wake a zone. A model may propose. Choosing a zone state, declaring anyone safe and giving ETAs are never automated.</p>
+    </aside>
+  </section>
+
+  <!-- ═══════════════ 7. THE END-TO-END RUN ═══════════════ -->
+  <section class="slide" id="s7" data-title="The end-to-end demo" data-time="15">
+    <div class="glow glow-a"></div>
+    <span class="sim sim-corner animate-in"><b>SIMULATED</b>Synthetic residents and 6 volunteer phones</span>
+    <p class="eyebrow animate-in">End-to-end demo &middot; a simulated fire</p>
+    <h2 class="h2 animate-in">Westside Fire, in 3.5 minutes.</h2>
+    <ol class="beats">
+      <li class="beat animate-in"><span class="t">0:15</span><span class="i">1</span><h3>Approve the Warning</h3><p>Culver City. A name, a reason, the exact words.</p></li>
+      <li class="beat animate-in"><span class="t">0:30</span><span class="i">2</span><h3>Edge-first calls</h3><p>Phone 1 answers in Spanish. Teach-back passes.</p></li>
+      <li class="beat animate-in"><span class="t">0:55</span><span class="i">3</span><h3>&ldquo;Wheelchair, no car&rdquo;</h3><p>A registry row at the corner she named: <b>Venice and Sepulveda</b>.</p></li>
+      <li class="beat key animate-in"><span class="t">1:35</span><span class="i">4</span><h3>The hold</h3><p class="big"><s>9.8 million</s> &rarr; 41,000</p><p>A sentinel says &ldquo;nothing here.&rdquo; The polygon is fixed.</p></li>
+      <li class="beat animate-in"><span class="t">2:05</span><span class="i">5</span><h3>Send, then the canary</h3><p>Quorum, Send now. A phone outside the zone says &ldquo;No&rdquo;: <b>canary clear</b>.</p></li>
+      <li class="beat animate-in"><span class="t">2:35</span><span class="i">6</span><h3>Pickup run</h3><p>&ldquo;We can&rsquo;t leave&rdquo; jumps to <b>priority 1</b>. Accessible van A: 2 stops.</p></li>
+      <li class="beat animate-in"><span class="t">2:55</span><span class="i">7</span><h3>Tower down</h3><p>Ten pins go silent: <b>possible tower loss</b>. Send a door-knock team.</p></li>
+      <li class="beat animate-in"><span class="t">3:10</span><span class="i">8</span><h3>The ledger</h3><p>Every decision, with <b>a name and a reason</b>. Every refusal, too.</p></li>
+    </ol>
+    <div class="autoplay animate-in">
+      <span class="cta"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>One click: <code>/board?autoplay=1</code></span>
+      <p>Runs the whole beat sheet hands-free. Every send is simulated.</p>
+    </div>
+    <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">07</span></div>
+    <aside class="notes">
+      <p>Here is the end-to-end run on a simulated Westside Fire. Watch the hold: 9.8 million phones, down to 41,000 after one sentinel says &ldquo;nothing here.&rdquo;</p>
+      <p>One click, /board?autoplay=1, runs it hands-free. Say out loud: every send is simulated.</p>
+    </aside>
+  </section>
+
+  <!-- ═══════════════ 8. DEMO VIDEO ═══════════════ -->
+  <section class="slide" id="s8" data-title="Demo video" data-time="0" data-demo="1">
+    <div class="video-wrap animate-in">
+      <video id="demo-video" src="assets/demo.mp4" controls preload="metadata" playsinline poster="assets/board.png" aria-label="VoiceFlare demo video: the simulated Westside Fire run" onerror="vfVid(this)"></video>
+      <div class="video-fallback">
+        <figure class="shot" style="height:100%">
+          <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span>/board?autoplay=1</span></div>
+          <div class="view">
+            <img src="assets/shot-autoplay.png" data-fallback="assets/board.png" alt="The VoiceFlare board during the simulated Westside Fire run" onerror="vfImg(this)" />
+            <div class="ph"><div class="cap"><b>The board, mid-run</b><br />Live: /board?autoplay=1</div></div>
+          </div>
+        </figure>
+        <p class="liveline">Live: open <code>/board?autoplay=1</code></p>
+      </div>
+    </div>
+    <div class="video-cap animate-in">
+      <span class="sim"><b>SIMULATED</b></span>
+      <p>Westside Fire scenario. Synthetic residents, 6 volunteer phones, every send simulated. Live: <code>/board?autoplay=1</code></p>
+    </div>
+    <aside class="notes">
+      <p>Play the video, or switch to the live board at /board?autoplay=1.</p>
+      <p>Narrate the beats: approve, edge-first, registry, the hold, the canary, the pickup run, tower down, the ledger. Say every send is simulated.</p>
+    </aside>
+  </section>
+
+  <!-- ═══════════════ 9. LIVE LOCATION ═══════════════ -->
+  <section class="slide" id="s9" data-title="Live location to a helper" data-time="15">
+    <div class="glow glow-d"></div>
+    <div class="left">
+      <p class="eyebrow animate-in">New &middot; live location, with consent</p>
+      <h2 class="h2 animate-in">From &ldquo;I can&rsquo;t leave&rdquo; to a helper at the door.</h2>
+      <ol class="steps">
+        <li class="animate-in"><span class="n">1</span><h3>Ask on the call</h3><p><q>May we share your location with the response team?</q> The answer is stored with the call.</p></li>
+        <li class="animate-in"><span class="n">2</span><h3>One tap</h3><p>A text link streams the phone&rsquo;s GPS to the database.</p></li>
+        <li class="animate-in"><span class="n">3</span><h3>The exact spot</h3><p>The response team sees the live pin, not the zone&rsquo;s center.</p></li>
+        <li class="animate-in"><span class="n">4</span><h3>Send a helper</h3><p>Turn-by-turn directions to the door.</p></li>
+        <li class="stop animate-in"><span class="n">5</span><h3>Then it stops</h3><p>When help arrives, or after 4 hours. Never in public feeds.</p></li>
+      </ol>
+    </div>
+    <div class="right">
+      <figure class="shot map animate-in">
+        <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span>/qrt &middot; response team</span></div>
+        <div class="view">
+          <img src="assets/shot-live-location.png" alt="The response team's map with a live location pin" onerror="vfImg(this)" />
+          <div class="ph">
+            <svg viewBox="0 0 560 300" aria-hidden="true">
+              <g stroke="#2a2a31" stroke-width="10" stroke-linecap="round"><path d="M0 80h560M0 200h560M120 0v300M300 0v300M450 0v300"/></g>
+              <g stroke="#202026" stroke-width="5"><path d="M0 140h560M0 255h560M60 0v300M210 0v300M380 0v300"/></g>
+              <path d="M120 255V200h180v-60h80" fill="none" stroke="#ff6b3d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 14"/>
+              <rect x="104" y="240" width="32" height="30" rx="6" fill="#f5f5f4"/><text x="120" y="261" font-size="14" font-weight="700" text-anchor="middle" fill="#050505" font-family="Geist, sans-serif">H</text>
+              <circle cx="380" cy="140" r="34" fill="#ff2a12" opacity="0.18"/><circle cx="380" cy="140" r="18" fill="#ff2a12" opacity="0.35"/>
+              <path d="M380 92c-15 0-26 11-26 26 0 19 26 42 26 42s26-23 26-42c0-15-11-26-26-26z" fill="#ff2a12"/><circle cx="380" cy="118" r="9" fill="#fff"/>
+            </svg>
+            <div class="cap"><b>Illustration.</b> Live at /qrt</div>
+          </div>
+        </div>
+      </figure>
+      <p class="shot-label label-map animate-in">The live pin and the helper&rsquo;s route, on the response team&rsquo;s map.</p>
+      <div class="privacy animate-in"><b>Consent first.</b> No consent, no link. The registry is visible only to the response team.</div>
+      <figure class="shot phone animate-in">
+        <div class="view">
+          <img src="assets/shot-helper.png" alt="The helper's phone with directions to the person" onerror="vfImg(this)" />
+          <div class="ph">
+            <svg viewBox="0 0 200 300" aria-hidden="true">
+              <rect x="14" y="16" width="172" height="44" rx="10" fill="#1c1c21"/><path d="M34 44l10-12 10 12M44 32v18" stroke="#ff6b3d" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="66" y="30" width="96" height="8" rx="4" fill="#3a3a43"/><rect x="66" y="44" width="64" height="6" rx="3" fill="#2a2a31"/>
+              <rect x="14" y="70" width="172" height="44" rx="10" fill="#141418"/><path d="M34 100h12a6 6 0 0 0 6-6v-10m-5 5 5-5 5 5" stroke="#a3a3ad" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="66" y="84" width="88" height="8" rx="4" fill="#2a2a31"/>
+              <rect x="14" y="124" width="172" height="120" rx="12" fill="#101014" stroke="#2a2a31"/><path d="M40 220V180h70v-30h40" fill="none" stroke="#ff6b3d" stroke-width="5" stroke-dasharray="2 10" stroke-linecap="round"/><circle cx="150" cy="150" r="10" fill="#ff2a12"/>
+              <rect x="14" y="254" width="172" height="34" rx="8" fill="#ff2a12"/><rect x="62" y="267" width="76" height="8" rx="4" fill="#fff" opacity="0.9"/>
+            </svg>
+            <div class="cap"><b>Illustration.</b> Helper link</div>
+          </div>
+        </div>
+      </figure>
+      <p class="shot-label label-phone animate-in">The helper&rsquo;s phone:<br />directions to the door.</p>
+    </div>
+    <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">09</span></div>
+    <aside class="notes">
+      <p>New today: when someone can&rsquo;t leave, the agent asks on the Retell call whether they will share their location. The answer is stored with the call.</p>
+      <p>A one-tap text link streams GPS to the database, and the response team sends a helper with directions to the exact spot. Sharing stops when help arrives, or after 4 hours.</p>
+    </aside>
+  </section>
+
+  <!-- ═══════════════ 10. NOVELTY ═══════════════ -->
+  <section class="slide" id="s10" data-title="What is new" data-time="15">
+    <div class="glow glow-b"></div>
+    <p class="eyebrow animate-in">What is new</p>
+    <h2 class="h2 animate-in">It asks before it alerts.</h2>
+    <div class="compare" role="table" aria-label="Today versus VoiceFlare">
+      <div class="row head animate-in" role="row"><div class="today" role="columnheader">Today</div><div class="vf" role="columnheader">VoiceFlare</div></div>
+      <div class="row animate-in" role="row">
+        <div class="today" role="cell"><svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>Alerts first, asks no one</div>
+        <div class="vf" role="cell"><svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Asks the edge before it alerts</div>
+      </div>
+      <div class="row animate-in" role="row">
+        <div class="today" role="cell"><svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>Sends blind</div>
+        <div class="vf" role="cell"><svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Shows the dose before sending</div>
+      </div>
+      <div class="row animate-in" role="row">
+        <div class="today" role="cell"><svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>Hopes it arrived</div>
+        <div class="vf" role="cell"><svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Confirms delivery with a canary</div>
+      </div>
+      <div class="row animate-in" role="row">
+        <div class="today" role="cell"><svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>No answer, no follow-up</div>
+        <div class="vf" role="cell"><svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Treats silence as a signal, never as safe</div>
+      </div>
+      <div class="row animate-in" role="row">
+        <div class="today" role="cell"><svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>A script, or a guess</div>
+        <div class="vf" role="cell"><svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Relays only approved words, verbatim</div>
+      </div>
+      <div class="row animate-in" role="row">
+        <div class="today" role="cell"><svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>Who decided? Unclear</div>
+        <div class="vf" role="cell"><svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Every decision has a name and a reason</div>
+      </div>
+    </div>
+    <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">10</span></div>
+    <aside class="notes">
+      <p>What is new: it asks before it alerts, shows the dose before sending, and confirms delivery with a canary.</p>
+      <p>Silence is a signal, never &ldquo;safe&rdquo;. It relays only approved words, and every decision has a name and a reason.</p>
+    </aside>
+  </section>
+
+  <!-- ═══════════════ 11. USEFULNESS ═══════════════ -->
+  <section class="slide" id="s11" data-title="Useful on an ordinary Tuesday" data-time="15">
+    <div class="glow glow-a"></div>
+    <p class="eyebrow animate-in">Useful &middot; the second customer</p>
+    <h2 class="h2 animate-in">The same board, on an ordinary Tuesday.</h2>
+    <div class="use">
+      <ul class="cust">
+        <li class="animate-in"><div class="mode">Campus mode</div><h3>USC DPS</h3><p>Buildings are zones. RAs and officers on post are sentinels. A 20-second test call each month.</p></li>
+        <li class="animate-in"><div class="mode">Base mode</div><h3>Military installations</h3><p>Housing, gates and the flight line are zones. Gate posts are sentinels. Personnel accountability.</p></li>
+        <li class="animate-in"><div class="mode">Collections line</div><h3>Galleries and archives</h3><p>A grab list of what cannot be replaced, and help at Warning. Lives first, always.</p></li>
+        <li class="animate-in"><div class="mode">Any country</div><h3>Six jurisdictions</h3><p>Los Angeles, Chongqing, &#x14C;funato, Rhodes, Odisha, East Gippsland. Same rules, six adapters.</p></li>
+      </ul>
+      <div class="nums animate-in">
+        <div class="k">Measured in the repo</div>
+        <div class="n"><div class="v">23<small> / 24</small></div><p>gold-set calls classified correctly (96%), in 5 languages</p></div>
+        <div class="n"><div class="v">6<small> / 6</small></div><p>&ldquo;needs help now&rdquo; calls caught: 100% recall</p></div>
+        <div class="n"><div class="v">~$0.10</div><p>per call minute, estimated (Retell, all-in)</p></div>
+        <div class="src">Gold set: latest run Oct 17, shown on /evidence. Cost: the board&rsquo;s estimate.</div>
+      </div>
+    </div>
+    <p class="fund animate-in"><span class="tag">Funding path</span><span><b>NSF SBIR Phase I</b> (up to $305,000) pays to prove it in drills with USC DPS. <b>/evidence</b> measures the milestones live.</span></p>
+    <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">11</span></div>
+    <aside class="notes">
+      <p>The second customer uses it on an ordinary Tuesday: USC DPS, a base&rsquo;s lockdown desk, the collections line. The same rules work in six jurisdictions.</p>
+      <p>The classifier got 23 of 24 gold-set calls right and caught every needs-help-now call. NSF SBIR Phase I pays to prove it.</p>
+    </aside>
+  </section>
+
+  <!-- ═══════════════ 12. ADAPT: BACK FULL CIRCLE ═══════════════ -->
+  <section class="slide" id="s12" data-title="Adapt: back full circle" data-time="15">
+    <div class="glow glow-d"></div>
+    <p class="eyebrow animate-in">Adapt &middot; back full circle</p>
+    <h2 class="h2 animate-in">Fire is the loudest emergency.<br /><span class="quiet">Drowning is the quietest.</span></h2>
+    <div class="adapt">
+      <div>
+        <ol class="pool-ladder">
+          <li class="r1 animate-in"><span class="w">Watch</span><p>A swimmer is still under water.</p></li>
+          <li class="r2 animate-in"><span class="w">Ask</span><p>A poolside speaker and every phone in the house.</p></li>
+          <li class="r5 animate-in"><span class="w">Hand to a person</span><p>The neighbor, then the emergency number, with the address and gate code.</p></li>
+          <li class="human animate-in"><p>Only a person can stand it down.</p></li>
+        </ol>
+        <p class="pool-note animate-in"><b>The same ladder, from hours down to seconds.</b> A named person is still the last rung.</p>
+      </div>
+      <div>
+        <figure class="shot animate-in">
+          <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span>/adapt &middot; backyard pool</span></div>
+          <div class="view">
+            <img src="assets/shot-pool.png" alt="The backyard pool adapter running the ladder in seconds" onerror="vfImg(this)" />
+            <div class="ph">
+              <svg viewBox="0 0 520 260" aria-hidden="true">
+                <rect x="60" y="50" width="300" height="160" rx="26" fill="#0f2a3a" stroke="#2f6f8f" stroke-width="3"/>
+                <path d="M80 110c25-12 50 12 75 0s50 12 75 0 50 12 75 0 50 12 50 0M80 150c25-12 50 12 75 0s50 12 75 0 50 12 75 0 50 12 50 0" stroke="#2f6f8f" stroke-width="3" fill="none" opacity="0.7"/>
+                <circle cx="230" cy="135" r="34" fill="#ff2a12" opacity="0.16"/><circle cx="230" cy="135" r="11" fill="#ff2a12"/>
+                <rect x="392" y="60" width="58" height="80" rx="12" fill="#1c1c21" stroke="#3a3a43"/><circle cx="421" cy="90" r="14" fill="none" stroke="#fbbf24" stroke-width="3"/><circle cx="421" cy="90" r="4" fill="#fbbf24"/>
+                <path d="M462 78a26 26 0 0 1 0 26M474 70a40 40 0 0 1 0 42" stroke="#fbbf24" stroke-width="3" fill="none" stroke-linecap="round"/>
+                <rect x="398" y="160" width="26" height="46" rx="5" fill="#1c1c21" stroke="#ff6b3d" stroke-width="2"/><rect x="432" y="160" width="26" height="46" rx="5" fill="#1c1c21" stroke="#ff6b3d" stroke-width="2"/>
+              </svg>
+              <div class="cap"><b>Illustration.</b> Live at /adapt</div>
+            </div>
+          </div>
+        </figure>
+        <div class="adapters animate-in"><span class="l">Also adapters:</span><span class="chip">Flood</span><span class="chip">Heat</span><span class="chip">Earthquake</span></div>
+      </div>
+    </div>
+    <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">12</span></div>
+    <aside class="notes">
+      <p>And back full circle: fire is the loudest emergency, drowning the quietest. The same ladder runs in seconds at a backyard pool: watch, ask the house, hand to the neighbor and the emergency number.</p>
+      <p>Only a person can stand it down. Flood, heat and earthquake are adapters too.</p>
+    </aside>
+  </section>
+
+  <!-- ═══════════════ 13. UNDER THE HOOD + CLOSE ═══════════════ -->
+  <section class="slide" id="s13" data-title="Under the hood" data-time="10">
+    <div class="glow glow-b"></div>
+    <div class="close">
+      <div>
+        <p class="eyebrow animate-in">Under the hood</p>
+        <ul class="stack">
+          <li class="animate-in"><b>Retell AI</b><span>voice on the phone network</span></li>
+          <li class="animate-in"><b>Claude Haiku</b><span>in-call turns, seven tools</span></li>
+          <li class="animate-in"><b>Claude Sonnet</b><span>post-call classification</span></li>
+          <li class="animate-in"><b>Next.js</b><span>the board and the phones</span></li>
+          <li class="animate-in"><b>Supabase</b><span>Postgres; a local store in the demo</span></li>
+          <li class="animate-in"><b>ArcGIS</b><span>GeoJSON feeds</span></li>
+          <li class="animate-in"><b>CAL FIRE, NWS</b><span>live incident and alert feeds</span></li>
+          <li class="animate-in"><b>Leaflet</b><span>the map</span></li>
+        </ul>
+        <div class="resp animate-in">
+          <h3>Responsible use</h3>
+          <p><b>Misuse:</b> a wrong or compromised zone directive would be relayed to everyone in it, a colluding sentinel panel could delay a real warning, and the registry is a list of real people at real locations.</p>
+          <p><b>Limits:</b> the agent reads only the directive a named human approved for the zone the phone is in and can change nothing else; the hold is capped and never blocks a send; every refusal and every human decision is in a ledger; the registry stores phone, zone, needs and last location, is visible only to the response team, and is purged 72 hours after the incident closes.</p>
+        </div>
+      </div>
+      <div class="right">
+        <figure class="shot animate-in">
+          <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span>/ &middot; start here</span></div>
+          <div class="view">
+            <img src="assets/shot-landing.png" alt="The VoiceFlare landing page" onerror="vfImg(this)" />
+            <div class="ph">
+              <img src="assets/voiceflare-logo.png" alt="" style="width:46%;height:auto" />
+              <div class="cap"><b>Start at /</b>, then the guided tour</div>
+            </div>
+          </div>
+        </figure>
+        <p class="try animate-in">Start at <code>/</code> &middot; tour <code>/board?tour=1</code> &middot; run <code>/board?autoplay=1</code></p>
+      </div>
+    </div>
+    <div class="final">
+      <p class="line animate-in">Ask the edge first.<br /><em>Let a named human decide.</em></p>
+      <ul class="team animate-in" aria-label="Team">
+        <li class="fill">Team VoiceFlare</li>
+        <li>Resilience Comms</li>
+        <li>USC Viterbi &times; InnovateLA</li>
+        <li>Retell AI</li>
+      </ul>
+    </div>
+    <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">13</span></div>
+    <aside class="notes">
+      <p>Under the hood: Retell AI for the voice, Claude Haiku in the call and Sonnet after it. The misuse risks and the limits are on screen.</p>
+      <p>Ask the edge first, and let a named human decide. Thank you.</p>
+    </aside>
+  </section>
+
+</main>
+</div>
+
+<!-- ─── NAVIGATION ─────────────────────────────────────────────────────────────── -->
+<nav id="nav" aria-label="Slides">
+  <button id="prev" type="button" aria-label="Previous slide" title="Previous (Left arrow)">&lsaquo;</button>
+  <div class="dot-row" id="dots"></div>
+  <span id="counter" aria-hidden="true">1 / 13</span>
+  <button id="next" type="button" aria-label="Next slide" title="Next (Right arrow or Space)">&rsaquo;</button>
+  <button id="notes-btn" class="tools-btn" type="button" aria-label="Toggle speaker notes" aria-controls="notes" aria-expanded="false" title="Speaker notes (N)">N</button>
+  <button id="fs-btn" class="tools-btn" type="button" aria-label="Toggle fullscreen" title="Fullscreen (F)">F</button>
+</nav>
+
+<section id="notes" aria-label="Speaker notes" hidden>
+  <div class="meta"><span class="ttl" id="notes-title"></span><span class="time" id="notes-time"></span></div>
+  <div class="body" id="notes-body"></div>
+  <div class="next"><span id="notes-next"></span><span id="notes-clock" class="mono"></span></div>
+  <div class="keys">Arrows / Space: move &middot; N: notes &middot; F: fullscreen &middot; T: restart clock</div>
+</section>
+
+<p id="live" class="sr-only" aria-live="polite"></p>
+
+<script>
+(function () {
+  var stage = document.getElementById('stage');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var cur = 0;
+  var video = document.getElementById('demo-video');
+  var nav = document.getElementById('nav');
+  var notesEl = document.getElementById('notes');
+  var notesBtn = document.getElementById('notes-btn');
+
+  // ── Fit the 1600 x 900 stage to the window (letterboxed) ──
+  function fit() {
+    var vp = document.getElementById('viewport');
+    var s = Math.min(vp.clientWidth / 1600, vp.clientHeight / 900);
+    stage.style.setProperty('--s', s);
+  }
+  window.addEventListener('resize', fit);
+  fit();
+
+  // ── Stagger: number each .animate-in within its slide ──
+  slides.forEach(function (sl, idx) {
+    sl.querySelectorAll('.animate-in').forEach(function (el, i) { el.style.setProperty('--i', Math.min(i, 14)); });
+    sl.setAttribute('role', 'group');
+    sl.setAttribute('aria-roledescription', 'slide');
+    sl.setAttribute('aria-label', (idx + 1) + ' of ' + total + ': ' + (sl.getAttribute('data-title') || ''));
+  });
+
+  // ── Target times (cumulative, the demo slide not counted) ──
+  var starts = [], acc = 0;
+  slides.forEach(function (sl) {
+    starts.push(acc);
+    if (!sl.hasAttribute('data-demo')) acc += parseInt(sl.getAttribute('data-time') || '0', 10);
+  });
+  var talkTotal = acc;
+  function mmss(sec) { sec = Math.max(0, Math.round(sec)); return Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2); }
+
+  // ── Dots ──
+  var dotsEl = document.getElementById('dots');
+  slides.forEach(function (sl, i) {
+    var d = document.createElement('button');
+    d.type = 'button';
+    d.className = 'dot';
+    d.setAttribute('aria-label', 'Go to slide ' + (i + 1) + ': ' + (sl.getAttribute('data-title') || ''));
+    d.addEventListener('click', function (e) { e.stopPropagation(); go(i); });
+    dotsEl.appendChild(d);
+  });
+  var dots = Array.prototype.slice.call(dotsEl.children);
+
+  // ── Video: missing file → fallback ──
+  function videoOk() { return video && !video.hidden && !video.error; }
+  // (The inline onerror catches a missing file; networkState is not checked because it reads NO_SOURCE while the
+  // browser is still selecting the source.)
+  if (video && video.error) vfVid(video);
+  // Images that failed before their handler ran (cached errors)
+  document.querySelectorAll('.shot img').forEach(function (img) {
+    if (img.complete && img.naturalWidth === 0 && img.getAttribute('src')) vfImg(img);
+  });
+
+  // ── Clock for the speaker notes ──
+  var clockStart = null;
+  function clockText() { return clockStart === null ? 'clock starts on slide 2' : 'elapsed ' + mmss((Date.now() - clockStart) / 1000); }
+
+  function renderNotes() {
+    var sl = slides[cur];
+    var aside = sl.querySelector('.notes');
+    document.getElementById('notes-title').textContent = (cur + 1) + '. ' + (sl.getAttribute('data-title') || '');
+    var t = parseInt(sl.getAttribute('data-time') || '0', 10);
+    document.getElementById('notes-time').textContent = sl.hasAttribute('data-demo')
+      ? 'demo, not in the ' + mmss(talkTotal)
+      : 'target ' + mmss(t) + ' · by ' + mmss(starts[cur] + t) + ' of ' + mmss(talkTotal);
+    document.getElementById('notes-body').innerHTML = aside ? aside.innerHTML : '';
+    var nx = slides[cur + 1];
+    document.getElementById('notes-next').textContent = nx ? 'Next: ' + nx.getAttribute('data-title') : 'Last slide';
+    document.getElementById('notes-clock').textContent = clockText();
+  }
+  setInterval(function () { if (!notesEl.hidden) document.getElementById('notes-clock').textContent = clockText(); }, 1000);
+
+  function setState(n) {
+    slides.forEach(function (sl, i) {
+      var on = i === n;
+      sl.classList.toggle('active', on);
+      if (on) { sl.removeAttribute('aria-hidden'); sl.inert = false; }
+      else { sl.setAttribute('aria-hidden', 'true'); sl.inert = true; }
+    });
+    dots.forEach(function (d, i) { d.setAttribute('aria-current', i === n ? 'true' : 'false'); });
+    document.getElementById('counter').textContent = (n + 1) + ' / ' + total;
+    document.getElementById('live').textContent = 'Slide ' + (n + 1) + ' of ' + total + ': ' + (slides[n].getAttribute('data-title') || '');
+    var h = '#' + (n + 1);
+    if (location.hash !== h) { try { history.replaceState(null, '', h); } catch (e) { location.hash = h; } }
+    renderNotes();
+  }
+
+  function go(n) {
+    n = Math.max(0, Math.min(total - 1, n));
+    if (n === cur) return;
+    var prev = slides[cur];
+    prev.classList.add('exit');
+    setTimeout(function () { prev.classList.remove('exit'); }, 500);
+    if (video && !video.paused) video.pause();
+    if (clockStart === null && n > 0) clockStart = Date.now();
+    cur = n;
+    setState(cur);
+    if (slides[cur].id === 's8' && videoOk()) {
+      try { video.currentTime = 0; } catch (e) {}
+      var p = video.play();
+      if (p && p.catch) p.catch(function () {});
+    }
+  }
+
+  function fromHash() {
+    var m = /^#(\d+)$/.exec(location.hash || '');
+    if (!m) return null;
+    var n = parseInt(m[1], 10) - 1;
+    return n >= 0 && n < total ? n : null;
+  }
+
+  // ── Initial slide from the URL hash (#1 … #13), shown without a transition ──
+  var start = fromHash();
+  cur = start === null ? 0 : start;
+  setState(cur);
+  requestAnimationFrame(function () { requestAnimationFrame(function () { document.body.classList.remove('no-anim'); }); });
+
+  window.addEventListener('hashchange', function () { var n = fromHash(); if (n !== null && n !== cur) go(n); });
+
+  document.getElementById('next').addEventListener('click', function (e) { e.stopPropagation(); go(cur + 1); });
+  document.getElementById('prev').addEventListener('click', function (e) { e.stopPropagation(); go(cur - 1); });
+
+  function toggleNotes() {
+    notesEl.hidden = !notesEl.hidden;
+    notesBtn.setAttribute('aria-expanded', String(!notesEl.hidden));
+    renderNotes();
+  }
+  function toggleFullscreen() {
+    var d = document;
+    if (!d.fullscreenElement && !d.webkitFullscreenElement) {
+      var el = d.documentElement;
+      (el.requestFullscreen || el.webkitRequestFullscreen || function () {}).call(el);
+    } else {
+      (d.exitFullscreen || d.webkitExitFullscreen || function () {}).call(d);
+    }
+  }
+  notesBtn.addEventListener('click', function (e) { e.stopPropagation(); toggleNotes(); });
+  document.getElementById('fs-btn').addEventListener('click', function (e) { e.stopPropagation(); toggleFullscreen(); });
+  notesEl.addEventListener('click', function (e) { e.stopPropagation(); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var t = e.target;
+    var onControl = t && t.closest && t.closest('button, a, video, input, textarea, select');
+    var k = e.key;
+    if ((k === ' ' || k === 'Enter') && onControl) return; // let buttons and the video use Space and Enter
+    if (t && t.closest && t.closest('video') && (k === 'ArrowLeft' || k === 'ArrowRight')) return; // seek
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ') { e.preventDefault(); go(cur + 1); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); go(cur - 1); }
+    else if (k === 'Home') { e.preventDefault(); go(0); }
+    else if (k === 'End') { e.preventDefault(); go(total - 1); }
+    else if (k === 'n' || k === 'N') { toggleNotes(); }
+    else if (k === 'f' || k === 'F') { toggleFullscreen(); }
+    else if (k === 't' || k === 'T') { clockStart = Date.now(); renderNotes(); }
+    wake();
+  });
+
+  // Click anywhere on the slide to advance (not on the nav, the video or a link)
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('#nav, #notes, video, a, button')) return;
+    go(cur + 1);
+  });
+
+  // ── Auto-hide the nav pill and the cursor after a few idle seconds ──
+  var idleTimer = null;
+  function wake() {
+    nav.classList.remove('idle');
+    document.body.classList.remove('idle');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(function () { nav.classList.add('idle'); document.body.classList.add('idle'); }, 2800);
+  }
+  ['mousemove', 'touchstart', 'focusin'].forEach(function (ev) { document.addEventListener(ev, wake, { passive: true }); });
+  wake();
+})();
+</script>
+</body>
+</html>
