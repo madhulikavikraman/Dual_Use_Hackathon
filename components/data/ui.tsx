@@ -6,6 +6,7 @@ import type { Cell, EvidenceStatus, EvidenceTable } from "@/lib/engine/evidence"
 
 export const STATUS_TEXT: Record<EvidenceStatus, string> = {
   pass: "Pass",
+  simulated: "Met in simulation",
   not_yet: "Not yet",
   no_data: "No data",
   info: "Measured",
@@ -13,17 +14,20 @@ export const STATUS_TEXT: Record<EvidenceStatus, string> = {
 
 const STATUS_CLASS: Record<EvidenceStatus, string> = {
   pass: "bg-emerald-100 text-emerald-900 ring-emerald-600/30 dark:bg-emerald-900/40 dark:text-emerald-200",
+  // Deliberately not green: a bar met only with simulated answers is not a pass (D-20).
+  simulated: "bg-violet-100 text-violet-900 ring-violet-600/30 dark:bg-violet-900/40 dark:text-violet-200",
   not_yet: "bg-amber-100 text-amber-900 ring-amber-600/30 dark:bg-amber-900/40 dark:text-amber-200",
   no_data: "bg-neutral-100 text-neutral-700 ring-neutral-500/30 dark:bg-neutral-800 dark:text-neutral-300",
   info: "bg-sky-100 text-sky-900 ring-sky-600/30 dark:bg-sky-900/40 dark:text-sky-200",
 };
 
-export function StatusBadge({ status, className = "" }: { status: EvidenceStatus; className?: string }) {
+/** A status pill; `label` overrides the text when the item states its basis ("Met on real phones", "Not yet tested"). */
+export function StatusBadge({ status, label, className = "" }: { status: EvidenceStatus; label?: string; className?: string }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset print:ring-neutral-400 ${STATUS_CLASS[status]} ${className}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap ring-1 ring-inset print:ring-neutral-400 ${STATUS_CLASS[status]} ${className}`}
     >
-      {STATUS_TEXT[status]}
+      {label ?? STATUS_TEXT[status]}
     </span>
   );
 }

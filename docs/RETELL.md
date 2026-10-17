@@ -1,6 +1,6 @@
 # Retell AI and the browser phone
 
-Second Key has two transports and one agent contract (PRD section 8, decision D-05):
+VoiceFlare has two transports and one agent contract (PRD section 8, decision D-05):
 
 | | Phone network (Retell) | Browser phone (`/phone/[id]`) |
 | --- | --- | --- |
@@ -57,7 +57,7 @@ inbound webhook in place (it reuses `RETELL_LLM_ID` and `RETELL_AGENT_ID_*`).
 
 ## Spam label and silenced phones (decision D-23)
 
-- [ ] Every volunteer saves the Retell number as a contact ("Second Key demo line") tonight.
+- [ ] Every volunteer saves the Retell number as a contact ("VoiceFlare demo line") tonight.
 - [ ] iPhone: Settings -> Apps -> Phone -> Silence Unknown Callers **off** (and any Focus mode off). Android: Phone app
       -> Settings -> Caller ID & spam -> "Filter spam calls" off for the demo.
 - [ ] Test-call every phone once from the number before the demo; fix any that show "Spam Likely" or go to voicemail.

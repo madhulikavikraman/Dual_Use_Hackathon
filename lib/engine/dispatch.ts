@@ -28,13 +28,20 @@ export async function dispatchTick(now: string, meta: Meta): Promise<number> {
     .sort((a, b) => urgent(a) - urgent(b) || (a.planned_at < b.planned_at ? -1 : a.planned_at > b.planned_at ? 1 : a.order_index - b.order_index));
   if (!due.length) return 0;
   const live = new Map<string, number>();
-  for (const c of all) if (c.campaign_id && LIVE.has(c.state)) live.set(c.campaign_id, (live.get(c.campaign_id) ?? 0) + 1);
+  const busy = new Set<string>(); // people already on a ringing or active call: never ring them twice at once
+  for (const c of all) {
+    if (!LIVE.has(c.state)) continue;
+    if (c.campaign_id) live.set(c.campaign_id, (live.get(c.campaign_id) ?? 0) + 1);
+    if (c.household_id) busy.add(c.household_id);
+  }
   let n = 0;
   for (const call of due) {
+    if (call.household_id && busy.has(call.household_id)) continue; // stays queued until their call ends
     const capped = call.campaign_id && (call.purpose === "resident" || call.purpose === "linked_contact");
     if (capped && (live.get(call.campaign_id!) ?? 0) >= CONCURRENCY) continue;
     await ring(call, meta);
     if (call.campaign_id) live.set(call.campaign_id, (live.get(call.campaign_id) ?? 0) + 1);
+    if (call.household_id) busy.add(call.household_id);
     n++;
   }
   return n;
@@ -99,7 +106,8 @@ export async function campaignTick(): Promise<number> {
   const calls = await db().all("calls");
   for (const c of running) {
     const mine = calls.filter((x) => x.campaign_id === c.id);
-    if (mine.length && mine.every((x) => !["queued", "ringing", "active"].includes(x.state))) {
+    const empty = !mine.length && Date.now() - Date.parse(c.created_at) > 10_000; // nobody to call
+    if (empty || (mine.length && mine.every((x) => !["queued", "ringing", "active"].includes(x.state)))) {
       await db().update("campaigns", c.id, { status: "done" });
       n++;
     }

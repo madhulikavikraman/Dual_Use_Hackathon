@@ -1,7 +1,8 @@
 "use client";
 
 // Push-to-talk speech recognition (Web Speech API: SpeechRecognition / webkitSpeechRecognition).
-// start() begins listening, finish() stops and delivers the final text to onFinal, abort() drops it.
+// start(delayMs?) begins listening (optionally a beat later), finish() stops and delivers the final text to
+// onFinal, abort() drops it.
 // Recognition that ends on its own while the user still wants to talk (Android ends after each phrase,
 // iOS after a pause) is restarted and the text accumulated, until finish() or abort().
 
@@ -59,6 +60,7 @@ export function useSpeechRecognition(opts: { lang: string; onFinal: (text: strin
   const interimRef = useRef("");
   const restartsRef = useRef(0);
   const deliverRef = useRef(false); // finish() asked to deliver on end
+  const pendingRef = useRef<number | null>(null); // a start(delayMs) waiting to open the microphone
   const optsRef = useRef(opts);
   useEffect(() => {
     optsRef.current = opts;
@@ -152,23 +154,49 @@ export function useSpeechRecognition(opts: { lang: string; onFinal: (text: strin
     return true;
   }, [deliver, isAndroid]);
 
-  const start = useCallback(() => {
-    if (recRef.current) return true;
-    wantRef.current = true;
-    deliverRef.current = true;
-    restartsRef.current = 0;
-    finalRef.current = "";
-    interimRef.current = "";
-    setInterim("");
-    const ok = startSession();
-    setListening(ok);
-    if (!ok) wantRef.current = false;
-    return ok;
-  }, [startSession]);
+  /** Drop a delayed start that has not opened the microphone yet. True if there was one. */
+  const cancelPending = useCallback(() => {
+    if (pendingRef.current === null) return false;
+    window.clearTimeout(pendingRef.current);
+    pendingRef.current = null;
+    return true;
+  }, []);
+
+  /**
+   * Start listening. With delayMs > 0 the microphone opens that much later (the agent's voice dying away);
+   * `listening` turns on only once it is open. Only pass a delay where starting outside the tap is allowed.
+   */
+  const start = useCallback(
+    (delayMs = 0) => {
+      if (recRef.current || pendingRef.current !== null) return true;
+      wantRef.current = true;
+      deliverRef.current = true;
+      restartsRef.current = 0;
+      finalRef.current = "";
+      interimRef.current = "";
+      setInterim("");
+      if (delayMs > 0 && recognitionCtor()) {
+        pendingRef.current = window.setTimeout(() => {
+          pendingRef.current = null;
+          if (!wantRef.current) return;
+          const ok = startSession();
+          setListening(ok);
+          if (!ok) wantRef.current = false;
+        }, delayMs);
+        return true;
+      }
+      const ok = startSession();
+      setListening(ok);
+      if (!ok) wantRef.current = false;
+      return ok;
+    },
+    [startSession],
+  );
 
   /** Stop listening and deliver what was heard. */
   const finish = useCallback(() => {
     wantRef.current = false;
+    if (cancelPending()) return; // released before the microphone opened: nothing was heard
     const rec = recRef.current;
     if (!rec) return;
     deliverRef.current = true;
@@ -177,33 +205,46 @@ export function useSpeechRecognition(opts: { lang: string; onFinal: (text: strin
     } catch {
       rec.onend?.();
     }
-  }, []);
+  }, [cancelPending]);
 
-  /** Stop listening and throw the text away. */
+  /** Stop listening and throw the text away. True if the microphone was open (or about to open). */
   const abort = useCallback(() => {
     wantRef.current = false;
     deliverRef.current = false;
+    const pending = cancelPending();
     const rec = recRef.current;
-    if (!rec) return;
+    if (!rec) return pending;
     try {
       rec.abort();
     } catch {
       rec.onend?.();
     }
-  }, []);
+    return true;
+  }, [cancelPending]);
 
   // Never leave the microphone open when the component goes away (or is hidden by Activity).
-  useEffect(() => () => {
-    wantRef.current = false;
-    deliverRef.current = false;
-    const rec = recRef.current;
-    recRef.current = null;
-    try {
-      rec?.abort();
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  useEffect(
+    () => () => {
+      wantRef.current = false;
+      deliverRef.current = false;
+      cancelPending();
+      const rec = recRef.current;
+      recRef.current = null;
+      try {
+        rec?.abort();
+      } catch {
+        /* ignore */
+      }
+      // The recognizer's onend is ignored from here on, so reset what it would have: a page hidden by
+      // Activity keeps its state and must not come back stuck on "Listening…".
+      finalRef.current = "";
+      sessionFinalRef.current = "";
+      interimRef.current = "";
+      setListening(false);
+      setInterim("");
+    },
+    [cancelPending],
+  );
 
   return { listening, interim, start, finish, abort };
 }

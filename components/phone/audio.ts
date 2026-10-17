@@ -23,6 +23,30 @@ export function subscribeAudioUnlock(cb: () => void): () => void {
   return () => window.removeEventListener(UNLOCK_EVENT, cb);
 }
 
+// A page cannot tell whether the phone is on Silent (on an iPhone the Silent switch mutes Web Audio, and
+// often speech too) or turned all the way down, so "sound on" is only true once the person says they heard it.
+let confirmed = false;
+const CONFIRM_EVENT = "secondkey:sound-confirmed";
+
+/** True once the person said they heard the sound check (or the agent) in this document. */
+export function isSoundConfirmed(): boolean {
+  return confirmed;
+}
+
+/** Record that the person hears this page. */
+export function confirmSound(): void {
+  if (!hasWindow() || confirmed) return;
+  confirmed = true;
+  window.dispatchEvent(new Event(CONFIRM_EVENT));
+}
+
+/** useSyncExternalStore subscription for isSoundConfirmed(). */
+export function subscribeSoundConfirmed(cb: () => void): () => void {
+  if (!hasWindow()) return () => {};
+  window.addEventListener(CONFIRM_EVENT, cb);
+  return () => window.removeEventListener(CONFIRM_EVENT, cb);
+}
+
 function audioContext(): AudioContext | null {
   if (!hasWindow()) return null;
   if (ctx) return ctx;
@@ -177,13 +201,17 @@ export interface SpeakHandle {
   done: Promise<void>;
 }
 
-/** Speak text in a language. Resolves `done` when finished (or a watchdog fires: iOS can drop onend). */
+/**
+ * Speak text in a language. Resolves `done` when the last utterance ends, or, since iOS can drop onend,
+ * once an estimate has passed and the browser no longer reports speech (bounded).
+ */
 export function speak(text: string, lang: string, voice: SpeechSynthesisVoice | null, opts: { rate?: number } = {}): SpeakHandle {
   if (!hasSpeechSynthesis() || !text.trim()) return { cancel: () => {}, done: Promise.resolve() };
   const synth = window.speechSynthesis;
   let cancelled = false;
   let resolveDone!: () => void;
   const done = new Promise<void>((r) => (resolveDone = r));
+  let timer: number | undefined;
   const finish = () => {
     window.clearTimeout(timer);
     resolveDone();
@@ -193,7 +221,21 @@ export function speak(text: string, lang: string, voice: SpeechSynthesisVoice | 
   const totalChars = parts.reduce((n, p) => n + p.length, 0);
   // CJK packs more speech per character.
   const perChar = /[぀-ヿ㐀-鿿가-힯]/.test(text) ? 260 : 85;
-  const timer = window.setTimeout(finish, totalChars * perChar + 4000);
+  const estimate = totalChars * perChar + 4000;
+  const giveUpAt = Date.now() + estimate + 30_000;
+  // The estimate can be short (a slow voice, a long Hindi reply): while the browser still reports speech,
+  // keep waiting, so a voice that is still playing is never treated as finished.
+  const watchdog = () => {
+    let busy = false;
+    try {
+      busy = synth.speaking || synth.pending;
+    } catch {
+      /* ignore */
+    }
+    if (!cancelled && busy && Date.now() < giveUpAt) timer = window.setTimeout(watchdog, 250);
+    else finish();
+  };
+  timer = window.setTimeout(watchdog, estimate);
 
   try {
     synth.cancel();

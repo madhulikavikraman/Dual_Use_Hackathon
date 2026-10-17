@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import type { Signed } from "@/lib/client/api";
-import { setSupervisorName, useSupervisorName } from "@/lib/client/supervisor";
+import { setOperatorName, useOperator, useOperatorName } from "@/lib/client/supervisor";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Field, inputClass } from "@/components/ui/Field";
@@ -40,9 +40,11 @@ export function DecisionDialog({
   onConfirm: (signed: Signed) => Promise<unknown>;
   onClose: () => void;
 }) {
-  const saved = useSupervisorName();
-  const [typedName, setTypedName] = useState<string | null>(null);
-  const name = typedName ?? saved;
+  const operator = useOperator();
+  const saved = useOperatorName(operator);
+  // Pre-filled once, when the dialog opens: a name typed later in another tab must not slip into a
+  // decision this person is about to sign.
+  const [name, setName] = useState(saved);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +57,7 @@ export function DecisionDialog({
     const actor = name.trim();
     setBusy(true);
     setError(null);
-    if (actor !== saved) setSupervisorName(actor);
+    if (actor !== saved) setOperatorName(operator, actor);
     try {
       await onConfirm({ actor, reason: reason.trim() });
       onClose();
@@ -75,7 +77,7 @@ export function DecisionDialog({
             <input
               className={inputClass}
               value={name}
-              onChange={(e) => setTypedName(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
               placeholder="Supervisor name"
               autoComplete="name"
             />

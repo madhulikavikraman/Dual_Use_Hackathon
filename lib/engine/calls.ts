@@ -1,7 +1,7 @@
 import "server-only";
 import { after } from "next/server";
 import { z } from "zod";
-import type { ToolName } from "@/lib/agent/tools";
+import { toolsForPurpose, type ToolName } from "@/lib/agent/tools";
 import { db, isoIn, nowIso, uid } from "@/lib/db";
 import { STATE_LABEL } from "@/lib/directives";
 import { geocode } from "@/lib/geocode";
@@ -127,6 +127,11 @@ async function stateFix(text: string | null | undefined, consent: boolean | null
 /** Run one of the seven tools for a call. Validates input, writes rows, logs refusals. */
 export async function executeTool(callId: string, name: ToolName, args: Record<string, unknown>): Promise<ToolResult> {
   const ctx = await loadCtx(callId);
+  // The allowlist is enforced here, for every transport: a sentinel call cannot record a resident's status, etc.
+  if (!toolsForPurpose(ctx.call.purpose).includes(name)) {
+    await ledger({ actor: "agent", action: `refused: tool ${name} is not allowed on a ${ctx.call.purpose} call`, allowed: false, kind: "refusal", target: ctx.household?.name ?? null });
+    return { result: `The ${name} tool is not available on this call.` };
+  }
   switch (name) {
     case "record_status": return recordStatus(ctx, RecordStatus.parse(args));
     case "report_hazard": return reportHazard(ctx, ReportHazard.parse(args));
@@ -194,7 +199,7 @@ async function recordStatus(ctx: Ctx, a: z.infer<typeof RecordStatus>): Promise<
     await refreshLocation(subject.id, fix);
   }
 
-  if (a.status === "needs_help_now") return { result: "Recorded as life safety (registry priority 1). If you have not yet, say: hang up and call 911 now. Then end the call." };
+  if (a.status === "needs_help_now") return { result: `Recorded as life safety (registry priority 1). If you have not yet, say: hang up and call ${call.vars.emergency_number || "911"} now. Then end the call.` };
   if (a.status === "needs_help_leaving") return { result: "Recorded: needs help leaving (registry priority 2). Tell them a person from the response team will call them back, then end the call." };
   if (a.status === "leaving" || a.status === "already_left") {
     if (a.understood === true) return { result: "Recorded, teach-back passed. Say goodbye and end the call." };
@@ -248,12 +253,12 @@ async function requestHuman(ctx: Ctx, a: z.infer<typeof RequestHuman>): Promise<
     });
   }
   if (a.reason === "medical_emergency") {
-    await ledger({ actor: "agent", action: "flag: life safety, told to hang up and call 911", kind: "agent", target: who, reason: a.note });
+    await ledger({ actor: "agent", action: `flag: life safety, told to hang up and call ${call.vars.emergency_number || "911"}`, kind: "agent", target: who, reason: a.note });
     if (subject) {
       await upsertHelp({ household: subject, zone_id: subject.zone_id ?? (call.vars.zone_id || null), priority: 1, needs: subject.afn_flags,
         reason: `Life safety${a.note ? `: ${a.note}` : ""}`, source: helpSource(call) });
     }
-    return { result: "Flagged as life safety. Make sure you said: hang up and call 911 now. Then end the call." };
+    return { result: `Flagged as life safety. Make sure you said: hang up and call ${call.vars.emergency_number || "911"} now. Then end the call.` };
   }
   if (a.reason === "asked_unapproved" || a.reason === "cannot_answer") {
     await ledger({ actor: "agent", action: `refused: ${a.note ?? "asked for something outside the approved text"}`, allowed: false, kind: "refusal", target: who, reason: "Not in the approved text; a person will call back" });
@@ -286,7 +291,8 @@ async function lookupZone(ctx: Ctx, a: z.infer<typeof LookupZone>): Promise<Tool
   const vars: CallVars = { ...ctx.call.vars, zone_id: zone.id, zone_name: zone.name, zone_state: zone.state,
     directive_text: zone.directive_text, move_text: zone.move_text ?? "", evac_point: zone.evac_point ?? "" };
   await db().update("calls", ctx.call.id, { vars });
-  if (ctx.household && !ctx.household.zone_id) await db().update("households", ctx.household.id, { zone_id: zone.id, lat: hit.lat, lng: hit.lng });
+  // A public-line caller's pin moves to where they said they are; they never join a zone's call list.
+  if (ctx.household?.device_label === "Public line") await db().update("households", ctx.household.id, { lat: hit.lat, lng: hit.lng });
   return {
     result: `Zone: ${zone.name} (${STATE_LABEL[zone.state]}). Read exactly. Directive: "${zone.directive_text}" Route: "${zone.move_text ?? "(none)"}" Evacuation point: "${zone.evac_point ?? "(none)"}"`,
   };
@@ -296,7 +302,8 @@ async function readObservation(ctx: Ctx, a: z.infer<typeof ReadObservation>): Pr
   const { call, household } = ctx;
   if (!call.hold_id) return { result: "Recorded." };
   const hold = await db().get("holds", call.hold_id);
-  if (hold) {
+  // Answers after the hold closed are kept as reports, but never rewrite a sent or cancelled hold's record.
+  if (hold && hold.status === "open") {
     const sentinels = hold.sentinels.map((s) =>
       s.household_id === household?.id ? { ...s, answer: a.sees, what: a.what ?? null, direction: a.direction ?? null, answered_at: nowIso() } : s,
     );
@@ -393,6 +400,8 @@ export async function failCall(callId: string, kind: "no_answer" | "voicemail" |
 
   const meta = await getMeta();
   const zone = subject.zone_id ? await db().get("zones", subject.zone_id) : null;
+  // A lifted (or monitored) zone gets no more follow-ups.
+  if (!zone || zone.state === "lifted" || zone.state === "monitor") return;
   if (call.purpose === "resident" && call.attempt === 1 && kind !== "unreachable") {
     await db().insert("calls", newCall({
       campaign_id: call.campaign_id, household: subject, purpose: "resident",
@@ -413,7 +422,10 @@ export async function failCall(callId: string, kind: "no_answer" | "voicemail" |
       return;
     }
   }
-  if (subject.afn_flags.length || zone?.state === "order") {
+  // People who already told us they are leaving or gone are not door-knock rows when their phone goes quiet.
+  const said = await db().where("household_status", { household_id: subject.id });
+  if (said.some((s) => s.status === "safe" || s.status === "leaving")) return;
+  if (subject.afn_flags.length || zone.state === "order") {
     await upsertHelp({ household: subject, zone_id: subject.zone_id, priority: 3, needs: subject.afn_flags,
       reason: `Unreached${subject.afn_flags.length ? ` (${subject.afn_flags.join(", ")})` : ""}: door-knock list`, source: helpSource(call),
       fix: enrolledFix(subject, zone) });

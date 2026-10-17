@@ -4,8 +4,8 @@ import DeviceSheet from "@/components/phone/DeviceSheet";
 // /phones — the device sheet: QR codes for the volunteers' phones, who each plays, live presence.
 
 export const metadata: Metadata = {
-  title: "Device sheet · Second Key",
-  description: "QR codes and live presence for the volunteer phones in the Second Key demo.",
+  title: "Device sheet · VoiceFlare",
+  description: "QR codes and live presence for the volunteer phones in the VoiceFlare demo.",
 };
 
 export default function PhonesPage() {

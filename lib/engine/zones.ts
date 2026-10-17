@@ -6,7 +6,7 @@ import { HttpError } from "@/lib/http";
 import { zoneDefaults } from "@/lib/scenarios";
 import type { Proposal, Zone } from "@/lib/types";
 import { startCampaign } from "./campaigns";
-import { applyZoneState, bypassHold, openHold } from "./holds";
+import { applyZoneState, bypassHold, decideHold, openHold } from "./holds";
 import { feed, getMeta, ledger } from "./log";
 
 // Only a named human moves a zone (PRD 6.1). An Order opens the hold first; the approval records who,
@@ -25,11 +25,21 @@ export async function approveZone(zoneId: string, body: ApproveZoneBody): Promis
   if (!body.approved_by.trim() || !body.reason.trim()) throw new HttpError(400, "A name and a reason are required");
   const meta = await getMeta();
   const defaults = zoneDefaults(zone, body.state, meta.mode);
+  // Omitted texts fall back to the approved defaults; an explicit empty route or evacuation point is the
+  // human's choice. The directive itself can never be empty.
   const directive = body.directive_text?.trim() || defaults.directive_text;
-  const move = body.move_text?.trim() ?? defaults.move_text;
+  const move = body.move_text === undefined ? defaults.move_text : body.move_text.trim();
   const evac = body.evac_point === undefined ? defaults.evac_point : body.evac_point;
 
   await closeProposals(zone, body.state, body.approved_by, body.reason);
+
+  // A later approval of a lower state (Warning, Lifted...) supersedes an open Order hold: otherwise its
+  // timer would push the zone back to Order at 0:00.
+  if (body.state !== "order" && body.state !== zone.state) {
+    for (const open of await db().where("holds", { zone_id: zone.id, status: "open" })) {
+      await decideHold(open.id, { decision: "cancel", actor: body.approved_by, reason: `Superseded by ${STATE_LABEL[body.state]}: ${body.reason}` });
+    }
+  }
 
   // Same state again: the human is editing the approved texts. Update and log; no new calls, no new send.
   if (body.state === zone.state) {

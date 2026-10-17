@@ -78,7 +78,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ name: string }
       "Nothing was recorded: this call is not linked to the response system. Do not call tools again on this call. " +
         "Tell the person you could not record that and that a person will call them back.",
       200,
-      { "X-Second-Key-Error": "unmatched_call" },
+      { "X-VoiceFlare-Error": "unmatched_call" },
     );
   }
 
@@ -88,7 +88,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ name: string }
   try {
     const result = await executeTool(callId, name, args);
     if (result.end) scheduleHangup(call?.call_id);
-    return textResponse(result.result || "Done.", 200, { "X-Second-Key-Call": callId });
+    return textResponse(result.result || "Done.", 200, { "X-VoiceFlare-Call": callId });
   } catch (e) {
     const msg = (e instanceof Error ? e.message : String(e)).slice(0, 200);
     console.error(`[retell tools] ${name} failed for call ${callId}`, e);
@@ -97,7 +97,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ name: string }
     return textResponse(
       `The ${name} tool failed (${msg}). Do not retry it. Tell the person you could not record that and that a person will call them back.`,
       200,
-      { "X-Second-Key-Error": "tool_failed", "X-Second-Key-Call": callId },
+      { "X-VoiceFlare-Error": "tool_failed", "X-VoiceFlare-Call": callId },
     );
   }
 }

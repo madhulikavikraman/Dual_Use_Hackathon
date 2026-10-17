@@ -16,7 +16,7 @@ function MilestoneCard({ m }: { m: EvidenceItem }) {
     >
       <div className="flex items-center justify-between gap-2">
         <span className="font-mono text-xs font-bold text-neutral-500">{m.id === "SAFETY" ? "Safety bar" : `Milestone ${m.id.slice(1)}`}</span>
-        <StatusBadge status={m.status} />
+        <StatusBadge status={m.status} label={m.status_label} />
       </div>
       <div className="text-sm font-semibold leading-snug">{m.title}</div>
       <div className="text-base leading-snug font-medium text-neutral-900 dark:text-neutral-50">{m.value}</div>
@@ -33,7 +33,7 @@ function ItemDetail({ m, compact = false }: { m: EvidenceItem; compact?: boolean
           <span className="mr-2 font-mono text-sm text-neutral-500">{m.id}</span>
           {m.title}
         </h2>
-        <StatusBadge status={m.status} />
+        <StatusBadge status={m.status} label={m.status_label} />
       </div>
       <p className="mt-1 text-sm text-neutral-600 italic dark:text-neutral-400">{m.question}</p>
       <div className="mt-2 grid gap-1 text-sm sm:grid-cols-[8rem_1fr]">
@@ -82,7 +82,7 @@ function MeasureRow({ m }: { m: EvidenceItem }) {
         <td className="px-2 py-1.5">{m.value}</td>
         <td className="px-2 py-1.5 text-neutral-600 dark:text-neutral-400">{m.target}</td>
         <td className="px-2 py-1.5">
-          <StatusBadge status={m.status} />
+          <StatusBadge status={m.status} label={m.status_label} />
         </td>
         <td className="px-2 py-1.5 print:hidden">
           {m.tables.some((t) => t.rows.length) ? (
@@ -141,6 +141,7 @@ export default function EvidenceView() {
 
   const milestones = data?.milestones ?? [];
   const passed = data?.summary.passed ?? 0;
+  const simOnly = milestones.filter((m) => m.status === "simulated").map((m) => m.id);
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 print:max-w-none print:px-0 print:py-0 print:text-black">
@@ -151,13 +152,14 @@ export default function EvidenceView() {
             <SimulatedBadge />
             <span>Twist 1 · NSF SBIR Phase I</span>
             <span aria-hidden>·</span>
-            <span>Second Key</span>
+            <span>VoiceFlare</span>
           </div>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Phase I evidence — measured live from this run</h1>
           <p className="mt-1 max-w-3xl text-sm text-neutral-600 dark:text-neutral-400">
             The three milestones an NSF SBIR Phase I grant would pay for, and the safety bar on all three, computed from the holds,
             canaries, intents, calls, registry and ledger of the run on the board. Every send is simulated; synthetic rows are
-            labeled and real phones are counted separately.
+            labeled and real phones are counted separately. A bar is met only on real phones (M2: the full gold set); one met
+            only with simulated answers reads “Met in simulation” and does not count.
           </p>
           <p className="mt-1 text-xs text-neutral-500">
             {data ? (
@@ -201,7 +203,12 @@ export default function EvidenceView() {
           <section className="mt-5">
             <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="text-sm font-semibold tracking-wide text-neutral-500 uppercase">
-                {passed} of {milestones.length} Phase I bars met in this run
+                {passed} of {milestones.length} Phase I bars met in this run, on real phones
+                {simOnly.length ? (
+                  <span className="ml-2 font-normal tracking-normal normal-case">
+                    · {simOnly.join(", ")} met in simulation only (does not count)
+                  </span>
+                ) : null}
               </h2>
               <span className="text-xs text-neutral-500">
                 {data.run.holds} holds ({data.run.holds_sent} sent) · {data.run.calls} calls rang ({data.run.calls_real} real phones,{" "}

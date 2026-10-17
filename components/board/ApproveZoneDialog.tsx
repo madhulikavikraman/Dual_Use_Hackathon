@@ -12,6 +12,7 @@ import { Field, inputClass } from "@/components/ui/Field";
 import { useAct, useBoard } from "./BoardContext";
 import { DecisionDialog } from "./DecisionDialog";
 import { useZoneTexts } from "./useZoneTexts";
+import { useZoneMoved, ZoneMovedNotice } from "./ZoneMoved";
 import { ZoneTextFields } from "./ZoneTextFields";
 
 /** What each rung does once approved (PRD 6.1), shown under the ladder select. */
@@ -41,6 +42,9 @@ export function ApproveZoneDialog({ zone, proposal, onClose }: { zone: Zone; pro
   const mode = snap.meta.mode;
   const [state, setState] = useState<ZoneState>(proposal?.proposed_state ?? zone.state);
   const [bypass, setBypass] = useState(false);
+  // `zone` is the zone as it was when the dialog opened (the texts load from it, so edits are not
+  // reloaded under the human); `live` is the zone now.
+  const { live, moved, acknowledge } = useZoneMoved(zone);
   const { texts, fromServer, edit } = useZoneTexts(zone, state, mode);
   const label = stateLabel(state, mode);
 
@@ -83,7 +87,7 @@ export function ApproveZoneDialog({ zone, proposal, onClose }: { zone: Zone; pro
       title={proposal ? `Approve the model's proposal for ${zone.name}` : `Change state: ${zone.name}`}
       subtitle={
         <span className="inline-flex flex-wrap items-center gap-1.5">
-          Now <ColorChip color={STATE_COLOR[zone.state]} text={STATE_TEXT[zone.state]}>{stateLabel(zone.state, mode)}</ColorChip>
+          Now <ColorChip color={STATE_COLOR[live.state]} text={STATE_TEXT[live.state]}>{stateLabel(live.state, mode)}</ColorChip>
           {zone.population_est ? (
             <span>
               · about {fmtPeople(zone.population_est)} people{zone.area_sq_mi ? ` across ${fmtArea(zone.area_sq_mi)} sq mi` : ""} (estimate)
@@ -92,7 +96,7 @@ export function ApproveZoneDialog({ zone, proposal, onClose }: { zone: Zone; pro
         </span>
       }
       confirmLabel={state === "order" && !bypass ? "Approve and open the hold" : `Approve: ${label}`}
-      canSubmit={texts !== null && (state === "monitor" || texts.directive_text.trim().length > 0)}
+      canSubmit={!moved && texts !== null && (state === "monitor" || texts.directive_text.trim().length > 0)}
       reasonPlaceholder={proposal ? "Why you agree with the model" : "Why this zone, why now"}
       reasonSuggestions={
         state === "warning"
@@ -104,6 +108,7 @@ export function ApproveZoneDialog({ zone, proposal, onClose }: { zone: Zone; pro
       onConfirm={confirm}
       onClose={onClose}
     >
+      {moved ? <ZoneMovedNotice name={zone.name} moved={moved} onAcknowledge={acknowledge} /> : null}
       {proposal ? (
         <div className="rounded-md border-2 border-dashed px-3 py-2 text-sm" style={{ borderColor: STATE_COLOR[proposal.proposed_state] }}>
           <div className="text-xs font-black uppercase tracking-wide text-amber-800">Proposed by model — needs a human</div>
@@ -126,7 +131,7 @@ export function ApproveZoneDialog({ zone, proposal, onClose }: { zone: Zone; pro
           {ZONE_STATES.map((s) => (
             <option key={s} value={s}>
               {stateLabel(s, mode)}
-              {s === zone.state ? " (current)" : ""}
+              {s === live.state ? " (current)" : ""}
             </option>
           ))}
         </select>

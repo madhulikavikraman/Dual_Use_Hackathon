@@ -5,23 +5,28 @@ import { resetDemo } from "@/lib/client/api";
 import { useNow } from "@/lib/client/clock";
 import { fmtClock } from "@/lib/client/format";
 import { SCENARIO_OPTIONS, scenarioLabel } from "@/lib/client/labels";
-import { setSupervisorName, useSupervisorName } from "@/lib/client/supervisor";
+import { OPERATOR_LABEL, setOperatorName, useOperator, useOperatorName } from "@/lib/client/supervisor";
 import type { Scenario } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { useAct } from "./BoardContext";
 
-/** The supervisor's name, saved in this browser and pre-filled in every decision dialog. */
+/**
+ * The name of the person at this screen (the supervisor on the board, the QRT lead on /qrt), saved in
+ * this browser and pre-filled in every decision dialog on that screen.
+ */
 export function SupervisorInput({ dark = true }: { dark?: boolean }) {
-  const name = useSupervisorName();
+  const operator = useOperator();
+  const name = useOperatorName(operator);
+  const label = OPERATOR_LABEL[operator];
   return (
     <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider">
-      <span className={dark ? "text-slate-400" : "text-slate-600"}>Supervisor</span>
+      <span className={dark ? "text-slate-400" : "text-slate-600"}>{label}</span>
       <input
         value={name}
-        onChange={(e) => setSupervisorName(e.target.value)}
+        onChange={(e) => setOperatorName(operator, e.target.value)}
         placeholder="Your name"
-        aria-label="Supervisor name"
+        aria-label={`${label} name`}
         className={`h-8 w-36 rounded-md px-2.5 text-sm font-semibold normal-case tracking-normal focus:outline-none focus:ring-2 ${
           dark
             ? `bg-slate-800 text-white placeholder:text-slate-500 focus:ring-blue-400 ${name ? "" : "ring-2 ring-amber-400"}`

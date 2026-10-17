@@ -2,6 +2,7 @@ import "server-only";
 import { db, isoIn, nowIso, uid } from "@/lib/db";
 import { STATE_LABEL } from "@/lib/directives";
 import { RING_M, edgeDistanceM } from "@/lib/geo";
+import { jurisdictionFor } from "@/lib/jurisdictions";
 import type {
   Call, CallPurpose, CallVars, Campaign, CampaignKind, Household, HouseholdStatus, Meta, Stage, Status, Zone,
 } from "@/lib/types";
@@ -51,6 +52,7 @@ export function buildVars(opts: {
     memory_note: (opts.subject ?? household)?.memory_note ?? "",
     simulated: "true",
     mode: meta.mode,
+    emergency_number: jurisdictionFor(meta.jurisdiction).call_now,
   };
 }
 

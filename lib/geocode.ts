@@ -71,7 +71,7 @@ async function nominatim(text: string): Promise<GeoHit | null> {
     format: "json", limit: "1", q: text, viewbox: "-118.95,34.85,-117.6,33.65", bounded: "1",
   });
   const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
-    headers: { "User-Agent": "SecondKey-hackathon-demo/0.1 (USC Dual-Use Hackathon)" },
+    headers: { "User-Agent": "VoiceFlare-hackathon-demo/0.1 (USC Dual-Use Hackathon)" },
     cache: "no-store",
   });
   if (!res.ok) return null;

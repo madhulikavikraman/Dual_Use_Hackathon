@@ -10,6 +10,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -22,13 +23,16 @@ import type { PhoneActionBody, PhoneState, PhoneTurnResult } from "@/lib/contrac
 import { languageByCode } from "@/lib/languages";
 import {
   cancelAllSpeech,
+  confirmSound,
   hasSpeechSynthesis,
   isAudioUnlocked,
+  isSoundConfirmed,
   loadVoices,
   pickVoice,
   speak,
   startRinging,
   subscribeAudioUnlock,
+  subscribeSoundConfirmed,
   unlockAudio,
   type SpeakHandle,
   type VoiceMatch,
@@ -38,6 +42,9 @@ import { FATAL_SR_ERRORS, speechRecognitionSupported, useSpeechRecognition } fro
 
 const POLL_MS = 1000;
 const HOLD_MS = 350; // a press at least this long is hold-to-talk; a shorter tap toggles listening
+// After the agent's voice stops, the microphone waits this long (speaker latency, room echo), so the
+// recognizer never hears the agent's own last words.
+const TAIL_MS = 300;
 const ENDED_STATES = new Set(["ended", "no_answer", "unreachable", "failed", "voicemail", "cancelled"]);
 
 type Line = { role: "agent" | "person"; text: string; at: string };
@@ -104,17 +111,22 @@ export default function PhoneClient() {
   const [tapOnly, setTapOnly] = useState(false);
   const srWorkedRef = useRef(false);
   const [voiceMatch, setVoiceMatch] = useState<VoiceMatch>("unknown");
-  const [soundOn, setSoundOn] = useState(true);
+  const [mutedCallId, setMutedCallId] = useState<string | null>(null); // "Mute agent", for that call only
   const [wakeLock, setWakeLock] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
 
   const unlocked = useSyncExternalStore(subscribeAudioUnlock, isAudioUnlocked, () => false);
+  const soundConfirmed = useSyncExternalStore(subscribeSoundConfirmed, isSoundConfirmed, () => false);
   const srSupported = useClientValue(speechRecognitionSupported, true);
   const ttsSupported = useClientValue(hasSpeechSynthesis, true);
   const insecure = useClientValue(() => !window.isSecureContext, false);
+  // Safari (every iOS browser) may open the microphone only inside the tap itself; Chrome can wait a beat.
+  const webkit = useClientValue(() => /Apple/i.test(navigator.vendor), false);
 
   const call = phone?.call ?? null;
+  // Muting the agent mutes the current call only, so the next call rings and speaks again.
+  const soundOn = mutedCallId === null || mutedCallId !== call?.id;
   const household = phone?.household ?? null;
   const lang = turnLang || call?.lang_code || household?.lang_code || "en-US";
   const langInfo = languageByCode(lang);
@@ -210,29 +222,53 @@ export default function PhoneClient() {
   });
 
   // ---------- Speech out ----------
+  // The agent never speaks into an open microphone: a press to talk silences it first (and the microphone
+  // waits out TAIL_MS), and a line about to play closes the microphone.
   const speakRef = useRef<SpeakHandle | null>(null);
+  const speakGenRef = useRef(0); // bumped by stopSpeaking: a line still loading its voice must not start
+  const quietAtRef = useRef(0); // performance.now() once the agent's voice has died away
+  const hiddenRef = useRef(false); // hidden by Activity (navigated away): say nothing
+  const srAbortRef = useRef<() => boolean>(() => false);
   const stopSpeaking = useCallback(() => {
+    speakGenRef.current++;
+    if (speakRef.current) quietAtRef.current = performance.now() + TAIL_MS;
     speakRef.current?.cancel();
     speakRef.current = null;
+    cancelAllSpeech(); // also a voice whose handle was already let go
     setSpeaking(false);
   }, []);
 
   const sayAloud = useCallback(async (text: string, lc: string) => {
-    if (!text.trim() || !soundOnRef.current) return;
+    if (!text.trim() || !soundOnRef.current || hiddenRef.current) return;
     speakRef.current?.cancel();
+    const gen = ++speakGenRef.current;
     const voices = await loadVoices();
+    // A press to talk, Mute, a newer line or leaving the page while the voices loaded wins over this line.
+    if (gen !== speakGenRef.current || !soundOnRef.current || hiddenRef.current) return;
     const { voice, match } = pickVoice(lc, voices);
     setVoiceMatch(match);
     if (match === "none") return; // no voice for this language on this device: text mode shows it
+    if (srAbortRef.current()) setNotice("Stopped listening so you can hear the agent. Press the button again to talk.");
     const h = speak(text, lc, voice);
     speakRef.current = h;
     setSpeaking(true);
     await h.done;
     if (speakRef.current === h) {
       speakRef.current = null;
+      quietAtRef.current = performance.now() + TAIL_MS;
       setSpeaking(false);
     }
   }, []);
+
+  // Activity hides this page on navigation instead of unmounting it, and replies still arriving for it
+  // must not talk over the page now on screen: mark it hidden and silence it.
+  useLayoutEffect(() => {
+    hiddenRef.current = false;
+    return () => {
+      hiddenRef.current = true;
+      stopSpeaking();
+    };
+  }, [stopSpeaking]);
 
   // Which voices exist for this language (decides the automatic text mode).
   useEffect(() => {
@@ -362,12 +398,14 @@ export default function PhoneClient() {
     },
   });
   const { abort: srAbort, finish: srFinish, start: srStart, listening } = sr;
+  useEffect(() => {
+    srAbortRef.current = srAbort;
+  });
 
   const hangup = useCallback(async () => {
     const callId = call?.id;
     if (!callId) return;
     stopSpeaking();
-    cancelAllSpeech();
     srAbort();
     setMyCall({ id: callId, status: "ended" });
     try {
@@ -421,9 +459,6 @@ export default function PhoneClient() {
     };
   }, [unlocked]);
 
-  // Never keep talking after the page is hidden by navigation.
-  useEffect(() => () => cancelAllSpeech(), []);
-
   useEffect(() => {
     if (!notice) return;
     const t = window.setTimeout(() => setNotice(null), 6000);
@@ -443,6 +478,12 @@ export default function PhoneClient() {
   }, [lines.length, thinking, sr.interim]);
 
   // ---------- Push-to-talk ----------
+  // How much longer the microphone waits for the agent's voice to die away. Only where recognition may
+  // start outside the tap (Chrome); Safari starts at once, inside the tap, and its start-up covers the tail.
+  const tailWait = useCallback(
+    () => (webkit ? 0 : Math.max(0, Math.min(TAIL_MS, quietAtRef.current - performance.now()))),
+    [webkit],
+  );
   const pressRef = useRef<number | null>(null);
   const pressStart = useCallback(() => {
     if (!activeCallId || thinking) return;
@@ -451,10 +492,10 @@ export default function PhoneClient() {
       pressRef.current = null;
       return;
     }
-    unlockAudio();
     stopSpeaking(); // talking over the agent interrupts it
-    pressRef.current = srStart() ? performance.now() : null;
-  }, [activeCallId, thinking, listening, srFinish, srStart, stopSpeaking]);
+    unlockAudio();
+    pressRef.current = srStart(tailWait()) ? performance.now() : null;
+  }, [activeCallId, thinking, listening, srFinish, srStart, stopSpeaking, tailWait]);
   const pressEnd = useCallback(() => {
     const t0 = pressRef.current;
     pressRef.current = null;
@@ -468,7 +509,7 @@ export default function PhoneClient() {
       return;
     }
     stopSpeaking();
-    srStart();
+    srStart(tailWait());
   };
   const onPointerDown = (e: ReactPointerEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -519,6 +560,12 @@ export default function PhoneClient() {
       void sayAloud(label("soundCheck", lang), lang);
     }, 1300);
   };
+  // "Tap to enable sound" plays the sound check too, so a phone on Silent is caught at setup, not on stage.
+  const enableSound = () => {
+    unlockNow();
+    soundCheck();
+  };
+  const canSpeak = ttsSupported && voiceMatch !== "none";
 
   // ---------- Render ----------
   const roleText = household?.role === "sentinel" ? "Sentinel" : household?.role === "canary" ? "Canary" : household?.role === "staff" ? "Staff" : "Resident";
@@ -533,7 +580,7 @@ export default function PhoneClient() {
       <header className="flex items-start justify-between gap-3 px-4 pb-2 pt-[max(1rem,env(safe-area-inset-top))]">
         <div className="min-w-0">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
-            Second Key{household?.device_label ? ` · ${household.device_label}` : ""}
+            VoiceFlare{household?.device_label ? ` · ${household.device_label}` : ""}
           </p>
           <p className="truncate text-lg font-semibold">{household?.name ?? "Browser phone"}</p>
         </div>
@@ -595,11 +642,11 @@ export default function PhoneClient() {
             {!unlocked ? (
               <button
                 type="button"
-                onClick={unlockNow}
+                onClick={enableSound}
                 className="w-full max-w-md rounded-2xl bg-emerald-500 px-6 py-6 text-xl font-semibold text-emerald-950 shadow-lg shadow-emerald-500/20 active:scale-[0.98]"
               >
                 Tap to enable sound
-                <span className="mt-1 block text-sm font-normal">Then leave this page open. It will ring.</span>
+                <span className="mt-1 block text-sm font-normal">Plays a test ring. Then leave this page open. It will ring.</span>
               </button>
             ) : (
               <div className="flex flex-col items-center gap-3">
@@ -611,9 +658,35 @@ export default function PhoneClient() {
                 <p className="max-w-xs text-sm text-slate-400">Keep this page open and the volume up. It rings here.</p>
               </div>
             )}
-            <button type="button" onClick={soundCheck} className="rounded-xl bg-slate-800 px-5 py-3 text-sm font-medium active:bg-slate-700">
-              Sound check ({langInfo.native})
-            </button>
+            {unlocked && !soundConfirmed ? (
+              <div className="w-full max-w-md rounded-2xl bg-amber-500/10 p-4 text-left ring-1 ring-amber-500/40">
+                <p className="font-semibold text-amber-100">{canSpeak ? "Did you hear a ring, then a voice?" : "Did you hear a ring?"}</p>
+                <p className="mt-1 text-sm text-amber-100/90">
+                  If not, turn off Silent mode (on an iPhone, the switch on the side), turn the volume all the way up,
+                  and play it again. A phone on Silent shows the call but makes no sound.
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => confirmSound()}
+                    className="min-h-12 flex-1 rounded-xl bg-emerald-500 px-3 text-sm font-semibold text-emerald-950 active:scale-[0.98]"
+                  >
+                    Yes, I heard it
+                  </button>
+                  <button
+                    type="button"
+                    onClick={soundCheck}
+                    className="min-h-12 flex-1 rounded-xl bg-slate-800 px-3 text-sm font-medium active:bg-slate-700"
+                  >
+                    Play it again
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" onClick={soundCheck} className="rounded-xl bg-slate-800 px-5 py-3 text-sm font-medium active:bg-slate-700">
+                Sound check ({langInfo.native})
+              </button>
+            )}
           </div>
         )}
 
@@ -632,6 +705,11 @@ export default function PhoneClient() {
               </span>
             </div>
             {!unlocked && <p className="text-sm text-amber-200">Sound is off until you tap. Answer turns it on.</p>}
+            {unlocked && !soundConfirmed && (
+              <div className="text-sm text-amber-200">
+                <Bi k="silentHint" lang={lang} />
+              </div>
+            )}
             <div className="grid w-full max-w-sm grid-cols-2 gap-6">
               <button
                 type="button"
@@ -715,6 +793,18 @@ export default function PhoneClient() {
 
             <div className="space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
               {textReason && <p className="text-center text-xs text-amber-200">{textReason}</p>}
+              {!soundConfirmed && soundOn && !textReason && (
+                <div className="flex items-center justify-center gap-3 text-xs text-amber-200">
+                  <Bi k="silentHint" lang={lang} className="text-center" />
+                  <button
+                    type="button"
+                    onClick={() => confirmSound()}
+                    className="min-h-10 shrink-0 rounded-lg bg-slate-800 px-3 font-medium text-slate-200 active:bg-slate-700"
+                  >
+                    I can hear it
+                  </button>
+                </div>
+              )}
               <p className="min-h-5 text-center text-sm text-slate-300" role="status" aria-live="polite">
                 {thinking
                   ? "Agent is thinking…"
@@ -794,7 +884,7 @@ export default function PhoneClient() {
                   type="button"
                   onClick={() => {
                     if (soundOn) stopSpeaking();
-                    setSoundOn((v) => !v);
+                    setMutedCallId(soundOn ? call.id : null);
                   }}
                   className="min-h-12 rounded-xl bg-slate-800 px-4 text-sm font-medium active:bg-slate-700"
                   aria-pressed={!soundOn}
@@ -809,7 +899,7 @@ export default function PhoneClient() {
                   {label("hangUp", lang)}
                 </button>
               </div>
-              {lastAgent && !speaking && soundOn && !textMode && (
+              {lastAgent && !speaking && !listening && soundOn && !textMode && (
                 <button
                   type="button"
                   onClick={() => void sayAloud(lastAgent, lang)}
@@ -846,7 +936,7 @@ export default function PhoneClient() {
 
       <footer className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-[11px] text-slate-500">
         <span>{netDown ? "● offline" : phone ? "● online" : "○ connecting"}</span>
-        <span>{unlocked ? "sound on" : "sound locked"}</span>
+        <span>{!unlocked ? "sound locked" : soundConfirmed ? "sound on" : "sound not checked"}</span>
         <span>{wakeLock ? "screen stays on" : "screen may sleep"}</span>
         {phone?.retell && <span>real-phone calls on</span>}
       </footer>

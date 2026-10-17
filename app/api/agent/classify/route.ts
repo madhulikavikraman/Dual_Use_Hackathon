@@ -4,8 +4,8 @@ import { body, handle, json } from "@/lib/http";
 
 const Body = z.object({
   transcript: z.string().min(1).max(20_000),
-  language: z.string().default("English"),
-  purpose: z.string().default("resident"),
+  language: z.string().max(40).default("English"),
+  purpose: z.enum(["resident", "inbound", "linked_contact", "qrt_callback", "sentinel", "canary", "test"]).default("resident"),
 });
 
 /** POST /api/agent/classify — the post-call intent classifier on its own (used by the gold-set runner). */

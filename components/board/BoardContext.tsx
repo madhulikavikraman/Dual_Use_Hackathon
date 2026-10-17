@@ -1,8 +1,8 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import type { BoardSnapshot, HouseholdView } from "@/lib/contracts";
-import type { Zone } from "@/lib/types";
+import type { Hold, Zone } from "@/lib/types";
 import { useToast } from "@/components/ui/Toast";
 
 export interface BoardContextValue {
@@ -13,21 +13,34 @@ export interface BoardContextValue {
   clockOffset: number;
   householdById: Map<string, HouseholdView>;
   zoneById: Map<string, Zone>;
+  /** Open holds, oldest first: a stable order between polls, whatever order storage returns them in. */
+  openHolds: Hold[];
+  /** The open hold on screen: the one picked in the hold strip, else the oldest. The map draws the same one. */
+  hold: Hold | null;
+  selectHold: (id: string) => void;
 }
 
+type Derived = "householdById" | "zoneById" | "openHolds" | "hold" | "selectHold";
+
 const BoardContext = createContext<BoardContextValue | null>(null);
+
+const byStart = (a: Hold, b: Hold) =>
+  a.started_at === b.started_at ? (a.id < b.id ? -1 : a.id > b.id ? 1 : 0) : a.started_at < b.started_at ? -1 : 1;
 
 export function BoardProvider({
   snap,
   refresh,
   clockOffset,
   children,
-}: Omit<BoardContextValue, "householdById" | "zoneById"> & { children: ReactNode }) {
+}: Omit<BoardContextValue, Derived> & { children: ReactNode }) {
   const householdById = useMemo(() => new Map(snap.households.map((h) => [h.id, h])), [snap.households]);
   const zoneById = useMemo(() => new Map(snap.zones.map((z) => [z.id, z])), [snap.zones]);
+  const openHolds = useMemo(() => snap.holds.filter((h) => h.status === "open").sort(byStart), [snap.holds]);
+  const [selectedHoldId, setSelectedHoldId] = useState<string | null>(null);
+  const hold = openHolds.find((h) => h.id === selectedHoldId) ?? openHolds[0] ?? null;
   const value = useMemo(
-    () => ({ snap, refresh, clockOffset, householdById, zoneById }),
-    [snap, refresh, clockOffset, householdById, zoneById],
+    () => ({ snap, refresh, clockOffset, householdById, zoneById, openHolds, hold, selectHold: setSelectedHoldId }),
+    [snap, refresh, clockOffset, householdById, zoneById, openHolds, hold],
   );
   return <BoardContext value={value}>{children}</BoardContext>;
 }

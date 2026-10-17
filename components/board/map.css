@@ -1,4 +1,4 @@
-/* Map marks for the Second Key board and QRT view. Leaflet builds this DOM outside React,
+/* Map marks for the VoiceFlare board and QRT view. Leaflet builds this DOM outside React,
    so these are plain classes, all prefixed sk-. */
 
 .sk-map {

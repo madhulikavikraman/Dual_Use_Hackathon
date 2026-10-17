@@ -1,4 +1,4 @@
--- Second Key, migration 002 (PRD section 15, decision D-18: additive).
+-- VoiceFlare, migration 002 (PRD section 15, decision D-18: additive).
 -- Run in the Supabase SQL editor AFTER supabase/schema.sql. Safe to re-run.
 -- Without Supabase the app uses a local file store and needs none of this.
 
@@ -116,8 +116,10 @@ create table if not exists holds (
   evac_point text, polygon jsonb, polygon_label text, population_est int, area_sq_mi double precision,
   started_at timestamptz, deadline timestamptz, extended_once boolean default false,
   tally jsonb, sentinels jsonb, read text, decision text, decided_by text, reason text,
-  decided_at timestamptz, sent_at timestamptz, status text, opened_by text, open_reason text
+  decided_at timestamptz, sent_at timestamptz, status text, opened_by text, open_reason text,
+  handed_off_by text, handed_off_at timestamptz
 );
+alter table holds add column if not exists handed_off_by text, add column if not exists handed_off_at timestamptz;
 
 create table if not exists canaries (
   id uuid primary key, hold_id uuid, household_id uuid, call_id uuid, inside boolean, result text, flag text,
@@ -142,7 +144,7 @@ create table if not exists ledger (
 );
 
 create table if not exists meta (
-  id text primary key, scenario text, mode text, sim_preset text, verification_phrase text, callback_number text,
+  id text primary key, scenario text, mode text, jurisdiction text default 'US-CA', sim_preset text, verification_phrase text, callback_number text,
   cost_minutes double precision default 0, cost_usd double precision default 0, usgs_event jsonb,
   autopilot_devices boolean default false, wrong_polygon boolean default false, updated_at timestamptz default now()
 );
@@ -159,3 +161,5 @@ begin
     execute format('create policy "anon read" on %I for select using (true)', t);
   end loop;
 end $$;
+
+alter table meta add column if not exists jurisdiction text default 'US-CA';

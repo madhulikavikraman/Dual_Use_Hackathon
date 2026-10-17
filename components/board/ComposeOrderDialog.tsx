@@ -9,6 +9,7 @@ import { Field, inputClass } from "@/components/ui/Field";
 import { useAct, useBoard } from "./BoardContext";
 import { DecisionDialog } from "./DecisionDialog";
 import { useZoneTexts } from "./useZoneTexts";
+import { useZoneMoved, ZoneMovedNotice } from "./ZoneMoved";
 import { ZoneTextFields } from "./ZoneTextFields";
 
 type HoldState = "order" | "shelter_in_place";
@@ -23,7 +24,11 @@ export function ComposeOrderDialog({ zone, onClose }: { zone: Zone; onClose: () 
   const act = useAct();
   const mode = snap.meta.mode;
   const [state, setState] = useState<HoldState>("order");
-  const [polygon, setPolygon] = useState<PolygonChoice>(snap.meta.wrong_polygon ? "county" : "zone");
+  // Until the human picks a polygon, the radio follows the demo's live Wrong polygon switch and the body
+  // leaves `polygon` out, so the server applies the switch at the moment the hold opens.
+  const [picked, setPicked] = useState<PolygonChoice | null>(null);
+  const polygon: PolygonChoice = picked ?? (snap.meta.wrong_polygon ? "county" : "zone");
+  const { moved, acknowledge } = useZoneMoved(zone);
   const { texts, fromServer, edit } = useZoneTexts(zone, state, mode);
 
   async function confirm({ actor, reason }: Signed) {
@@ -38,7 +43,7 @@ export function ComposeOrderDialog({ zone, onClose }: { zone: Zone; onClose: () 
           evac_point: texts.evac_point.trim() || null,
           opened_by: actor,
           reason,
-          polygon,
+          ...(picked ? { polygon: picked } : {}),
         }),
       (hold) => `Hold opened: wakes about ${fmtPeople(hold.population_est)} people. Sentinels ringing at the edges.`,
     );
@@ -50,12 +55,13 @@ export function ComposeOrderDialog({ zone, onClose }: { zone: Zone; onClose: () 
       title={`Compose ${stateLabel(state, mode)}: ${zone.name}`}
       subtitle="Opens the hold. Nothing is sent until a human decides or the 90-second timer runs out."
       confirmLabel="Open the hold"
-      canSubmit={texts !== null && texts.directive_text.trim().length > 0}
+      canSubmit={!moved && texts !== null && texts.directive_text.trim().length > 0}
       reasonPlaceholder="Who asked for this, and why"
       reasonSuggestions={["Duty officer requests an Order", "Envelope reached the zone edge"]}
       onConfirm={confirm}
       onClose={onClose}
     >
+      {moved ? <ZoneMovedNotice name={zone.name} moved={moved} onAcknowledge={acknowledge} /> : null}
       <div className="grid grid-cols-2 gap-3">
         <Field label="Escalate to">
           <select className={inputClass} value={state} onChange={(e) => setState(e.target.value as HoldState)}>
@@ -66,7 +72,7 @@ export function ComposeOrderDialog({ zone, onClose }: { zone: Zone; onClose: () 
         <fieldset>
           <legend className="mb-1 block text-[13px] font-semibold text-slate-800">Alert polygon</legend>
           <label className="flex items-center gap-2 text-sm">
-            <input type="radio" name="polygon" checked={polygon === "zone"} onChange={() => setPolygon("zone")} className="accent-slate-900" />
+            <input type="radio" name="polygon" checked={polygon === "zone"} onChange={() => setPicked("zone")} className="accent-slate-900" />
             {zone.name}
             {zone.population_est ? (
               <span className="text-slate-500">
@@ -75,7 +81,7 @@ export function ComposeOrderDialog({ zone, onClose }: { zone: Zone; onClose: () 
             ) : null}
           </label>
           <label className="mt-1 flex items-center gap-2 text-sm">
-            <input type="radio" name="polygon" checked={polygon === "county"} onChange={() => setPolygon("county")} className="accent-red-700" />
+            <input type="radio" name="polygon" checked={polygon === "county"} onChange={() => setPicked("county")} className="accent-red-700" />
             Countywide polygon <span className="text-slate-500">(the January 9 mistake, for the demo)</span>
           </label>
         </fieldset>

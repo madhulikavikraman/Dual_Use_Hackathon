@@ -16,7 +16,7 @@ export interface FundingSource {
 
 export const FUNDING: { one_line: string; legs: FundingLeg[]; milestones_note: string; sources: FundingSource[] } = {
   one_line:
-    "Second Key launches on an NSF SBIR Phase I grant (up to $305,000, zero equity), sells to counties and cities that buy it with FEMA preparedness grants they already receive (UASI and EMPG), and reaches the defense customer through DoD SBIR topics and the Defense Innovation Unit.",
+    "VoiceFlare launches on an NSF SBIR Phase I grant (up to $305,000, zero equity), sells to counties and cities that buy it with FEMA preparedness grants they already receive (UASI and EMPG), and reaches the defense customer through DoD SBIR topics and the Defense Innovation Unit.",
   legs: [
     {
       leg: "Primary: launch",

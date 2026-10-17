@@ -1,4 +1,4 @@
-// Create (or update) the Retell side of Second Key: one Retell LLM with the shared prompt and the seven
+// Create (or update) the Retell side of VoiceFlare: one Retell LLM with the shared prompt and the seven
 // tools as custom functions, one voice agent per language (EN, ES, KO, ZH, HI, FR), and the public
 // number's agent binding and inbound webhook. Prints the RETELL_AGENT_ID_* lines to paste into .env.local.
 //

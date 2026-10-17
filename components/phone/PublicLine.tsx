@@ -45,7 +45,7 @@ export default function PublicLine() {
   return (
     <main className="flex min-h-dvh flex-1 flex-col bg-slate-950 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] text-slate-50">
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col">
-        <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Second Key</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-slate-400">VoiceFlare</p>
         <h1 className="mt-1 text-3xl font-semibold">Emergency information line</h1>
         <p className="mt-2 text-slate-300">
           Choose your language · Elija su idioma · 언어를 선택하세요 · 选择语言 · अपनी भाषा चुनें · Choisissez votre langue

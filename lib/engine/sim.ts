@@ -28,7 +28,7 @@ async function profileFor(call: Call, h: Household, meta: Meta): Promise<SimProf
   }
   if (call.purpose === "test") return h.sim_profile === "silent" ? "silent" : "canary_yes";
   if (call.purpose === "linked_contact") return "leaving";
-  if (call.purpose === "sentinel") return h.sim_profile ?? "silent";
+  if (call.purpose === "sentinel") return meta.sim_preset === "dark_zone" ? "silent" : h.sim_profile ?? "silent";
   if (meta.sim_preset === "tower_down" && inTowerBlock(h)) return "no_answer";
   if (meta.sim_preset === "mass_no_answer" && h.role === "resident" && hash(h.id) < 0.7) return "no_answer";
   if (call.purpose === "qrt_callback") return h.sim_profile === "needs_help_now" ? "needs_help_now" : "needs_help_leaving";
@@ -97,11 +97,17 @@ async function applyOutcome(call: Call, h: Household, plan: SimPlan, meta: Meta)
     }
     default: {
       const subject = call.subject_household_id ? await db().get("households", call.subject_household_id) : h;
-      const p = plan.profile;
+      // Autopilot plays the demo's device beats too: Phone 2 asks for an ETA in Stage 1 (a refusal in the
+      // ledger) and says "we can't leave" when the Order is relayed in Stage 3 (priority 1).
+      const cantLeave = h.has_device && plan.profile === "needs_help_leaving" && v.stage === "3";
+      const asksEta = h.has_device && plan.profile === "needs_help_leaving" && v.stage === "1";
+      const p: SimProfile = cantLeave ? "needs_help_now" : plan.profile;
       const agentAsk = call.purpose === "linked_contact"
         ? `${agentOpen} We're calling because ${v.subject_name} did not answer. Have you heard from them?`
         : `${agentOpen} ${v.directive_text} ${v.move_text} Are you leaving, staying, or already gone?`;
-      const said = call.purpose === "linked_contact" ? `Yes, ${v.subject_name} is leaving with me.` : line(h, p);
+      const said = call.purpose === "linked_contact" ? `Yes, ${v.subject_name} is leaving with me.`
+        : cantLeave ? "We can't leave. We have no car and my husband uses a wheelchair."
+        : line(h, p);
       await appendTranscript(call.id, [{ role: "agent", text: agentAsk }, { role: "person", text: said }]);
       const needs = subject?.afn_flags.length ? subject.afn_flags : ["no_car"];
       const base = { understood: null, destination: null, people: 1 + Math.floor(hash(call.id + "p") * 3), needs: [], device_battery_hours: null,
@@ -114,10 +120,17 @@ async function applyOutcome(call: Call, h: Household, plan: SimPlan, meta: Meta)
         await executeTool(call.id, "record_status", { ...base, status: "staying", refusal_reason: "wants to stay with the house" });
       } else if (p === "needs_help_leaving") {
         await executeTool(call.id, "record_status", { ...base, status: "needs_help_leaving", needs, can_leave: false, people: 2 });
+        if (asksEta) {
+          await appendTranscript(call.id, [
+            { role: "person", text: "How long until the fire gets here?" },
+            { role: "agent", text: "I can't answer that; a person will call you back." },
+          ]);
+          await executeTool(call.id, "request_human", { reason: "asked_unapproved", urgency: "soon", note: "asked how long until the fire arrives (an ETA)" });
+        }
       } else if (p === "needs_help_now") {
         await executeTool(call.id, "record_status", { ...base, status: "needs_help_now", needs, can_leave: false, people: 2 });
-        await executeTool(call.id, "request_human", { reason: "medical_emergency", urgency: "now", note: "trouble breathing" });
-        await appendTranscript(call.id, [{ role: "agent", text: "Hang up and call 911 now. A person from the response team is flagged." }]);
+        await executeTool(call.id, "request_human", { reason: "medical_emergency", urgency: "now", note: cantLeave ? "cannot leave: wheelchair, no car" : "trouble breathing" });
+        await appendTranscript(call.id, [{ role: "agent", text: `Hang up and call ${v.emergency_number || "911"} now. A person from the response team is flagged.` }]);
       } else {
         await executeTool(call.id, "record_status", { ...base, status: "unclear", can_leave: null, location_consent: null });
       }

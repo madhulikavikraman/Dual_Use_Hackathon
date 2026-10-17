@@ -93,6 +93,26 @@ interface Corroboration {
   quake: boolean;
 }
 
+/** One cluster found in this pass. `fresh`: a new burst (new id, or the last one lapsed), which raises a card. */
+interface Found {
+  cluster: Cluster;
+  types: string[];
+  corr: Corroboration;
+  fresh: boolean;
+}
+
+/**
+ * The previous row for a cluster id, unless its burst lapsed (nothing within two windows): a new burst in the same
+ * cell starts over (window, status, card) instead of inheriting "proposed" from a burst a human already decided on.
+ */
+function liveRow(prev: Map<string, Cluster>, id: string, now: number, windowMs: number): Cluster | undefined {
+  const p = prev.get(id);
+  return p && now - t(p.last_at) <= windowMs * 2 ? p : undefined;
+}
+
+/** A new burst keeps a human's dismissal (pass() re-applies it) and otherwise starts open. */
+const statusFrom = (live: Cluster | undefined): Cluster["status"] => live?.status ?? "open";
+
 interface PassCtx {
   now: number;
   meta: Meta;
@@ -158,8 +178,8 @@ function hexClusters(
   min: number,
   prev: Map<string, Cluster>,
   needsHelp: boolean,
-): { cluster: Cluster; types: string[]; corr: Corroboration }[] {
-  const out: { cluster: Cluster; types: string[]; corr: Corroboration }[] = [];
+): Found[] {
+  const out: Found[] = [];
   const byCell = new Map<string, Member[]>();
   for (const m of members) {
     const age = ctx.now - t(m.at);
@@ -173,9 +193,9 @@ function hexClusters(
     // A help cluster needs at least one person on the registry in the cell, not only hazard reports.
     if (needsHelp && !recent.some((m) => m.type === "help")) continue;
     const id = `${cell}:${kind}`;
-    const p = prev.get(id);
+    const p = liveRow(prev, id, ctx.now, windowMs);
     const windowStart = Math.min(...recent.map((m) => t(m.at)));
-    const since = p && ctx.now - t(p.last_at) <= windowMs * 2 ? Math.min(t(p.first_at), windowStart) : windowStart;
+    const since = p ? Math.min(t(p.first_at), windowStart) : windowStart;
     const inCell = members.filter((m) => m.cell === cell);
     const all = inCell.filter((m) => t(m.at) >= since && t(m.at) <= ctx.now + 60_000).sort((a, b) => t(a.at) - t(b.at));
     const prior = inCell.filter((m) => t(m.at) < since && t(m.at) >= since - PRIOR_MS).length;
@@ -187,6 +207,7 @@ function hexClusters(
     out.push({
       types,
       corr,
+      fresh: !p,
       cluster: {
         id,
         cell,
@@ -197,7 +218,7 @@ function hexClusters(
         score: round2(all.length / baseline),
         corroborated: corr.corroborated,
         sentinel_reads: corr.reads,
-        status: p?.status ?? "open",
+        status: statusFrom(p),
         center_lat: +c0.lat.toFixed(6),
         center_lng: +c0.lng.toFixed(6),
         member_ids: all.map((m) => m.id),
@@ -231,7 +252,7 @@ function silenceClusters(ctx: PassCtx, calls: Call[], hh: Map<string, Household>
   }
   silent.sort((a, b) => (a.h.id < b.h.id ? -1 : 1));
   const used = new Set<string>();
-  const out: { cluster: Cluster; types: string[]; corr: Corroboration }[] = [];
+  const out: Found[] = [];
   const recentlyCalled = new Set(calls.filter((c) => c.household_id && ctx.now - t(c.created_at) <= 15 * 60_000).map((c) => c.household_id!));
   for (const seed of silent) {
     if (used.has(seed.h.id)) continue;
@@ -254,9 +275,11 @@ function silenceClusters(ctx: PassCtx, calls: Call[], hh: Map<string, Household>
     }).length;
     const baseline = Math.max(1, round1(calledNear * 0.2)); // a typical no-answer rate of about one in five
     const times = group.map((x) => x.at).sort();
+    const live = liveRow(prev, id, ctx.now, SILENCE_WINDOW_MS);
     out.push({
       types: [],
       corr: { corroborated: false, reads: 0, by: [], quake: false },
+      fresh: !live,
       cluster: {
         id,
         cell,
@@ -267,7 +290,7 @@ function silenceClusters(ctx: PassCtx, calls: Call[], hh: Map<string, Household>
         score: round2(group.length / baseline),
         corroborated: false,
         sentinel_reads: 0,
-        status: prev.get(id)?.status ?? "open",
+        status: statusFrom(live),
         center_lat: +lat.toFixed(6),
         center_lng: +lng.toFixed(6),
         member_ids: ids,
@@ -281,7 +304,7 @@ function silenceClusters(ctx: PassCtx, calls: Call[], hh: Map<string, Household>
 
 /** Volume clusters: a zone at >= 3x its seeded inbound baseline in the last 15 minutes. */
 function volumeClusters(ctx: PassCtx, reports: Report[], reportZone: Map<string, string | null>, calls: Call[], prev: Map<string, Cluster>) {
-  const out: { cluster: Cluster; types: string[]; corr: Corroboration }[] = [];
+  const out: Found[] = [];
   const inbound = calls.filter((c) => c.purpose === "inbound" && ctx.now - t(c.created_at) <= VOLUME_WINDOW_MS);
   const inboundIds = new Set(calls.filter((c) => c.purpose === "inbound").map((c) => c.id));
   for (const zone of ctx.zones) {
@@ -301,9 +324,11 @@ function volumeClusters(ctx: PassCtx, reports: Report[], reportZone: Map<string,
     const times = [...reps.map((r) => r.created_at), ...zoneCalls.map((c) => c.created_at)].sort();
     const types = reps.map((r) => r.type as string);
     const corr = corroborate(ctx, zone.id, [lng, lat], types);
+    const live = liveRow(prev, id, ctx.now, VOLUME_WINDOW_MS);
     out.push({
       types,
       corr,
+      fresh: !live,
       cluster: {
         id,
         cell: `zone:${zone.id}`,
@@ -314,7 +339,7 @@ function volumeClusters(ctx: PassCtx, reports: Report[], reportZone: Map<string,
         score: round2(count / baseline),
         corroborated: corr.corroborated,
         sentinel_reads: corr.reads,
-        status: prev.get(id)?.status ?? "open",
+        status: statusFrom(live),
         center_lat: +lat.toFixed(6),
         center_lng: +lng.toFixed(6),
         member_ids: [...reps.map((r) => r.id), ...zoneCalls.map((c) => c.id)],
@@ -355,7 +380,7 @@ function clusterCard(c: Cluster, zoneName: string, types: string[], corr: Corrob
       title: corr.corroborated
         ? `Call volume in ${zoneName}: ${c.count} inbound in 15 min (${c.score}× baseline), corroborated`
         : `Not confirmed: reports ${c.count}, sentinel reads ${c.sentinel_reads} (${zoneName} call volume ${c.score}× baseline)`,
-      detail: `${confirm} Seeded baseline ${c.baseline} inbound per 15 min.${what ? ` Reports: ${what}.` : ""} The hoax mirror: volume triggers Ask, never Send.`,
+      detail: `${confirm} Seeded baseline ${c.baseline} inbound per 15 min.${what ? ` Reports: ${what}.` : ""} The hoax mirror: call volume never sends. Pattern watch rings no one; to ask the edge, a human opens a hold and this zone's sentinels ring.`,
     };
   }
   if (c.kind === "help") {
@@ -374,7 +399,7 @@ function clusterCard(c: Cluster, zoneName: string, types: string[], corr: Corrob
     : {
         kind: "cluster", severity: "warn", zone_id: c.zone_id, geo,
         title: `Not confirmed: reports ${c.count}, sentinel reads ${c.sentinel_reads} (${zoneName})`,
-        detail: `${c.count} reports (${what}) in one hex cell within 5 minutes and no sentinel has confirmed. The hoax mirror: a cluster triggers Ask, never Send.`,
+        detail: `${c.count} reports (${what}) in one hex cell within 5 minutes and no sentinel has confirmed. The hoax mirror: a cluster never sends. Pattern watch rings no one; to ask the edge, a human opens a hold and this zone's sentinels ring.`,
       };
 }
 
@@ -406,16 +431,17 @@ function envelopeFor(clusters: Cluster[]): GeoJSON.Polygon | null {
   return { type: "Polygon", coordinates: [hull(pts)] };
 }
 
-/** Proposals for corroborated hazard clusters, one per zone; marks covered clusters "proposed". Returns rows written. */
-async function propose(
-  ctx: PassCtx,
-  found: { cluster: Cluster; types: string[]; corr: Corroboration }[],
-  proposals: Proposal[],
-): Promise<number> {
-  const byZone = new Map<string, typeof found>();
+/**
+ * Proposals for corroborated hazard clusters, one per zone. A cluster is "proposed" while an open proposal covers it.
+ * Within the cooldown after a human rejected the same zone and state it stays "open" and nothing is proposed; if the
+ * burst is still going when the cooldown ends, it proposes again. Returns rows written.
+ */
+async function propose(ctx: PassCtx, found: Found[], proposals: Proposal[]): Promise<number> {
+  const byZone = new Map<string, Found[]>();
   for (const f of found) {
     const c = f.cluster;
-    if (c.kind !== "hazard" || !c.corroborated || c.status !== "open" || !c.zone_id) continue;
+    // "proposed" clusters are re-checked too: their proposal may have been rejected since.
+    if (c.kind !== "hazard" || !c.corroborated || c.status === "dismissed" || !c.zone_id) continue;
     const list = byZone.get(c.zone_id) ?? [];
     list.push(f);
     byZone.set(c.zone_id, list);
@@ -430,8 +456,15 @@ async function propose(
     const same = (p: Proposal) => p.zone_id === zoneId && p.proposed_state === state;
     const open = proposals.find((p) => same(p) && p.status === "open");
     const rejected = proposals.find((p) => same(p) && p.status === "rejected" && ctx.now - t(p.decided_at) <= REJECT_COOLDOWN_MS);
+    if (open) {
+      for (const f of list) f.cluster.status = "proposed";
+      continue;
+    }
+    if (rejected) {
+      for (const f of list) f.cluster.status = "open"; // not covered by any proposal: a human said no, for now
+      continue;
+    }
     for (const f of list) f.cluster.status = "proposed";
-    if (open || rejected) continue;
 
     const clusters = list.map((f) => f.cluster);
     const total = clusters.reduce((s, c) => s + c.count, 0);
@@ -522,10 +555,11 @@ async function pass(): Promise<number> {
   for (const f of changed) {
     const p = prev.get(f.cluster.id);
     const zoneName = f.cluster.zone_id ? zoneById.get(f.cluster.zone_id)?.name ?? f.cluster.zone_id : "outside the zones";
-    if (!p) {
+    if (f.fresh) {
+      // A new id, or a new burst in a cell whose last burst lapsed: the desk gets a card either way.
       await feed(clusterCard(f.cluster, zoneName, f.types, f.corr));
       changes++;
-    } else if (!p.corroborated && f.cluster.corroborated && f.cluster.kind !== "silence") {
+    } else if (p && !p.corroborated && f.cluster.corroborated && f.cluster.kind !== "silence") {
       await feed({
         kind: "cluster", severity: "warn", zone_id: f.cluster.zone_id, geo: { type: "Point", coordinates: [f.cluster.center_lng, f.cluster.center_lat] },
         title: `Cluster now corroborated in ${zoneName}: ${f.cluster.count} reports`,
@@ -653,7 +687,7 @@ export async function seedHoaxFlood(): Promise<void> {
     geo: { type: "Point", coordinates: anchors[0].at },
     title: `Hoax flood drill (simulated): ${rows.length} inbound reports of smoke in ${zone.name}`,
     detail:
-      "Synthetic inbound reports in 5 minutes, with no sentinel confirmation. Watch the hoax mirror: reports high, sentinel reads zero. Clusters trigger Ask, never Send.",
+      "Synthetic inbound reports in 5 minutes, with no sentinel confirmation. Watch the hoax mirror: reports high, sentinel reads zero. A cluster never sends; asking the edge is a human's hold.",
   });
   await runPatternWatchNow();
 }

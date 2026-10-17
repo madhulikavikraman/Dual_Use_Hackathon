@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Second Key", template: "%s · Second Key" },
+  title: { default: "VoiceFlare", template: "%s · VoiceFlare" },
   description:
-    "Before an automated system wakes a zone, Second Key asks the people at its edge, shows how many phones it will wake, and relays only what a named human approved. Hackathon demo: synthetic residents, simulated sends.",
+    "Before an automated system wakes a zone, VoiceFlare asks the people at its edge, shows how many phones it will wake, and relays only what a named human approved. Hackathon demo: synthetic residents, simulated sends.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

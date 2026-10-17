@@ -7,7 +7,7 @@ import { getMeta, ledger } from "./log";
 // Adopt a live National Weather Service alert polygon as a zone (PRD backlog 8). The zone starts at Monitor
 // with no directive: adopting a polygon is not approving an instruction; a named human still does that.
 
-const UA = "SecondKey-hackathon-demo (github.com/madhulikavikraman/Dual_Use_Hackathon)";
+const UA = "VoiceFlare-hackathon-demo (github.com/madhulikavikraman/Dual_Use_Hackathon)";
 
 export interface NwsAlert {
   id: string;
@@ -47,6 +47,13 @@ export async function adoptNws(alertId: string, actor: string): Promise<Zone> {
   if (!alert) throw new Error("That NWS alert is no longer active or has no polygon");
   const meta = await getMeta();
   const id = `NWS-${alertId.split(".").slice(-3).join("").slice(-8).toUpperCase()}`;
+  const existing = await db().get("zones", id);
+  if (existing) {
+    // Re-adopting refreshes the polygon only; the zone's approved state and texts stay as a human left them.
+    const next = (await db().update("zones", id, { geom: alert.geom, area_sq_mi: +areaSqMi(alert.geom).toFixed(2), updated_at: nowIso(), version: existing.version + 1 }))!;
+    await ledger({ actor, action: "refresh NWS polygon (state and texts unchanged)", target: existing.name, reason: alert.headline ?? alert.id });
+    return next;
+  }
   const zone: Zone = {
     id, name: `${alert.event}: ${alert.area}`.slice(0, 80), scenario: meta.scenario, geom: alert.geom, state: "monitor",
     directive_text: null, move_text: null, evac_point: null, evac_point_lat: null, evac_point_lng: null,

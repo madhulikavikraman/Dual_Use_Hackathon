@@ -15,11 +15,11 @@ export default function Home() {
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-8 p-6">
       <div>
         <div className="flex items-center gap-3">
-          <h1 className="text-4xl font-black tracking-tight">Second Key</h1>
+          <h1 className="text-4xl font-black tracking-tight">VoiceFlare</h1>
           <span className="rounded bg-amber-400 px-2 py-0.5 text-xs font-black tracking-widest text-slate-950">SIMULATED</span>
         </div>
         <p className="mt-3 text-lg leading-relaxed">
-          Before an automated system wakes a zone, Second Key asks the people at its edge, shows how many phones it will wake, and relays
+          Before an automated system wakes a zone, VoiceFlare asks the people at its edge, shows how many phones it will wake, and relays
           only the instruction a named human approved.
         </p>
       </div>

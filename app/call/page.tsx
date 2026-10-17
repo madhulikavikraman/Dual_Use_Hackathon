@@ -4,8 +4,8 @@ import PublicLine from "@/components/phone/PublicLine";
 // /call — the public line in the browser (the same agent as the phone number, for any language).
 
 export const metadata: Metadata = {
-  title: "Emergency information line · Second Key",
-  description: "Call the Second Key demo line from the browser in eight languages.",
+  title: "Emergency information line · VoiceFlare",
+  description: "Call the VoiceFlare demo line from the browser in eight languages.",
 };
 
 export const viewport: Viewport = {

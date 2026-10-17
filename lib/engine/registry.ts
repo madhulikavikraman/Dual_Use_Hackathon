@@ -32,7 +32,9 @@ export async function recordFix(householdId: string | null, helpId: string | nul
 
 /** Fallback fix when nothing was stated: the enrolled address, else the zone centroid (low precision). */
 export function enrolledFix(h: Household | null, zone: Zone | null): Fix | null {
-  if (h) return { lat: h.lat, lng: h.lng, accuracy_m: 30, source: "enrolled", stated_text: null, consent: true };
+  // The enrolled address is for the response team only; nobody consented to publishing it, so consent is false
+  // (public feeds then show the hex-cell centre). Public-line callers have no enrolled address at all.
+  if (h && h.device_label !== "Public line") return { lat: h.lat, lng: h.lng, accuracy_m: 30, source: "enrolled", stated_text: null, consent: false };
   if (zone) {
     const [lng, lat] = centroidOf(zone.geom);
     return { lat, lng, accuracy_m: 1500, source: "centroid", stated_text: null, consent: false };
@@ -75,6 +77,8 @@ export async function upsertHelp(input: {
       reason: input.priority <= existing.priority ? input.reason : existing.reason,
       updated_at: now,
     };
+    // A new need from someone already marked reached (or unreachable) puts the row back on the open list.
+    if ((existing.status === "reached" || existing.status === "unreachable") && input.priority <= existing.priority) patch.status = "open";
     if (fix && better(existing, fix)) {
       Object.assign(patch, {
         last_lat: fix.lat, last_lng: fix.lng, last_accuracy_m: fix.accuracy_m, last_source: fix.source,
@@ -126,7 +130,7 @@ async function announce(row: HelpRequest) {
   await feed({
     kind: "needs_help", severity: "critical", zone_id: row.zone_id,
     title: `Life safety: ${row.name ?? "caller"} (${row.people ?? "?"} people)`,
-    detail: `${row.reason}. Told to hang up and call 911. Last seen: ${row.last_stated_text ?? row.last_source}.`,
+    detail: `${row.reason}. Told to hang up and call the emergency number. Last seen: ${row.last_stated_text ?? row.last_source}.`,
   });
 }
 

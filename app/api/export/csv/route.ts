@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
     return new Response(csv, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="second-key-${kind}-${stamp}.csv"`,
+        "Content-Disposition": `attachment; filename="voiceflare-${kind}-${stamp}.csv"`,
         "Cache-Control": "no-store",
       },
     });

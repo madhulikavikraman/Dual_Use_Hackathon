@@ -152,10 +152,12 @@ export default function DeviceSheet() {
     <main className="mx-auto w-full max-w-6xl flex-1 p-4 text-slate-900 sm:p-6 print:p-0">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-medium uppercase tracking-wider text-slate-500">Second Key · device sheet</p>
+          <p className="text-sm font-medium uppercase tracking-wider text-slate-500">VoiceFlare · device sheet</p>
           <h1 className="text-2xl font-semibold sm:text-3xl">Volunteer phones</h1>
           <p className="mt-1 text-slate-600">
-            Scan a code with the volunteer&apos;s phone, tap <em>Tap to enable sound</em>, and leave the page open.
+            Scan a code with the volunteer&apos;s phone and tap <em>Tap to enable sound</em>: it plays a test ring and
+            voice. No sound? Turn off Silent mode (the switch on the side of an iPhone) and turn the volume up. Then
+            leave the page open.
             {board && (
               <>
                 {" "}
@@ -178,6 +180,13 @@ export default function DeviceSheet() {
       {error && (
         <p className="mt-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-800 ring-1 ring-red-200 print:hidden">
           Board unreachable ({error}). Retrying…
+        </p>
+      )}
+      {board?.meta.autopilot_devices && (
+        <p className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-200 print:hidden">
+          <strong>Autopilot is on:</strong> the simulator answers for these phones, so their pages will not ring. Turn
+          off <em>Autopilot devices</em> on <Link href="/demo" className="font-medium underline underline-offset-2">/demo</Link>{" "}
+          before the volunteers&apos; run.
         </p>
       )}
       {isLocal && (
@@ -298,7 +307,10 @@ export default function DeviceSheet() {
       <section className="mt-8 grid gap-6 lg:grid-cols-2 print:hidden">
         <div className="min-w-0 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
           <h2 className="font-semibold">Open any household&apos;s phone (testing)</h2>
-          <p className="mt-1 text-sm text-slate-600">Synthetic households normally answer through the simulator; this opens their browser phone.</p>
+          <p className="mt-1 text-sm text-slate-600">
+            Only device households and public-line callers ring in the browser. The simulator answers every call to a
+            synthetic household, so its page only waits.
+          </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <select
               value={pick}
@@ -311,6 +323,7 @@ export default function DeviceSheet() {
                 <option key={h.id} value={h.id}>
                   {h.has_device ? `${h.device_label} · ` : ""}
                   {h.name} · {h.language} · {h.zone_id ?? "no zone"}
+                  {h.synthetic ? " · simulator answers" : ""}
                 </option>
               ))}
             </select>

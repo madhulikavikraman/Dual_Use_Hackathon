@@ -1,4 +1,4 @@
-# Devpost draft: Second Key
+# Devpost draft: VoiceFlare
 
 Draft for the team to edit. Facts are from the PRD, the decisions log and the build; keep the numbers as they are
 unless the build changes.
@@ -17,7 +17,7 @@ the overnight supervisor of an emergency call line, with too few people and a su
 
 ## What it does
 
-Second Key is the gentlest response that still works, on a ladder: watch, ask, slow, hold, hand to a person.
+VoiceFlare is the gentlest response that still works, on a ladder: watch, ask, slow, hold, hand to a person.
 
 - **Zones with a human key.** A map of Los Angeles zones on California's standard evacuation ladder (Warning,
   Order, Shelter in Place, Lifted). A toy fire-spread model and a call-pattern watcher *propose* changes; only a
@@ -27,7 +27,7 @@ Second Key is the gentlest response that still works, on a ladder: watch, ask, s
   inward, in their language (English, Spanish, Korean, Mandarin, Hindi, French, Armenian, Tagalog). It reads only
   the approved text, confirms every answer back, asks a teach-back question, and records answers through seven
   tools — it has no tool to change a zone, send an alert or give an ETA.
-- **The hold.** Before an Order is broadcast, Second Key holds for 90 seconds, shows the dose ("wakes about
+- **The hold.** Before an Order is broadcast, VoiceFlare holds for 90 seconds, shows the dose ("wakes about
   41,000 people", or "9.8 million" for a wrong polygon), and rings sentinels at the polygon's edges: "does this
   match what you see?" The supervisor can Send, Hold once, Edit the polygon, Cancel or Hand to the authority. At
   0:00 it sends on time: the machine can delay an alert, never stop one.
@@ -96,5 +96,26 @@ and last location, is visible only to the response team, and is purged 72 hours 
 
 - **Twist 1 (federal funding pathway):** primary NSF SBIR Phase I; alternatives FEMA UASI/EMPG (customer money) and
   DoD SBIR/DIU (installations). Build change: the `/evidence` page measures the Phase I milestones live from the run.
-- **Twist 2:** (fill in)
+- **Twist 2 (make it global; "how can firefighters in China implement it?"):** the product does not change; six
+  adapters do. The six things that stay everywhere:
+  - a named human approves every directive;
+  - the edge is asked first;
+  - the dose shows before the send, and the hold sends on time;
+  - the agent reads only approved text, with an AI-voice disclosure;
+  - a canary checks delivery;
+  - every decision goes in the ledger.
+
+  What changes per country is the ladder words, the decider, the emergency number, the public channel and dose source,
+  the voice platform and AI model, and privacy and maps. The Chongqing scenario (Beibei, on the August 2022 fire's
+  ground) runs that way:
+  - China's colour warnings are hazard levels, and only a relocation order (转移指令) moves people; a red warning is
+    never auto-promoted;
+  - calls say 119;
+  - the dose counts 12379 and carrier SMS audiences;
+  - the sentinels are the grid workers China already asks to acknowledge (叫应);
+  - an in-country, CAC-filed model sits behind the same seven tools, because Claude is not offered in mainland China;
+  - PIPL consent and GCJ-02 maps.
+
+  Japan (Ōfunato 2025), Greece (Rhodes 2023), India (Cyclone Dana 2024) and Australia (Black Summer) are profiled too.
+  Proof: a live Mandarin call reads the Chinese directive word for word and files a "needs help leaving" row.
 - **Twist 3:** (fill in)

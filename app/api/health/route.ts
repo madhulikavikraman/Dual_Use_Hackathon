@@ -40,5 +40,5 @@ export async function GET() {
   }
 
   const ok = Object.values(checks).every((c) => c.ok);
-  return Response.json({ ok, service: "second-key", time: new Date().toISOString(), checks }, { status: ok ? 200 : 503 });
+  return Response.json({ ok, service: "voiceflare", time: new Date().toISOString(), checks }, { status: ok ? 200 : 503 });
 }

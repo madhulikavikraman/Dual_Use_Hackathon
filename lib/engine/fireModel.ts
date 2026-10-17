@@ -31,11 +31,12 @@ export interface FireRun {
 }
 
 const NWS_POINT = "https://api.weather.gov/points/34.02,-118.49";
-const USER_AGENT = "SecondKey-hackathon-demo (github.com/madhulikavikraman/Dual_Use_Hackathon)";
+const USER_AGENT = "VoiceFlare-hackathon-demo (github.com/madhulikavikraman/Dual_Use_Hackathon)";
 const PERIMETER_CENTER: [number, number] = [-118.492, 34.036]; // northern Santa Monica (seeded, demo choice)
 const HALF_LEN_KM = 0.5;
 const HALF_WIDTH_KM = 0.3;
 const MODEL_ACTOR = "model (toy fire envelope)";
+const REJECT_COOLDOWN_MS = 30 * 60_000; // as pattern watch: do not re-propose what a human just rejected
 const HORIZONS: { hours: number; state: ZoneState; score: number }[] = [
   { hours: 1, state: "order", score: 0.85 },
   { hours: 3, state: "warning", score: 0.7 },
@@ -177,21 +178,25 @@ export function polygonsIntersect(a: GeoJSON.Polygon, b: GeoJSON.Polygon): boole
 interface FireState {
   center: [number, number];
   advanced_hours: number;
+  at: number; // when the run that recorded it happened (ms)
 }
 
-function stateFromGeo(geo: unknown): FireState | null {
+function stateFromGeo(geo: unknown, at: string): FireState | null {
   const fc = geo as GeoJSON.FeatureCollection | null;
   const props = fc?.type === "FeatureCollection" ? fc.features?.[0]?.properties : null;
   if (!props || props.model !== "fire_envelope" || props.layer !== "perimeter") return null;
   const c = props.center as unknown;
   if (!Array.isArray(c) || c.length !== 2 || !c.every((x) => typeof x === "number")) return null;
-  return { center: [c[0], c[1]], advanced_hours: Number(props.advanced_hours) || 0 };
+  return { center: [c[0], c[1]], advanced_hours: Number(props.advanced_hours) || 0, at: Date.parse(at) || 0 };
 }
 
-async function lastState(): Promise<FireState | null> {
+/** Every recorded run's perimeter, newest first (the first one is where the perimeter is now). */
+async function stateHistory(): Promise<FireState[]> {
   const cards: AlertItem[] = await db().where("alerts_feed", { kind: "info" });
-  const mine = cards.filter((c) => stateFromGeo(c.geo)).sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0];
-  return mine ? stateFromGeo(mine.geo) : null;
+  return cards
+    .map((c) => stateFromGeo(c.geo, c.created_at))
+    .filter((s): s is FireState => s !== null)
+    .sort((a, b) => b.at - a.at);
 }
 
 // ---------- the model ----------
@@ -206,7 +211,10 @@ export async function runFireModel(opts: { advanceHours?: number; wind?: "live" 
     });
     return [];
   }
-  const [zones, proposals, prev] = await Promise.all([db().all("zones"), db().all("proposals"), lastState()]);
+  const [zones, proposals, history] = await Promise.all([db().all("zones"), db().all("proposals"), stateHistory()]);
+  const prev = history[0] ?? null;
+  /** How far the perimeter had advanced by `at` (the last run recorded before it; 0 before any run). */
+  const advancedBy = (at: number) => history.find((s) => s.at <= at)?.advanced_hours ?? 0;
   const wind = await getWind(opts.wind ?? "live");
   const bearing = (wind.from_deg + 180) % 360; // the fire runs downwind
   const adv = Math.max(0, Math.min(24, Number(opts.advanceHours) || 0));
@@ -228,6 +236,18 @@ export async function runFireModel(opts: { advanceHours?: number; wind?: "live" 
     }
     if (proposals.some((p) => p.zone_id === zone.id && p.proposed_state === hit.state && p.status === "open")) {
       considered.push({ ...base, outcome: "same proposal already open" });
+      continue;
+    }
+    // A human rejected this zone and state recently: propose it again only once the perimeter has moved since.
+    const now = Date.now();
+    const rejected = proposals
+      .filter((p) => p.zone_id === zone.id && p.proposed_state === hit.state && p.status === "rejected" && p.decided_at)
+      .map((p) => Date.parse(p.decided_at!))
+      .filter((at) => Number.isFinite(at) && now - at <= REJECT_COOLDOWN_MS)
+      .sort((a, b) => b - a)[0];
+    if (rejected !== undefined && advanced <= advancedBy(rejected)) {
+      const mins = Math.max(0, Math.round((now - rejected) / 60_000));
+      considered.push({ ...base, outcome: `rejected ${mins < 1 ? "just now" : `${mins} min ago`}; the perimeter has not advanced since` });
       continue;
     }
     const reason =

@@ -30,7 +30,9 @@ export async function phoneState(householdId: string): Promise<PhoneState> {
   await db().update("households", h.id, { presence_at: nowIso() });
   const calls = (await db().where("calls", { household_id: h.id })).sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
   // Only browser-transport calls ring this page; a Retell call rings the real phone instead.
-  const live = calls.find((c) => (c.state === "ringing" || c.state === "active") && c.transport === "browser");
+  const live =
+    calls.find((c) => c.state === "active" && c.transport === "browser") ??
+    calls.find((c) => c.state === "ringing" && c.transport === "browser");
   const recent = calls.find((c) => c.ended_at && Date.now() - Date.parse(c.ended_at) < RECENT_END_MS && c.transport === "browser");
   const call = live ?? recent ?? null;
   return {

@@ -4,6 +4,7 @@ import type { Intent, Need, PrimaryIntent } from "@/lib/types";
 import { NEEDS, PRIMARY_INTENTS } from "@/lib/types";
 import { answerCall, endCall, failCall } from "./calls";
 import { getMeta, setMeta } from "./log";
+import { upsertHelp } from "./registry";
 
 // Engine handlers for Retell webhook events. The Retell webhook route verifies the signature, finds our
 // call id (metadata.call_id, or by retell_call_id) and calls these.
@@ -77,6 +78,13 @@ export async function onRetellCallAnalyzed(callId: string, info: RetellAnalyzedI
       created_at: nowIso(),
     };
     await db().insert("intents", row);
+    // "Needs help now" from any layer surfaces at once, whatever the confidence (PRD 10).
+    const subjectId = call.subject_household_id ?? call.household_id;
+    const subject = subjectId ? await db().get("households", subjectId) : null;
+    if (primary === "needs_help_now" && subject) {
+      await upsertHelp({ household: subject, zone_id: subject.zone_id ?? (call.vars.zone_id || null), priority: 1, needs,
+        people: row.people, reason: "Retell post-call analysis: possible life safety", source: "stage1" });
+    }
   }
   // The Claude post-call pass runs when the call ends (endCall); nothing else to do here.
 }

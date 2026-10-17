@@ -39,6 +39,8 @@ const serverSchema = z.object({
   DEVICE_PHONE_6: optionalString,
   // Feeds and integrations.
   FEED_TOKEN: z.preprocess(blankToUndefined, z.string().default("demo")),
+  /** When set, proxy.ts requires HTTP Basic auth (this password) for the desk pages and APIs. */
+  DESK_PASSWORD: optionalString,
   ARCGIS_API_KEY: optionalString,
   NASA_FIRMS_MAP_KEY: optionalString,
   SUPERVISOR_NAME: z.preprocess(blankToUndefined, z.string().default("Overnight supervisor")),

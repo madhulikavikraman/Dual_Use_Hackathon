@@ -3,6 +3,7 @@ import { db, nowIso, uid } from "@/lib/db";
 import { TABLES } from "@/lib/db/tables";
 import { serverEnv } from "@/lib/env";
 import { STATE_LABEL } from "@/lib/directives";
+import { jurisdictionForScenario } from "@/lib/jurisdictions";
 import { buildScenario, modeFor, SCENARIOS } from "@/lib/scenarios";
 import type { Scenario, TwistEntry, ZoneEvent } from "@/lib/types";
 import { defaultMeta, feed, ledger, setMeta } from "./log";
@@ -21,10 +22,28 @@ export const TWIST_ONE: Omit<TwistEntry, "id" | "created_at"> = {
   commits: ["f3b21f9", "4db9d76"],
 };
 
-export async function ensureTwistOne() {
-  const rows = await db().where("twist_log", { twist_no: 1 });
-  if (!rows.length) await db().insert("twist_log", { ...TWIST_ONE, id: uid(), created_at: nowIso() });
+export const TWIST_TWO: Omit<TwistEntry, "id" | "created_at"> = {
+  twist_no: 2,
+  title: "Make it global",
+  twist_text:
+    "Let's make it global. Your solution is good, see how it applies to a global application. How does the same solution hold up in another part of the world? For example, if you are solving for fire-fighters in Los Angeles, how can ones in China implement it?",
+  what_changed:
+    "Six invariants stay (a named human approves, the edge is asked first, the dose shows and the hold sends on time, verbatim relay with an AI-voice disclosure, a delivery canary, the ledger); six adapters change per country (ladder words, decider, emergency number, public channel and dose source, voice platform and AI model, privacy and maps). Build: jurisdiction profiles for Los Angeles, China, Japan, Greece, India and Australia; a Chongqing scenario on the August 2022 Beibei fire ground with China's ladder (colour warnings are hazard levels; only a relocation order moves people), 119 in every call, grid-worker sentinels and a named helper for an older man living alone; the emergency number became a call variable; WGS-84 to GCJ-02 conversion for Chinese basemaps; /global compares the adapters.",
+  why:
+    "Every country has its own words for 'leave now', its own emergency number and its own rules on AI and data; what must travel is the safety properties. In mainland China the in-call model is a CAC-filed domestic model behind the same seven tools, since Claude is not offered there.",
+  proof:
+    "Reset to Chongqing and approve a Warning for Tiansheng: calls carry the Chinese directive and 119. scripts/agent-check-cn.ts: a live Mandarin call opens with the AI disclosure, reads the directive, route and shelter verbatim, confirms 'wheelchair, no car' back and files a P2 help row. PRD 17.2; decisions D-37 to D-41.",
+  commits: [],
+};
+
+/** Twists are part of the record; reset never deletes them, and missing ones are re-filed. */
+export async function ensureTwists() {
+  for (const t of [TWIST_ONE, TWIST_TWO]) {
+    const rows = await db().where("twist_log", { twist_no: t.twist_no });
+    if (!rows.length) await db().insert("twist_log", { ...t, id: uid(), created_at: nowIso() });
+  }
 }
+export const ensureTwistOne = ensureTwists;
 
 /** Wipe the run (not the twist log) and load a scenario. */
 export async function resetScenario(scenario: Scenario) {
@@ -39,7 +58,7 @@ export async function resetScenario(scenario: Scenario) {
   await db().insert("zones", build.zones);
   await db().insert("households", build.households);
   if (build.proposals.length) await db().insert("proposals", build.proposals);
-  await setMeta({ ...defaultMeta(), scenario, mode: modeFor(scenario) });
+  await setMeta({ ...defaultMeta(), scenario, mode: modeFor(scenario), jurisdiction: jurisdictionForScenario(scenario) });
 
   const events: ZoneEvent[] = build.zones
     .filter((z) => z.approved_by)
@@ -59,7 +78,7 @@ export async function resetScenario(scenario: Scenario) {
     await feed({ kind: "proposal", severity: "warn", zone_id: p.zone_id, title: `Model proposes ${STATE_LABEL[p.proposed_state]} for ${zone.name}`,
       detail: `${p.reason} Needs a human.` });
   }
-  await ensureTwistOne();
+  await ensureTwists();
   return {
     scenario,
     zones: build.zones.length,

@@ -67,7 +67,7 @@ const DECISIONS: Record<
     button: "Hand to authority",
     title: "Hand to the alert authority",
     confirm: "Hand off",
-    toast: "Handed to the duty officer with the evidence.",
+    toast: "Handed to the duty officer with the evidence. It still sends at 0:00 unless they decide first.",
     suggestions: ["Dark zone: probably the network", "Reads disputed: the duty officer decides"],
     describe: () =>
       "Hands the decision to the duty officer with the evidence: zone, read, dose and clock. If nobody decides, it still sends at 0:00.",
@@ -187,6 +187,12 @@ function OpenHold({ hold, others, onSelect }: { hold: Hold; others: Hold[]; onSe
           {read.label}
         </Chip>
       </header>
+      {hold.handed_off_by ? (
+        // A hand-off escalates, it never stops the alert: the hold stays open and every button still works.
+        <p role="status" className="mx-3 mt-2 shrink-0 rounded-md bg-amber-100 px-2 py-1 text-[13px] font-semibold leading-snug text-amber-950 ring-1 ring-inset ring-amber-300">
+          Handed to the duty officer by {hold.handed_off_by} at {fmtTime(hold.handed_off_at)} — still sends at 0:00
+        </p>
+      ) : null}
       {others.length > 1 ? (
         <div className="flex shrink-0 gap-1 px-3 pt-2">
           {others.map((o) => (
@@ -298,6 +304,11 @@ function ClosedHold({ hold, onDismiss }: { hold: Hold; onDismiss: () => void }) 
             {hold.tally.silent} silent
           </p>
         ) : null}
+        {hold.handed_off_by ? (
+          <p className="text-[13px] text-slate-700">
+            Handed to the duty officer by {hold.handed_off_by} at {fmtTime(hold.handed_off_at)}.
+          </p>
+        ) : null}
         {sent && !canaries.length ? <p className="text-sm text-slate-500">Canary: rings outside the polygon about 15 s after the send…</p> : null}
         {canaries.map((c) => {
           const h = householdById.get(c.household_id);
@@ -335,14 +346,10 @@ function ClosedHold({ hold, onDismiss }: { hold: Hold; onDismiss: () => void }) 
 
 /** Top of the right column: the open hold, or the outcome of the last one until dismissed. */
 export function HoldStrip() {
-  const { snap } = useBoard();
-  const [selected, setSelected] = useState<string | null>(null);
+  // The selected open hold lives in the board context, so the map draws the hold these buttons act on.
+  const { snap, openHolds, hold, selectHold } = useBoard();
   const [dismissed, setDismissed] = useState<string | null>(null);
-  const open = snap.holds.filter((h) => h.status === "open");
-  if (open.length) {
-    const hold = open.find((h) => h.id === selected) ?? open[0];
-    return <OpenHold key={hold.id} hold={hold} others={open} onSelect={setSelected} />;
-  }
+  if (hold) return <OpenHold key={hold.id} hold={hold} others={openHolds} onSelect={selectHold} />;
   const last = snap.holds[0];
   if (!last || last.id === dismissed) return null;
   return <ClosedHold key={last.id} hold={last} onDismiss={() => setDismissed(last.id)} />;

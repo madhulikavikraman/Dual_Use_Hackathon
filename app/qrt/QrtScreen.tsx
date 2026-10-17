@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { EXPORT_CSV_URL, getBoard } from "@/lib/client/api";
 import { HELP_STATUS_LABEL, PRIORITY_COLOR, scenarioLabel, WORDING } from "@/lib/client/labels";
+import { OperatorContext } from "@/lib/client/supervisor";
 import { usePoll } from "@/lib/client/usePoll";
 import type { HelpStatus } from "@/lib/types";
 import { BoardProvider, useBoard } from "@/components/board/BoardContext";
@@ -58,7 +59,7 @@ function QrtLayout({ error, receivedAt }: { error: string | null; receivedAt: nu
     <>
       <div className="flex h-dvh flex-col overflow-hidden bg-slate-100 text-slate-900 print:hidden">
         <header className="flex h-14 shrink-0 items-center gap-3 bg-slate-900 px-4 text-white">
-          <span className="text-xl font-black tracking-tight">Second Key</span>
+          <span className="text-xl font-black tracking-tight">VoiceFlare</span>
           <span className="text-sm text-slate-300">Quick response team · {WORDING[snap.meta.mode].registry}</span>
           <span className="rounded bg-amber-400 px-2 py-0.5 text-xs font-black tracking-widest text-slate-950">SIMULATED</span>
           <span className="min-w-0 truncate text-sm text-slate-300">{scenarioLabel(snap.meta.scenario)}</span>
@@ -136,11 +137,14 @@ export function QrtScreen() {
   const { data, error, receivedAt, refresh } = usePoll(getBoard, POLL_MS);
   if (!data) return <BoardWaiting error={error} />;
   const clockOffset = receivedAt ? Date.parse(data.now) - receivedAt : 0;
+  // Signed as the QRT lead: a name typed here never replaces the supervisor's on the board.
   return (
-    <ToastProvider>
-      <BoardProvider snap={data} refresh={refresh} clockOffset={clockOffset}>
-        <QrtLayout error={error} receivedAt={receivedAt} />
-      </BoardProvider>
-    </ToastProvider>
+    <OperatorContext value="qrt">
+      <ToastProvider>
+        <BoardProvider snap={data} refresh={refresh} clockOffset={clockOffset}>
+          <QrtLayout error={error} receivedAt={receivedAt} />
+        </BoardProvider>
+      </ToastProvider>
+    </OperatorContext>
   );
 }

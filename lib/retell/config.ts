@@ -184,7 +184,7 @@ export const VOICEMAIL_PROMPT =
 /** POST /create-agent (or PATCH /update-agent/{agent_id}) body for one language. */
 export function buildAgentPayload(l: RetellLang, opts: { llmId: string; voiceId: string; baseUrl: string; analysisModel?: string }) {
   return {
-    agent_name: `Second Key ${l.lang.name} (${l.retellLanguage})`,
+    agent_name: `VoiceFlare ${l.lang.name} (${l.retellLanguage})`,
     response_engine: { type: "retell-llm" as const, llm_id: opts.llmId },
     voice_id: opts.voiceId,
     language: l.retellLanguage,
@@ -207,7 +207,7 @@ export function buildPhoneNumberPayload(opts: { agentId: string; baseUrl: string
     inbound_agents: [{ agent_id: opts.agentId, weight: 1 }],
     outbound_agents: [{ agent_id: opts.agentId, weight: 1 }],
     inbound_webhook_url: inboundUrl(opts.baseUrl),
-    nickname: "Second Key public line",
+    nickname: "VoiceFlare public line",
   };
 }
 

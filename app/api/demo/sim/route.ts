@@ -7,10 +7,10 @@ import { body, handle, json } from "@/lib/http";
 
 const Body = z.object({
   mode: z.enum(["civilian", "campus", "base"]).optional(),
-  preset: z.enum(["normal", "tower_down", "fire_spreading", "mass_no_answer", "earthquake", "hoax_flood"]).optional(),
+  preset: z.enum(["normal", "tower_down", "fire_spreading", "mass_no_answer", "earthquake", "hoax_flood", "dark_zone"]).optional(),
   autopilot_devices: z.boolean().optional(),
   wrong_polygon: z.boolean().optional(),
-  event: z.enum(["tower_down", "earthquake", "hoax_flood", "fire_spreading", "mass_no_answer"]).optional(),
+  event: z.enum(["tower_down", "earthquake", "hoax_flood", "fire_spreading", "mass_no_answer", "dark_zone"]).optional(),
 });
 
 /**
@@ -57,6 +57,10 @@ export async function POST(req: Request) {
       case "mass_no_answer":
         await setMeta({ sim_preset: "mass_no_answer" });
         detail = "70% of residents will not answer";
+        break;
+      case "dark_zone":
+        await setMeta({ sim_preset: "dark_zone" });
+        detail = "every simulated sentinel is silent: the next hold reads dark zone and still sends at 0:00";
         break;
     }
     if (b.event) {

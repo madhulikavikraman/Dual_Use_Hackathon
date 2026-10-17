@@ -50,6 +50,7 @@ export function defaultMeta(): Meta {
     id: "meta",
     scenario: "westside",
     mode: "civilian",
+    jurisdiction: "US-CA",
     sim_preset: "normal",
     verification_phrase: env.VERIFICATION_PHRASE,
     callback_number: env.CALLBACK_NUMBER,

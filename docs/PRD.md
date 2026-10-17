@@ -1,18 +1,18 @@
-# Second Key: Product Requirements Document
+# VoiceFlare: Product Requirements Document
 
-**Version 1.1.** Saturday, October 17, 2026, 12:45 AM PDT: adds the Twist 1 response (section 17.1, the federal funding pathway) and the `/evidence` page. Version 1.0: Friday, October 16, 2026, 10:30 PM PDT. USC Viterbi x InnovateLA Dual-Use Hackathon, Resilience Comms track (sponsor Retell AI). Team of four (P1 backend and data, P2 AI and Retell, P3 frontend and demo, P4 product, twists and pitch).
+**Version 1.2.** Saturday, October 17, 2026, 10:20 AM PDT: renamed VoiceFlare (formerly Second Key, D-36); adds the Twist 2 response (section 17.2, make it global). **Version 1.1.** Saturday, October 17, 2026, 12:45 AM PDT: adds the Twist 1 response (section 17.1, the federal funding pathway) and the `/evidence` page. Version 1.0: Friday, October 16, 2026, 10:30 PM PDT. USC Viterbi x InnovateLA Dual-Use Hackathon, Resilience Comms track (sponsor Retell AI). Team of four (P1 backend and data, P2 AI and Retell, P3 frontend and demo, P4 product, twists and pitch).
 
-"Second Key" is the working name. The name is decision D-01 in `decisions.md`; the alternates are "Lookout" and keeping "AllClear". Nothing in this document depends on the name.
+"VoiceFlare" is the working name. The name is decision D-01 in `decisions.md`; the alternates are "Lookout" and keeping "AllClear". Nothing in this document depends on the name.
 
-**Builds on** the team's current documents and code: the AllClear Project Document (Oct 16, @Madhu: the 45-item backlog, the Claude agent with a browser phone page, the Supabase schema) and the Phase 0 commit in the team repo `madhulikavikraman/Dual_Use_Hackathon` (Next.js 16 scaffold, `supabase/schema.sql`, the synthetic west Altadena seed, env validation, health check). It carries forward the earlier AllClear + AllFound plan and the teammate feedback, and folds in the ideation verdict (Second Key) and tonight's new requirements: zones with directives set by a human or a prediction model, staged calls along the polygon edge, an intent classifier, a geo-tagged help registry, and an ArcGIS feed. Section 1.1 lists exactly what changes.
+**Builds on** the team's current documents and code: the AllClear Project Document (Oct 16, @Madhu: the 45-item backlog, the Claude agent with a browser phone page, the Supabase schema) and the Phase 0 commit in the team repo `madhulikavikraman/Dual_Use_Hackathon` (Next.js 16 scaffold, `supabase/schema.sql`, the synthetic west Altadena seed, env validation, health check). It carries forward the earlier AllClear + AllFound plan and the teammate feedback, and folds in the ideation verdict (VoiceFlare) and tonight's new requirements: zones with directives set by a human or a prediction model, staged calls along the polygon edge, an intent classifier, a geo-tagged help registry, and an ArcGIS feed. Section 1.1 lists exactly what changes.
 
-**One line.** Before an automated system wakes a zone, Second Key asks the people at the zone's edge, shows the human how many phones it will wake, and relays only the instruction a named human approved for that zone. Afterwards it checks that the message landed, keeps a live list of who said they need help and where they were last heard from, and hands the pattern of calls to the response team's own map.
+**One line.** Before an automated system wakes a zone, VoiceFlare asks the people at the zone's edge, shows the human how many phones it will wake, and relays only the instruction a named human approved for that zone. Afterwards it checks that the message landed, keeps a live list of who said they need help and where they were last heard from, and hands the pattern of calls to the response team's own map.
 
 ## 1. Summary
 
 The problem revealed at 6:15 PM: automated systems act on their own, misbehave, or go quiet when they should be talking, and the usual answer is a bang (shut it down, call everyone). Our seat is the Comms track's overnight supervisor of a call line, facing a surge of unverified calls with too few people. The ladder is watch, ask, slow, hold, hand to a person.
 
-Second Key is one system with five parts, all run from one screen by that supervisor:
+VoiceFlare is one system with five parts, all run from one screen by that supervisor:
 
 1. **Zones.** A map of Los Angeles and its neighbors (Santa Monica, Venice, Mar Vista, Culver City, Palms, West LA, Mid-City, Koreatown, Downtown) divided into zones. Each zone has a state on a ladder (Monitor, Watch, Near-Crisis, Crisis, Shelter in Place, Lifted) and a directive in California's standard evacuation vocabulary. A human sets zone states. A prediction model may propose them. Nothing calls anyone until a named human approves.
 2. **Edge calls.** When a zone enters Near-Crisis (Evacuation Warning), the agent calls residents in two or three stages, starting at the edge of the polygon nearest the hazard and sweeping inward. Calls go over the phone network through Retell AI; the browser phone page from the Project Document stays as the fallback transport and the text path. The agent reads the approved directive for the zone the person is in: leave, prepare to leave, stay indoors, or move toward a named evacuation point. It never invents an instruction.
@@ -22,7 +22,7 @@ Second Key is one system with five parts, all run from one screen by that superv
 
 A sixth part, AllFound (shelter intake that works offline and a reunification callback line), is kept from the teammate's plan as a stretch lane. See section 14 and decision D-04.
 
-**Opening sentence for the pitch.** "On January 9, 2025, an alert meant for three cities woke ten million phones and kept echoing into the next day, and the desk that sent it found out from the callers. Second Key asks four neighbors before the send button, relays only what a human approved, and rings one phone outside the zone afterwards, so the desk knows in ninety seconds."
+**Opening sentence for the pitch.** "On January 9, 2025, an alert meant for three cities woke ten million phones and kept echoing into the next day, and the desk that sent it found out from the callers. VoiceFlare asks four neighbors before the send button, relays only what a human approved, and rings one phone outside the zone afterwards, so the desk knows in ninety seconds."
 
 ### 1.1 What changes against the Project Document
 
@@ -79,7 +79,7 @@ A sixth part, AllFound (shelter intake that works offline and a reunification ca
 
 ## 4. People
 
-| Who | Role in Second Key | What they see |
+| Who | Role in VoiceFlare | What they see |
 | --- | --- | --- |
 | Overnight supervisor (the decider) | Opens holds, approves or rejects zone changes proposed by the model, starts call stages, decides Send / Hold once / Edit / Cancel / Hand off | The one screen: map, hold strip, dose preview, tally, registry, ledger |
 | Alert authority / duty officer | Receives the hand-off with the evidence; owns the real alert-origination system | Hand-off card: zone, read, count, clock, recommendation |
@@ -95,7 +95,7 @@ A sixth part, AllFound (shelter intake that works offline and a reunification ca
 
 The geography is stylized for the demo. The mechanics do not depend on it; any zone set with directives works.
 
-**Story.** 3:40 AM, Tuesday. A wind-driven fire is burning in Santa Monica with offshore winds pushing it east along the I-10 corridor toward Downtown Los Angeles. Santa Monica is under an Evacuation Order. The prediction model projects the three-hour envelope into Venice, Mar Vista, West LA, Palms and Culver City and proposes Near-Crisis (Evacuation Warning) for them; the supervisor approves Culver City and Palms first. Staged calls sweep Culver City from its north-west edge inward, relaying the Warning and the evacuation point. A resident in Palms says her husband uses a wheelchair and they have no car: a red pin appears in the registry at her stated location, with her number. Forty minutes later the envelope reaches Culver City's edge; the duty officer requests an Order. Second Key holds 90 seconds, rings four sentinels at Culver City's edges, shows "wakes 41,000" (not 9.8 million), gets two "yes, I see smoke to the west" reads, and the supervisor clicks Send (simulated). Fifteen seconds later a canary phone in Westchester is asked "did you just receive an evacuation order?" and says no, correctly. Stage 3 calls relay the Order to Culver City; a resident who says he cannot leave goes to the top of the registry.
+**Story.** 3:40 AM, Tuesday. A wind-driven fire is burning in Santa Monica with offshore winds pushing it east along the I-10 corridor toward Downtown Los Angeles. Santa Monica is under an Evacuation Order. The prediction model projects the three-hour envelope into Venice, Mar Vista, West LA, Palms and Culver City and proposes Near-Crisis (Evacuation Warning) for them; the supervisor approves Culver City and Palms first. Staged calls sweep Culver City from its north-west edge inward, relaying the Warning and the evacuation point. A resident in Palms says her husband uses a wheelchair and they have no car: a red pin appears in the registry at her stated location, with her number. Forty minutes later the envelope reaches Culver City's edge; the duty officer requests an Order. VoiceFlare holds 90 seconds, rings four sentinels at Culver City's edges, shows "wakes 41,000" (not 9.8 million), gets two "yes, I see smoke to the west" reads, and the supervisor clicks Send (simulated). Fifteen seconds later a canary phone in Westchester is asked "did you just receive an evacuation order?" and says no, correctly. Stage 3 calls relay the Order to Culver City; a resident who says he cannot leave goes to the top of the registry.
 
 ### Zone set for the demo
 
@@ -162,7 +162,7 @@ A proposal never calls anyone. The human may approve, edit, or reject it. Reject
 
 ## 7. The ladder, mapped to features
 
-| Rung | What Second Key does | Feature |
+| Rung | What VoiceFlare does | Feature |
 | --- | --- | --- |
 | Watch | Clusters geo-tagged reports and help calls; the fire model projects the envelope; nothing calls anyone | Pattern watch (section 12), model proposals (6.2), ArcGIS feed |
 | Ask | Rings the people who can see: sentinels at the polygon's edges; asks residents in a Warning zone what they need | Hold (8.1), staged edge calls (8.2), intent pipeline (10) |
@@ -174,7 +174,7 @@ A proposal never calls anyone. The human may approve, edit, or reject it. Reject
 
 **Two transports, one agent contract.** Retell AI carries calls over the phone network: batch outbound with per-call dynamic variables, inbound on a public number, custom functions as HTTPS routes with signature verification, webhooks, post-call analysis, one agent configuration per language (English, Spanish, Korean, Mandarin, Hindi and French; Armenian and Tagalog by SMS or an Azure-backed agent where voice recognition is thin; Hindi and French added Saturday 1:05 AM, D-30). The browser phone page from the Project Document (`/phone/[id]`: ringing, push-to-talk, per-language speech synthesis, presence, text mode) is the fallback transport and the path for deaf or hard-of-hearing residents and noisy rooms. Both call the same tool endpoints and write the same rows; the board tells them apart only by a `transport` field. The in-call brain is Retell's LLM on the phone transport and Claude Haiku on the browser transport, with the same system prompt, the same tools and the same post-call Claude pass (decision D-05). Every agent has the same tool allowlist (section 9). Variables carried into every call: `zone_name`, `zone_state`, `directive_text`, `move_text`, `evac_point`, `stage`, `language`, `callback_number`, `verification_phrase`, `memory_note`, `simulated` (always "true" in the demo and said out loud).
 
-### 8.1 Hold: edge verification before the Order (the Second Key core)
+### 8.1 Hold: edge verification before the Order (the second key: VoiceFlare's core)
 
 **Trigger.** A zone is proposed to move to Crisis (Evacuation Order) or any broadcast alert is composed for a polygon. Second entry: a corroborated cluster from pattern watch opens the same screen.
 
@@ -229,7 +229,7 @@ For Crisis zones after Stage 3: call households not yet heard from; record safe,
 
 ### 8.5 Monthly test call (the Tuesday product)
 
-Every sentinel and every USC DPS roster member gets a 20-second test call once a month: "This is the Second Key test. Press or say 1 if you can hear this." It keeps the roster alive, trains the reliability score, and is the everyday use that makes the roster exist on the night it is needed. Three silent tests replace a sentinel.
+Every sentinel and every USC DPS roster member gets a 20-second test call once a month: "This is the VoiceFlare test. Press or say 1 if you can hear this." It keeps the roster alive, trains the reliability score, and is the everyday use that makes the roster exist on the night it is needed. Three silent tests replace a sentinel.
 
 ## 9. What the agent can and cannot do
 
@@ -468,7 +468,7 @@ Retell signature verification on every webhook and tool call; secrets in environ
 | Ordinary Tuesday (USC DPS on stage; senior-living and home-health operators in the business slide) | DPS watch commander before a TrojansAlert; an operations director running daily check-ins | Buildings and quads: Leavey, Doheny, USC Village, Residential West; a facility's floors | Avoid the area, Shelter in Place, All clear; check-in scripts | RAs and officers on post; shift nurses | Students or residents needing assistance | Monthly test call; daily multilingual check-ins that build the memory note; drill accountability |
 | Defense (installation) | Command post before a base-wide lockdown | Housing areas, gates, flight line | Lockdown, Shelter in Place, Avoid, All clear | Gate posts, housing phones, duty desks | Personnel accountability in ADPAAS, NFAAS, AFPAAS vocabulary (base mode, item 18); NEO processing for AllFound | Recall drills; monthly test call |
 
-The grounding events for each column are real: Los Angeles, January 9, 2025 (ten million phones for a three-city warning) and the late warnings in west Altadena the day before; Hawaii, January 13, 2018 (a false missile alert, and a two-person rule as the fix); Wright-Patterson AFB, August 2, 2018 (one 911 call during a drill, an hours-long lockdown with about 50 armed responders). Second Key is the two-person rule with the second person at a window.
+The grounding events for each column are real: Los Angeles, January 9, 2025 (ten million phones for a three-city warning) and the late warnings in west Altadena the day before; Hawaii, January 13, 2018 (a false missile alert, and a two-person rule as the fix); Wright-Patterson AFB, August 2, 2018 (one 911 call during a drill, an hours-long lockdown with about 50 armed responders). VoiceFlare is the two-person rule with the second person at a window.
 
 ## 17. Twists
 
@@ -498,9 +498,9 @@ Three twists drop: Friday 11:30 PM, Saturday 4:30 AM, Saturday 7:00 AM, with six
 
 **Text (verbatim).** "Identify the government funding pathway for your venture. Many startups find their first funding through government agencies like NASA, DHS, USDA, etc. They also find them through different funding programs such as DARPA and NSF project funding platforms. Identify at least one federal funding pathway in the US government whether through an agency, program, or military sector as your primary or alternative funding source to launch your venture."
 
-**Answer in one line.** Second Key launches on an NSF SBIR Phase I grant (up to $305,000, zero equity). It sells to counties and cities, which buy it with FEMA preparedness grants they already receive (UASI and EMPG). It reaches the defense customer through DoD SBIR topics and the Defense Innovation Unit. Decisions D-26 to D-28.
+**Answer in one line.** VoiceFlare launches on an NSF SBIR Phase I grant (up to $305,000, zero equity). It sells to counties and cities, which buy it with FEMA preparedness grants they already receive (UASI and EMPG). It reaches the defense customer through DoD SBIR topics and the Defense Innovation Unit. Decisions D-26 to D-28.
 
-| Leg | Program | Who funds whom | Size and timing (verified Oct 17, 2026) | Why it fits Second Key |
+| Leg | Program | Who funds whom | Size and timing (verified Oct 17, 2026) | Why it fits VoiceFlare |
 | --- | --- | --- | --- | --- |
 | **Primary: launch** | **NSF SBIR/STTR Phase I ("America's Seed Fund"), solicitation NSF 26-510** | NSF grants the company directly; no equity | Phase I up to **$305,000 for 6 to 18 months**; Phase II up to **$1,250,000**. Full proposals need an invitation from a **Project Pitch**; an invitation is valid for the next two deadlines. Deadlines: **Nov 4, 2026; Mar 4, 2027; Jul 7, 2027** | NSF funds "nearly all technology areas" and does not need a government topic to match, so a civilian-first, high-risk product qualifies. The risk NSF pays to retire is exactly ours: can a four-person edge panel give a correct read on an alert polygon inside 90 seconds at 3 AM, and can a voice agent classify multilingual distress calls well enough to route them to a person? |
 | **Alternative 1: the customer's money** | **FEMA Homeland Security Grant Program (UASI) and Emergency Management Performance Grants (EMPG)** | FEMA funds states, which pass money to counties and cities, which buy from us | FY2026 HSGP about **$1.064 billion**, of which UASI about **$584 million** (applications closed Jul 24, 2026); FY2026 EMPG about **$337 million** (closed Jul 10, 2026). Next cycle: FY2027 notices, expected mid-2027 | FEMA's Authorized Equipment List names public alert and warning systems (item 04AP-09-ALRT, "Systems, Public Notification and Warning," which cites IPAWS and WEA; newer lists use 13IT-00-ALRT) with UASI as an eligible program. Los Angeles/Long Beach is a UASI urban area. Caveat priced in: telecommunications service fees are not allowable under that item, so call minutes go on the jurisdiction's operating budget and the grant buys the platform |
@@ -530,6 +530,83 @@ Three twists drop: Friday 11:30 PM, Saturday 4:30 AM, Saturday 7:00 AM, with six
 **Proof (20 seconds).** Run the demo path, open `/evidence`, and the three Phase I milestones fill from the run that just happened; download the CSV.
 
 **Pitch line (for section 18 step 4).** "NSF's seed fund pays for the Phase I proof, up to $305,000 and no equity. Counties already have the money to buy it, in the FEMA grants that pay for alert and warning systems. The same product is a base's lockdown desk, which is our DoD SBIR path."
+
+### 17.2 Twist 2 (Saturday 4:30 AM): make it global
+
+**Text (verbatim).** "Let's make it global. Your solution is good, see how it applies to a global application. How does the same solution hold up in another part of the world? For example, if you are solving for fire-fighters in Los Angeles, how can ones in China implement it?"
+
+**Answer in one line.** The product does not change; six adapters do. The human key, the sentinels, the dose, the hold, the verbatim relay, the canary and the ledger run unchanged in Chongqing. What changes:
+- **Ladder:** China's colour warnings are hazard levels, and moving people takes a separate relocation order (转移指令).
+- **Number:** the agent says 119.
+- **Dose:** counted from 12379 and carrier SMS audiences.
+- **Sentinels:** the grid workers China already asks to acknowledge (叫应).
+- **Model:** a CAC-filed domestic model behind the same seven tools, because Claude is not offered in mainland China.
+- **Data and maps:** PIPL consent and GCJ-02 maps.
+
+Decisions D-37 to D-41.
+
+**What stays the same everywhere (the invariants).**
+
+1. A named human approves every directive; models and feeds only propose.
+2. Before an order wakes a zone, people at its edge are asked what they see.
+3. The dose (how many people the polygon wakes) is shown before the send, and the hold sends on time.
+4. The agent reads only approved text, in the person's language, and says it is an automated voice.
+5. A canary inside and one outside the polygon check delivery.
+6. Silence becomes a door-knock list, and every decision goes in the ledger with a name and a reason.
+
+**What changes: six adapters, filled for Los Angeles and Chongqing (both built), with four more profiles.**
+
+| Adapter | Los Angeles (built) | Chongqing, China (built for Twist 2) |
+| --- | --- | --- |
+| Ladder words | Cal OES: Evacuation Warning, Evacuation Order, Shelter in Place, Lifted | Blue and yellow warnings map to monitor and watch, orange and red to warning (prepare to relocate). A separate relocation order (转移指令) is the order. 就地避险 is shelter where you are; 解除 is lifted. **A red warning is never auto-promoted to an order.** |
+| Decider | Overnight supervisor of the alert desk; the duty officer approves | The county or district forest fire headquarters (森林防灭火指挥部) duty leader, or the front-line command post. Under Chongqing's 2026 regulation, a township head may act on the spot (临机处置权) and report upward |
+| Emergency number in every call | 911 | 119 (fire), 120 (ambulance), 110 (police); no single number |
+| Public channel and dose | WEA through IPAWS; dose from the population in the polygon | The national early-warning release system (CAP-based): 12379 SMS, WeChat, village loudspeakers. Dose = carrier targeted-SMS audience by base-station area; one canary phone per carrier (China Mobile, Telecom, Unicom, Broadcast Network) |
+| Sentinels | Enrolled residents, CERT, block captains | The existing call-and-respond practice (叫应): the village relocation leads (转移责任人) and grid workers (网格员) must acknowledge |
+| Voice and AI model | Retell AI over the phone network; Claude in the call | A registered, number-authenticated government line through a domestic carrier. Every call opens with an AI-voice disclosure (CAC labeling measures; GB 45438-2025). A CAC-filed domestic model, hosted in-country, sits behind the same seven tools and the same verbatim rule |
+| Privacy | California law; TCPA emergency-purpose exemption | PIPL: locations and health needs are sensitive data (Art. 28) needing separate consent (Art. 29) unless the emergency basis applies (Art. 13(4)); hosted in-country. Vulnerable residents are pre-registered with a named helper (Chongqing 2026 regulation, Art. 8), which is our linked contact |
+| Maps | Esri and OpenStreetMap, WGS-84 | Approved basemaps use GCJ-02, where raw GPS lands about 100 to 700 m off. VoiceFlare stores WGS-84 and converts only to draw; public maps need an approval number (审图号) |
+| Languages | English, Spanish, Korean, Mandarin, Hindi, French, Armenian, Filipino | Mandarin, plus Sichuanese/Chongqing dialect and Cantonese where needed |
+
+| Profile | Worked example (verified) | Number | Who approves | What changes |
+| --- | --- | --- | --- | --- |
+| Japan | Ōfunato, Feb to Apr 2025: about 3,370 ha, the largest since 1964; one death; 4,596 people under evacuation instructions at the peak | 119 | The mayor (Disaster Countermeasures Basic Act, Art. 60), reporting to the governor | Labels carry the five alert levels (【警戒レベル４】 避難指示); Easy Japanese; municipal disaster radio and cell-broadcast mail |
+| Greece (EU) | Rhodes, July 2023: about 19,000 people moved by land and sea, many of them tourists | 112 (199 fire) | Two roles: the mayor or regional governor orders; civil protection sends the 112 message | The approver splits in two; every order names a destination; tourist languages; GDPR |
+| India | Odisha, Cyclone Dana, Oct 2024 | 112 | The District Collector and district disaster authority | SACHET (NDMA's CAP system) for the public channel; Odia and Hindi; DPDP Act 2023 |
+| Australia | East Gippsland and Mallacoota, Black Summer 2019-20 | 000 | The incident controller (Australian Warning System) | Advice / Watch and Act / Emergency Warning map straight onto watch, warning, order |
+
+**The China worked example.** The Chongqing mountain fires, August 2022. The Beibei fire started at 22:30 on Aug 21 in Xiema subdistrict on the Jinyun Mountain side. The Ministry of Emergency Management reported:
+- more than 680 households (1,800+ people) relocated;
+- more than 14,000 responders;
+- all open flames out at 08:30 on Aug 26.
+
+Chongqing then passed its Natural Disaster Evacuation Regulation (effective Aug 1, 2026). It:
+- requires an immediate relocation directive when a forest fire may endanger life;
+- lets township heads act on the spot;
+- pre-registers vulnerable residents with named helpers.
+
+That is VoiceFlare's shape in China's own law: a named decider, an acknowledged edge, and a linked contact for the person who cannot leave alone.
+
+**What changed in the build (not just the slides).**
+
+1. **`lib/jurisdictions.ts`:** profiles for Los Angeles, China, Japan, Greece, India and Australia. Each holds the ladder labels, local directive templates, emergency numbers, warning system, decider, telephony, model, privacy, maps, adaptations and sources.
+2. **The `chongqing` scenario.** It has:
+   - five Beibei zones on the 2022 fire's ground, with Chinese directives from the China profile;
+   - sentinels who are grid workers and relocation leads;
+   - Grandpa Zhao, whose named helper is Phone 1;
+   - a wrong polygon of central Chongqing (about 10 million, an estimate) for the hold beat.
+3. **The emergency number is a call variable.** "Hang up and call 119 now" in Chongqing, 911 in Los Angeles. Every call now opens with an automated-voice disclosure.
+4. **The approve dialog pre-fills the jurisdiction's own words.** A reset records the jurisdiction.
+5. **`lib/geo-cn.ts`:** WGS-84 to GCJ-02 conversion, plus the offset a raw GPS point would show on a Chinese basemap.
+6. **`/global` page:** the six adapters side by side, and a button that loads the Chongqing scenario.
+
+**Proof (20 seconds).** Reset the board to Chongqing and approve a Warning for Tiansheng (天生街道). Calls go out with the Chinese directive and 119. A live Claude call in Mandarin (`scripts/agent-check-cn.ts`) then:
+- opens with the AI-voice disclosure;
+- reads the directive, the route and the evacuation point word for word;
+- confirms "老伴坐轮椅，家里没有车" back;
+- files a P2 help row ("needs help leaving: wheelchair, no car").
+
+**Pitch line.** "Every country has its own words for 'leave now', its own emergency number and its own rules on AI and data. VoiceFlare keeps the human key and swaps six adapters. In Chongqing the red warning is not an order, the call says 119, the dose counts 12379 messages, the sentinels are the grid workers China already asks to acknowledge, and the model is one China allows."
 
 ## 18. Demo and pitch
 

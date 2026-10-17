@@ -4,6 +4,8 @@ import { agentModel, anthropic } from "@/lib/anthropic";
 import { db, nowIso } from "@/lib/db";
 import { appendTranscript, endCall, executeTool } from "@/lib/engine/calls";
 import { ledger } from "@/lib/engine/log";
+import { upsertHelp } from "@/lib/engine/registry";
+import type { CallVars } from "@/lib/types";
 import { CALL_CONNECTED, systemPrompt } from "./prompt";
 import { TOOL_NAMES, toolDefsFor, type ToolName } from "./tools";
 
@@ -17,7 +19,18 @@ export interface TurnResult {
 }
 
 const MAX_STEPS = 4;
-const TROUBLE = "Sorry, I'm having trouble on this line. A person will call you back. Goodbye.";
+const trouble = (v: CallVars) =>
+  `Sorry, I'm having trouble on this line. If this is an emergency, hang up and call ${v.emergency_number || "911"} now. Otherwise a person will call you back. Goodbye.`;
+
+/** When the agent cannot continue, a person must actually call back: put the person on the registry. */
+async function callbackRow(callId: string, why: string) {
+  const call = await db().get("calls", callId);
+  const id = call?.subject_household_id ?? call?.household_id;
+  const h = id ? await db().get("households", id) : null;
+  if (!call || !h) return;
+  await upsertHelp({ household: h, zone_id: h.zone_id ?? (call.vars.zone_id || null), priority: 3, needs: [],
+    reason: `Call back: ${why}`, source: call.purpose === "inbound" ? "inbound" : "stage1" });
+}
 
 // Everything in `reply` is spoken. Low-effort turns occasionally narrate the instructions ("Hindi only, per
 // instructions."); drop those sentences, and only those, so the approved directive itself is never touched.
@@ -30,9 +43,22 @@ const NARRATION = [
   /^(respond|speak|reply) (only )?in [\p{L} ()]+ only\.?$/iu,
 ];
 
-export function spoken(text: string): string {
+const words = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
+
+/** True when a sentence quotes four or more consecutive words of an approved text: never drop those. */
+function quotesApproved(sentence: string, approved: string[]): boolean {
+  const w = words(sentence);
+  const texts = approved.map((t) => words(t).join(" "));
+  for (let i = 0; i + 4 <= w.length; i++) {
+    const run = w.slice(i, i + 4).join(" ");
+    if (texts.some((t) => t.includes(run))) return true;
+  }
+  return false;
+}
+
+export function spoken(text: string, approved: string[] = []): string {
   const sentences = text.split(/(?<=[.!?。।])\s+/);
-  const kept = sentences.filter((s) => !NARRATION.some((re) => re.test(s.trim())));
+  const kept = sentences.filter((s) => quotesApproved(s, approved) || !NARRATION.some((re) => re.test(s.trim())));
   if (kept.length !== sentences.length) console.warn("[agent] dropped narration:", sentences.filter((s) => !kept.includes(s)).join(" | "));
   return kept.join(" ").trim();
 }
@@ -73,22 +99,28 @@ export async function agentTurn(callId: string, personText: string | null): Prom
       });
     } catch (e) {
       console.error("[agent]", e instanceof Anthropic.APIError ? `${e.status} ${e.message}` : e);
-      reply = reply || TROUBLE;
-      ended = !reply || reply === TROUBLE;
-      await ledger({ actor: "system", action: "agent error: handed to a person", kind: "system", target: call.vars.person_name, reason: e instanceof Error ? e.message : String(e) });
+      reply = reply ? `${reply} ${trouble(vars)}` : trouble(vars);
+      ended = true;
+      await callbackRow(callId, "the line had a technical problem");
+      await ledger({ actor: "system", action: "agent error: call ended, a person will call back", kind: "system", target: call.vars.person_name, reason: e instanceof Error ? e.message : String(e) });
       break;
     }
     if (res.stop_reason === "refusal") {
-      reply = reply || "I can't help with that on this line. A person will call you back.";
+      reply = reply || `I can't help with that on this line. A person will call you back. If this is an emergency, hang up and call ${vars.emergency_number || "911"} now.`;
+      await callbackRow(callId, "the agent could not continue the conversation");
       break;
     }
-    messages.push({ role: "assistant", content: res.content });
+    // A reply cut off by max_tokens may end in a half-written tool call: keep only its text, run no tools.
+    const truncated = res.stop_reason === "max_tokens";
+    messages.push({ role: "assistant", content: truncated ? res.content.filter((b) => b.type === "text") : res.content });
+    const approved = [vars.directive_text, vars.move_text, vars.evac_point, vars.alert_text].filter(Boolean);
     const text = spoken(
       res.content
         .filter((b): b is Anthropic.TextBlock => b.type === "text")
         .map((b) => b.text)
         .join(" ")
         .trim(),
+      approved,
     );
     if (text) reply = reply ? `${reply} ${text}` : text;
 

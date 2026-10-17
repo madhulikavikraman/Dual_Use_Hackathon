@@ -80,9 +80,10 @@ export interface BoardSnapshot {
 
 export interface ApproveZoneBody {
   state: ZoneState;
-  directive_text: string;
-  move_text: string;
-  evac_point: string | null;
+  /** Omitted texts fall back to the zone's approved defaults for the state; the directive is never empty. */
+  directive_text?: string;
+  move_text?: string;
+  evac_point?: string | null;
   approved_by: string;
   reason: string;
   /** Incident commander order: skip the hold for an Order (logged). */
@@ -152,7 +153,7 @@ export interface RegistryPatchBody {
 }
 
 export interface DemoResetBody {
-  scenario?: "westside" | "usc" | "altadena";
+  scenario?: "westside" | "usc" | "altadena" | "chongqing";
 }
 
 export interface DemoSimBody {
@@ -161,7 +162,7 @@ export interface DemoSimBody {
   preset?: SimPreset; // switch the simulator preset
   autopilot_devices?: boolean;
   wrong_polygon?: boolean;
-  event?: "tower_down" | "earthquake" | "hoax_flood" | "fire_spreading" | "mass_no_answer";
+  event?: "tower_down" | "earthquake" | "hoax_flood" | "fire_spreading" | "mass_no_answer" | "dark_zone";
 }
 
 // ---------- Phone (browser transport) ----------

@@ -5,12 +5,13 @@ import { STATE_COLOR, STATE_LABEL } from "@/lib/directives";
 import { serverEnv } from "@/lib/env";
 import { hexCell, hexPolygon } from "@/lib/geo";
 import { CORS } from "@/lib/http";
-import type { Cluster, HelpRequest, Report, Zone } from "@/lib/types";
+import type { Cluster, HelpRequest, Household, LocationSource, Report, Zone } from "@/lib/types";
 
 // Public GeoJSON feeds for ArcGIS Online (PRD 12, backlog item 63, D-13): add each URL to a web map as a GeoJSON
 // layer and set a refresh interval. A token query parameter guards them; CORS is permissive so ArcGIS Online can
-// read them from the browser. Privacy (PRD 11 and 20): no phone numbers, no names, no household ids, no
-// free-text caller words; a help row whose person did not consent to sharing is shown at hex-cell precision.
+// read them from the browser. Privacy (PRD 11 and 20): no phone numbers, no names (not even the approver's), no
+// household ids, no free-text caller words. A point is exact only when a person stated it and consented to sharing
+// it; an enrolled home address, a sentinel's post or a point without consent is shown at its hex-cell center.
 
 const FEEDS = ["zones", "clusters", "help", "reports"] as const;
 type FeedName = (typeof FEEDS)[number];
@@ -42,11 +43,11 @@ type Feature = GeoJSON.Feature<GeoJSON.Geometry, Record<string, string | number 
 function collection(name: FeedName, features: Feature[], now: number) {
   return {
     type: "FeatureCollection",
-    name: `second_key_${name}`,
+    name: `voiceflare_${name}`,
     // Foreign members (allowed by RFC 7946): when and what this is.
     generated_at: new Date(now).toISOString(),
     simulated: 1,
-    note: "Second Key demo feed. Every send is simulated; rows are synthetic except the volunteer phones.",
+    note: "VoiceFlare demo feed. Every send is simulated; rows are synthetic except the volunteer phones.",
     features,
   };
 }
@@ -66,7 +67,8 @@ function zonesFeed(zones: Zone[], openProposals: Map<string, string>, now: numbe
       evac_point: z.evac_point,
       population_est: z.population_est,
       area_sq_mi: z.area_sq_mi,
-      approved_by: z.approved_by,
+      // Who approved stays on the board and in the ledger; the public feed says only that a named human did.
+      human_approved: flag(Boolean(z.approved_by)),
       approved_at: z.approved_at,
       updated_at: z.updated_at,
       age_min: minutesSince(z.approved_at ?? z.updated_at, now),
@@ -111,11 +113,16 @@ function clustersFeed(clusters: Cluster[], zones: Map<string, Zone>, now: number
 
 const PRIORITY_LABEL: Record<number, string> = { 1: "1 life safety", 2: "2 needs help leaving", 3: "3 check later / unreached" };
 
+/** Sources a person gives in the moment; an enrolled address (a home) or a zone centroid is never published exactly. */
+const SHAREABLE = new Set<LocationSource>(["stated", "gps_link"]);
+
 function helpFeed(rows: HelpRequest[], now: number): Feature[] {
   return rows
     .filter((r) => r.last_lat !== null && r.last_lng !== null)
     .map((r) => {
-      const exact = r.last_consent;
+      // Exact only with consent for a location the person gave (rows written before enrolled fixes stopped
+      // claiming consent may still say true for a home address: those go to the hex cell too).
+      const exact = r.last_consent === true && SHAREABLE.has(r.last_source);
       const cell = exact ? null : hexCell(r.last_lat!, r.last_lng!);
       const lng = exact ? r.last_lng! : cell!.lng;
       const lat = exact ? r.last_lat! : cell!.lat;
@@ -135,7 +142,11 @@ function helpFeed(rows: HelpRequest[], now: number): Feature[] {
           zone_id: r.zone_id,
           source: r.source,
           location_source: r.last_source,
-          precision: exact ? "reported" : "hex cell (no consent to share the exact location)",
+          precision: exact
+            ? "reported"
+            : r.last_consent && !SHAREABLE.has(r.last_source)
+              ? `hex cell (${r.last_source} location, not stated by the person)`
+              : "hex cell (no consent to share the exact location)",
           location_age_min: locAge,
           fresh: flag(locAge !== null && locAge < 15),
           age_min: minutesSince(r.created_at, now),
@@ -147,24 +158,42 @@ function helpFeed(rows: HelpRequest[], now: number): Feature[] {
     });
 }
 
-function reportsFeed(rows: Report[], now: number): Feature[] {
+/**
+ * Why a report's point would locate a person rather than a hazard, or null. A sentinel "yes" is filed at the sentinel's
+ * enrolled post (publishing it maps the panel whose answers gate an Order); a hazard report with no stated place is
+ * filed at the caller's enrolled home.
+ */
+function personPoint(r: Report, hh: Map<string, Household>): string | null {
+  if (r.source === "sentinel") return "sentinel post";
+  const h = r.household_id ? hh.get(r.household_id) : undefined;
+  if (h && Math.abs(h.lat - r.lat) < 1e-6 && Math.abs(h.lng - r.lng) < 1e-6) return "caller's enrolled address";
+  return null;
+}
+
+function reportsFeed(rows: Report[], hh: Map<string, Household>, now: number): Feature[] {
   return [...rows]
     .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
     .slice(0, 2000)
-    .map((r) => ({
-      type: "Feature",
-      geometry: { type: "Point", coordinates: [r.lng, r.lat] },
-      properties: {
-        report_id: r.id,
-        type: r.type,
-        source: r.source,
-        zone_id: r.zone_id,
-        cell: hexCell(r.lat, r.lng).key,
-        synthetic: flag(r.synthetic),
-        created_at: r.created_at,
-        age_min: minutesSince(r.created_at, now),
-      },
-    }));
+    .map((r) => {
+      const cell = hexCell(r.lat, r.lng);
+      const why = personPoint(r, hh);
+      const [lng, lat] = why ? [cell.lng, cell.lat] : [r.lng, r.lat];
+      return {
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [+lng.toFixed(6), +lat.toFixed(6)] },
+        properties: {
+          report_id: r.id,
+          type: r.type,
+          source: r.source,
+          zone_id: r.zone_id,
+          cell: cell.key,
+          precision: why ? `hex cell (${why})` : "reported",
+          synthetic: flag(r.synthetic),
+          created_at: r.created_at,
+          age_min: minutesSince(r.created_at, now),
+        },
+      };
+    });
 }
 
 /** Preflight for browsers (ArcGIS Online reads the feeds cross-origin). */
@@ -195,8 +224,10 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ name: strin
       }
       case "help":
         return respond(collection(name, helpFeed(await s.all("help_requests"), now), now));
-      case "reports":
-        return respond(collection(name, reportsFeed(await s.all("reports"), now), now));
+      case "reports": {
+        const [reports, households] = await Promise.all([s.all("reports"), s.all("households")]);
+        return respond(collection(name, reportsFeed(reports, new Map(households.map((h) => [h.id, h])), now), now));
+      }
     }
   } catch (e) {
     console.error("[feeds]", e);

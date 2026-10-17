@@ -100,10 +100,31 @@ function PanToSelected({ target }: { target: [number, number] | null }) {
   return null;
 }
 
-export default function MapView({ variant, registry, selectedId = null, onSelectRegistry }: MapViewProps) {
-  const { snap, zoneById } = useBoard();
+/**
+ * The map, mounted only while its route is on screen.
+ *
+ * Next keeps visited routes mounted in a hidden <Activity> and runs their effect cleanups while hidden.
+ * react-leaflet's MapContainer removes its Leaflet map in that cleanup but keeps the removed map in
+ * state, so showing the route again (Back, or a link to a page already visited) re-ran every layer and
+ * pane against a dead map and the page crashed ("Map container is being reused by another instance").
+ * React detaches a hidden route's refs and attaches them again when it is shown, so this callback ref
+ * drops the whole Leaflet tree on hide and mounts a fresh map, with fresh panes, on show. It also covers
+ * Strict Mode's simulated unmount in dev, and a real unmount (the route evicted) removes the map as before.
+ */
+export default function MapView(props: MapViewProps) {
+  const [host, setHost] = useState<HTMLDivElement | null>(null);
+  return (
+    <div ref={setHost} className="h-full w-full">
+      {host ? <LiveMap {...props} /> : null}
+    </div>
+  );
+}
+
+function LiveMap({ variant, registry, selectedId = null, onSelectRegistry }: MapViewProps) {
+  const { snap, zoneById, hold: selectedHold } = useBoard();
   const board = variant === "board";
-  const hold = board ? (snap.holds.find((h) => h.status === "open") ?? null) : null;
+  // The same open hold the hold strip shows (and its buttons act on), not just the first one.
+  const hold = board ? selectedHold : null;
   const proposals = board ? snap.proposals.filter((p) => p.status === "open") : [];
   const rows = registry ?? snap.registry.filter((r) => r.status !== "closed");
   // Board: the open hold's polygon, else every zone. QRT: the rows it lists, else every zone.

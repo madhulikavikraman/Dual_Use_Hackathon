@@ -1,9 +1,11 @@
 // Gold-set runner for the post-call classifier (PRD 10 "Evaluation"; PRD 17.1 milestone 2, shown on /evidence).
 // Posts each scripted call to POST /api/agent/classify, scores intent and needs, prints a table and writes
 // .data/gold-set-latest.json (read by GET /api/evidence) plus one summary line in .data/gold-set-history.jsonl.
+// Only a full run (every item in transcripts.json) replaces gold-set-latest.json: an --only subset is written to
+// .data/gold-set-partial.json and marked partial in the history, so milestone M2 never rests on a hand-picked subset.
 //
 // Run from the repo root:  npx tsx scripts/gold-set/run.ts
-// Options:  --concurrency 3   --only EN-01,ES-05   --dry (check the transcripts file only)
+// Options:  --concurrency 3   --only EN-01,ES-05 (debugging; does not count for M2)   --dry (check the transcripts file only)
 // Base URL: APP_BASE_URL, else http://localhost:3000 (GOLD_BASE_URL overrides both).
 import fs from "node:fs";
 import path from "node:path";
@@ -13,6 +15,7 @@ import type { GoldItem, GoldItemResult, GoldSetResult } from "./types";
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, ".data");
 const OUT = path.join(DATA_DIR, "gold-set-latest.json");
+const PARTIAL = path.join(DATA_DIR, "gold-set-partial.json");
 const HISTORY = path.join(DATA_DIR, "gold-set-history.jsonl");
 const SET = path.join(ROOT, "scripts", "gold-set", "transcripts.json");
 const BASE = (process.env.GOLD_BASE_URL || process.env.APP_BASE_URL || "http://localhost:3000").replace(/\/+$/, "");
@@ -136,8 +139,12 @@ async function main() {
   const items = loadSet();
   const only = arg("only");
   const chosen = only ? items.filter((it) => only.split(",").map((s) => s.trim()).includes(it.id)) : items;
+  const subset = chosen.length < items.length;
   const concurrency = Math.max(1, Number(arg("concurrency") || 3));
-  console.log(`Gold set: ${chosen.length} calls (${[...new Set(chosen.map((i) => i.language))].join(", ")}) -> ${ENDPOINT}`);
+  console.log(
+    `Gold set: ${chosen.length} calls (${[...new Set(chosen.map((i) => i.language))].join(", ")}) -> ${ENDPOINT}` +
+      (subset ? ` [subset of ${items.length}: written to ${path.relative(ROOT, PARTIAL)}, does not count for M2]` : ""),
+  );
   if (process.argv.includes("--dry")) {
     console.log("Dry run: transcripts.json is valid.");
     return;
@@ -191,6 +198,8 @@ async function main() {
     run_at: new Date().toISOString(),
     base_url: BASE,
     endpoint: ENDPOINT,
+    set_size: items.length,
+    subset,
     total,
     scored,
     errors: total - scored,
@@ -206,10 +215,15 @@ async function main() {
     worst,
   };
   fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(OUT, JSON.stringify(out, null, 2));
+  // A subset never replaces the latest full run that /evidence reads for M2.
+  const file = subset ? PARTIAL : OUT;
+  fs.writeFileSync(file, JSON.stringify(out, null, 2));
   fs.appendFileSync(
     HISTORY,
-    JSON.stringify({ run_at: out.run_at, endpoint: ENDPOINT, total, correct, accuracy: out.accuracy, nhn_recall: out.needs_help_now.recall, worst }) + "\n",
+    JSON.stringify({
+      run_at: out.run_at, endpoint: ENDPOINT, total, set_size: items.length, ...(subset ? { partial: true } : {}),
+      correct, accuracy: out.accuracy, nhn_recall: out.needs_help_now.recall, worst,
+    }) + "\n",
   );
 
   const pct = (x: number) => `${Math.round(x * 100)}%`;
@@ -220,7 +234,11 @@ async function main() {
   );
   console.log(`By language: ${Object.entries(byLanguage).map(([l, v]) => `${l} ${v.correct}/${v.total}`).join(", ")}`);
   if (worst.length) console.log(`Worst three (pitch appendix): ${worst.join(", ")}`);
-  console.log(`Wrote ${path.relative(ROOT, OUT)}; /evidence picks it up on its next refresh.`);
+  console.log(
+    subset
+      ? `Wrote ${path.relative(ROOT, file)} (subset run; /evidence keeps the latest full run for M2).`
+      : `Wrote ${path.relative(ROOT, file)}; /evidence picks it up on its next refresh.`,
+  );
 }
 
 main().catch((e) => {

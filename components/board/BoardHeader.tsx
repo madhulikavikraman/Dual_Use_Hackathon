@@ -25,7 +25,7 @@ export function BoardHeader() {
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 bg-slate-900 px-4 text-white">
       <div className="flex shrink-0 items-baseline gap-2">
-        <span className="text-xl font-black tracking-tight">Second Key</span>
+        <span className="text-xl font-black tracking-tight">VoiceFlare</span>
         <span className="hidden text-xs text-slate-400 2xl:inline">the supervisor&apos;s screen</span>
       </div>
       <span

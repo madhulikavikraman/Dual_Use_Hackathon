@@ -5,6 +5,7 @@ import { startCampaign, type Signed } from "@/lib/client/api";
 import type { Zone } from "@/lib/types";
 import { useAct } from "./BoardContext";
 import { DecisionDialog } from "./DecisionDialog";
+import { useZoneMoved, ZoneMovedNotice } from "./ZoneMoved";
 
 export type CampaignAction = "stage2" | "rollcall" | "test";
 
@@ -33,7 +34,7 @@ const SPEC: Record<
     confirm: "Start test calls",
     body: { kind: "test" },
     description:
-      "A 20-second call to every sentinel and roster member in the zone: “This is the Second Key test. Press or say 1 if you can hear this.” It keeps the roster alive and trains each sentinel's reliability score.",
+      "A 20-second call to every sentinel and roster member in the zone: “This is the VoiceFlare test. Press or say 1 if you can hear this.” It keeps the roster alive and trains each sentinel's reliability score.",
     suggestions: ["Monthly roster test", "New sentinels enrolled"],
   },
 };
@@ -42,6 +43,9 @@ const SPEC: Record<
 export function CampaignDialog({ zone, action, onClose }: { zone: Zone; action: CampaignAction; onClose: () => void }) {
   const act = useAct();
   const spec = SPEC[action];
+  // Each action is offered for a zone state (Stage 2 for Near-Crisis, roll call after the Order): if the
+  // zone moves while this is open, the human looks again first.
+  const { moved, acknowledge } = useZoneMoved(zone);
 
   async function confirm({ actor, reason }: Signed) {
     await act(
@@ -56,8 +60,11 @@ export function CampaignDialog({ zone, action, onClose }: { zone: Zone; action: 
       description={spec.description}
       confirmLabel={spec.confirm}
       reasonSuggestions={spec.suggestions}
+      canSubmit={!moved}
       onConfirm={confirm}
       onClose={onClose}
-    />
+    >
+      {moved ? <ZoneMovedNotice name={zone.name} moved={moved} onAcknowledge={acknowledge} /> : null}
+    </DecisionDialog>
   );
 }

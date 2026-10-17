@@ -29,14 +29,20 @@ const PRESETS: { id: SimPreset; label: string }[] = [
   { id: "mass_no_answer", label: "Mass no answer" },
   { id: "earthquake", label: "Earthquake" },
   { id: "hoax_flood", label: "Hoax flood" },
+  { id: "dark_zone", label: "Dark zone" },
 ];
 
-const EVENTS: { id: "tower_down" | "earthquake" | "hoax_flood" | "fire_spreading" | "mass_no_answer"; label: string; hint: string }[] = [
+const EVENTS: {
+  id: "tower_down" | "earthquake" | "hoax_flood" | "fire_spreading" | "mass_no_answer" | "dark_zone";
+  label: string;
+  hint: string;
+}[] = [
   { id: "tower_down", label: "Tower down", hint: "The Palms block goes silent: a silence-cluster card" },
   { id: "earthquake", label: "Earthquake", hint: "USGS M5.9 (simulated) and 20 reports in Mid-City" },
   { id: "hoax_flood", label: "Hoax flood", hint: "200 unverified reports in Koreatown: the hoax mirror" },
   { id: "fire_spreading", label: "Fire spreading", hint: "The envelope advances 1 h: new proposals" },
   { id: "mass_no_answer", label: "Mass no answer", hint: "70% of residents stop answering" },
+  { id: "dark_zone", label: "Dark zone", hint: "Every sentinel goes silent: the dark-zone card; the alert still sends at 0:00" },
 ];
 
 const FEEDS = [
@@ -263,7 +269,7 @@ export default function DemoConsole({ feedToken, defaultBase }: { feedToken: str
         <div>
           <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500">
             <SimulatedBadge />
-            <span>Second Key · operator only</span>
+            <span>VoiceFlare · operator only</span>
           </div>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight">Demo console</h1>
           <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">

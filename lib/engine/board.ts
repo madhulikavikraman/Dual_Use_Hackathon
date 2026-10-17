@@ -83,11 +83,13 @@ export async function buildBoard(): Promise<BoardSnapshot> {
   );
   const reachedViews = views.filter((v) => reachedIds.has(v.id) && v.role === "resident");
   const understoodKnown = reachedViews.filter((v) => v.understood !== null);
-  const devices = views.filter((v) => v.has_device && v.role === "resident");
+  // Volunteer phones only: public-line callers are not part of the demo roster.
+  const volunteer = (v: HouseholdView) => v.has_device && v.device_label !== "Public line";
+  const devices = views.filter((v) => volunteer(v) && v.role === "resident");
   // Accounted for = a final answer in any campaign (a later wave re-queues people without erasing what they said).
   const everFinal = new Set(statuses.filter((st) => FINAL.includes(st.status)).map((st) => st.household_id));
   const metrics: BoardMetrics = {
-    real_phones: views.filter((v) => v.has_device).length,
+    real_phones: views.filter(volunteer).length,
     real_accounted: devices.filter((v) => everFinal.has(v.id)).length,
     reached: reachedIds.size,
     in_campaigns: residentsCalled.size,

@@ -181,7 +181,7 @@ export default function TwistsView() {
       <header>
         <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500">
           <SimulatedBadge />
-          <span>Second Key · Best Shift Adapter</span>
+          <span>VoiceFlare · Best Shift Adapter</span>
         </div>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Twist log</h1>
         <p className="mt-1 max-w-3xl text-sm text-neutral-600 dark:text-neutral-400">

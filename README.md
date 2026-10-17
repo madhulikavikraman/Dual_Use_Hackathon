@@ -1,9 +1,9 @@
-# Second Key
+# VoiceFlare
 
 The gentlest response that still works, for the overnight supervisor of an emergency call line.
 USC Viterbi x InnovateLA Dual-Use Hackathon, October 2026 — Resilience Comms track (Retell AI).
 
-Before an automated system wakes a zone, Second Key asks the people at the zone's edge, shows the supervisor
+Before an automated system wakes a zone, VoiceFlare asks the people at the zone's edge, shows the supervisor
 how many phones it will wake, and relays only the instruction a named human approved for that zone. Afterwards
 it checks that the message landed, keeps a live list of who said they need help and where they were last heard
 from, and hands the pattern of calls to the response team's map. The ladder: watch, ask, slow, hold, hand to a

@@ -34,6 +34,10 @@ export interface GoldSetResult {
   run_at: string; // ISO 8601 UTC
   base_url: string;
   endpoint: string;
+  /** Items in transcripts.json when the run started; absent in files written before this field existed. */
+  set_size?: number;
+  /** True for an --only run that skipped items: written to gold-set-partial.json, never to gold-set-latest.json. */
+  subset?: boolean;
   total: number;
   scored: number; // items that got a classification back
   errors: number;

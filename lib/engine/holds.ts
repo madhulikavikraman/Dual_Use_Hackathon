@@ -4,7 +4,7 @@ import { db, isoIn, nowIso, uid } from "@/lib/db";
 import { STATE_LABEL, directiveFor } from "@/lib/directives";
 import { areaSqMi, edgeDistanceM, pickSentinels, pointInPolygon } from "@/lib/geo";
 import { HttpError } from "@/lib/http";
-import { COUNTYWIDE_POLYGON, COUNTYWIDE_POPULATION, zoneDefaults } from "@/lib/scenarios";
+import { wrongPolygonFor, zoneDefaults } from "@/lib/scenarios";
 import type { Call, Canary, Hold, HoldSentinel, HoldTally, Household, Zone, ZoneEvent } from "@/lib/types";
 import { buildVars, cancelQueued, newCall, startCampaign } from "./campaigns";
 import { feed, getMeta, ledger, setMeta } from "./log";
@@ -69,7 +69,8 @@ export async function openHold(body: OpenHoldBody): Promise<Hold> {
   if (open) return open;
   const meta = await getMeta();
   const county = body.polygon === "county" || (body.polygon === undefined && meta.wrong_polygon);
-  const polygon = county ? COUNTYWIDE_POLYGON : zone.geom;
+  const wrong = wrongPolygonFor(zone.scenario);
+  const polygon = county ? wrong.polygon : zone.geom;
   // The wrong-polygon demo switch is one-shot, so a rehearsal cannot leave it on by mistake.
   if (meta.wrong_polygon) await setMeta({ wrong_polygon: false });
   const defaults = zoneDefaults(zone, body.proposed_state, meta.mode);
@@ -88,8 +89,8 @@ export async function openHold(body: OpenHoldBody): Promise<Hold> {
     move_text: move,
     evac_point: evac,
     polygon,
-    polygon_label: county ? "Countywide (wrong polygon)" : zone.name,
-    population_est: county ? COUNTYWIDE_POPULATION : zone.population_est ?? 0,
+    polygon_label: county ? wrong.label : zone.name,
+    population_est: county ? wrong.population : zone.population_est ?? 0,
     area_sq_mi: +areaSqMi(polygon).toFixed(1),
     started_at: new Date(now).toISOString(),
     deadline: new Date(now + HOLD_MS).toISOString(),
@@ -103,6 +104,8 @@ export async function openHold(body: OpenHoldBody): Promise<Hold> {
     decided_at: null,
     sent_at: null,
     status: "open",
+    handed_off_by: null,
+    handed_off_at: null,
     opened_by: body.opened_by,
     open_reason: body.reason,
   };
@@ -172,15 +175,16 @@ export async function decideHold(id: string, body: HoldDecisionBody): Promise<Ho
       return (await db().update("holds", id, { status: "cancelled", decision: "cancel", decided_by: body.actor, reason: body.reason, decided_at: nowIso() }))!;
     }
     case "hand_off": {
-      await cancelSentinelCalls(hold);
+      // A hand-off escalates; it never stops the alert. The hold stays open and still sends on time at 0:00
+      // unless the authority sends or cancels first (PRD 8.1, 13).
       const t = hold.tally;
-      await ledger({ actor: body.actor, action: "hand to authority", target: zone.name, reason: body.reason });
+      await ledger({ actor: body.actor, action: "hand to authority (hold keeps running; sends on time)", target: zone.name, reason: body.reason });
       await feed({
         kind: "hand_off", severity: "warn", zone_id: zone.id,
         title: `Handed to the duty officer: ${STATE_LABEL[hold.proposed_state]} for ${zone.name}`,
-        detail: `Read: ${hold.read} (yes ${t.yes}, no ${t.no}, unsure ${t.unsure}, silent ${t.silent}). Wakes about ${hold.population_est.toLocaleString("en-US")}. Polygon: ${hold.polygon_label}. ${body.reason}`,
+        detail: `Read: ${hold.read} (yes ${t.yes}, no ${t.no}, unsure ${t.unsure}, silent ${t.silent}). Wakes about ${hold.population_est.toLocaleString("en-US")}. Polygon: ${hold.polygon_label}. Still sends at 0:00 unless the authority decides first. ${body.reason}`,
       });
-      return (await db().update("holds", id, { status: "handed_off", decision: "hand_off", decided_by: body.actor, reason: body.reason, decided_at: nowIso() }))!;
+      return (await db().update("holds", id, { handed_off_by: body.actor, handed_off_at: nowIso() }))!;
     }
   }
 }
@@ -201,7 +205,7 @@ export async function sendHold(hold: Hold, actor: string, reason: string, decisi
   await cancelSentinelCalls(hold);
   await applyZoneState(zone, hold.proposed_state, {
     directive_text: hold.directive_text ?? hold.alert_text, move_text: hold.move_text, evac_point: hold.evac_point,
-    actor, reason, hold_id: hold.id,
+    actor: actor === "timer" ? `timer (no decision; opened by ${hold.opened_by})` : actor, reason, hold_id: hold.id,
   });
   const fresh = (await db().get("zones", zone.id))!;
   await ledger({
@@ -238,7 +242,26 @@ export async function applyZoneState(zone: Zone, state: Zone["state"], o: {
     hold_id: o.hold_id ?? null, created_at: at,
   };
   await db().insert("zone_events", ev);
-  if (state === "lifted" || state === "monitor") await cancelQueued(zone.id);
+  if (state === "lifted" || state === "monitor") {
+    await cancelQueued(zone.id);
+  } else if (state !== zone.state) {
+    // Calls still waiting from earlier waves carry the old state's text: cancel them. The new wave started by
+    // the caller (Stage 3 after an Order, shelter calls) reaches everyone not confirmed gone.
+    for (const c of await db().where("campaigns", { zone_id: zone.id, status: "running" })) {
+      if (c.kind === "inbound") continue;
+      await db().updateWhere("calls", { campaign_id: c.id, state: "queued" }, { state: "cancelled", ended_at: at });
+      await db().update("campaigns", c.id, { status: "done" });
+    }
+  } else {
+    // Same state, corrected texts: calls still waiting read the corrected approval.
+    for (const c of await db().where("campaigns", { zone_id: zone.id, status: "running" })) {
+      for (const call of await db().where("calls", { campaign_id: c.id, state: "queued" })) {
+        await db().update("calls", call.id, {
+          vars: { ...call.vars, directive_text: o.directive_text ?? "", move_text: o.move_text ?? "", evac_point: o.evac_point ?? "", zone_state: state },
+        });
+      }
+    }
+  }
 }
 
 // ---------- canary (PRD 8.1 step 7) ----------
@@ -331,10 +354,11 @@ export async function holdTick(now: string): Promise<number> {
       }
       n++;
     }
-    if (now >= hold.deadline) {
+    // Compare as times, not strings: Supabase returns "+00:00" offsets where the local store keeps "Z".
+    if (Date.parse(now) >= Date.parse(hold.deadline)) {
       const mid = sentinels.some((s) => s.call_id && calls.get(s.call_id)?.state === "active");
       const cap = new Date(Date.parse(hold.started_at) + CAP_MS).toISOString();
-      if (mid && !hold.extended_once && hold.deadline < cap) {
+      if (mid && !hold.extended_once && Date.parse(hold.deadline) < Date.parse(cap)) {
         await db().update("holds", hold.id, { deadline: cap });
         await ledger({ actor: "timer", action: "timer runs to the 120 s cap: a sentinel is mid-answer", kind: "system", target: zone.name });
       } else {
@@ -369,6 +393,11 @@ export async function canaryTick(): Promise<number> {
 
 /** IC order: skip the hold but keep the record (and the canary). */
 export async function bypassHold(zone: Zone, o: { directive_text: string; move_text: string; evac_point: string | null; actor: string; reason: string }) {
+  // An IC order replaces any hold already open for the zone (it may hold a wrong polygon or older texts).
+  for (const open of await db().where("holds", { zone_id: zone.id, status: "open" })) {
+    await cancelSentinelCalls(open);
+    await db().update("holds", open.id, { status: "cancelled", decision: "cancel", decided_by: o.actor, reason: "Replaced by an IC order (bypass)", decided_at: nowIso() });
+  }
   const hold = await openHold({ zone_id: zone.id, proposed_state: "order", directive_text: o.directive_text, move_text: o.move_text,
     evac_point: o.evac_point, opened_by: o.actor, reason: `IC order, bypass hold: ${o.reason}`, polygon: "zone" });
   return sendHold(hold, o.actor, `IC order, bypass hold: ${o.reason}`, "bypass");

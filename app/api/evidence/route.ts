@@ -16,13 +16,13 @@ export async function GET(req: NextRequest) {
       return new Response(evidenceCsv(e), {
         headers: {
           "Content-Type": "text/csv; charset=utf-8",
-          "Content-Disposition": `attachment; filename="second-key-phase1-evidence-${stamp}.csv"`,
+          "Content-Disposition": `attachment; filename="voiceflare-phase1-evidence-${stamp}.csv"`,
           "Cache-Control": "no-store",
         },
       });
     }
     const headers: Record<string, string> = params.get("download")
-      ? { "Content-Disposition": `attachment; filename="second-key-phase1-evidence-${stamp}.json"` }
+      ? { "Content-Disposition": `attachment; filename="voiceflare-phase1-evidence-${stamp}.json"` }
       : {};
     return json(e, 200, headers);
   });

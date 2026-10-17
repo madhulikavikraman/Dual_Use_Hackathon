@@ -102,13 +102,20 @@ export async function runPostCall(callId: string): Promise<Intent | null> {
   const subject = subjectId ? await db().get("households", subjectId) : null;
   if (subject && cls.memory_note && !subject.memory_note) await db().update("households", subject.id, { memory_note: cls.memory_note.slice(0, 280) });
 
-  // No in-call record: apply the classification through the same tool path.
-  if (!first && subject && STATUS_FOR[cls.primary_intent] && call.purpose !== "sentinel" && call.purpose !== "canary") {
+  // No in-call record: apply a confident classification through the same tool path (below 0.7 it waits for a
+  // human's review). The row that path writes is a post-call guess, not a confirmed in-call answer.
+  if (!first && subject && STATUS_FOR[cls.primary_intent] && cls.confidence >= 0.7 && call.purpose !== "sentinel" && call.purpose !== "canary") {
     await executeTool(callId, "record_status", {
       status: STATUS_FOR[cls.primary_intent], understood: cls.understood, destination: cls.destination, people: cls.people,
       needs: cls.needs, device_battery_hours: null, animals: null, location_text: cls.location_text, location_consent: null,
       can_leave: cls.can_leave, refusal_reason: null, memory_note: null,
     });
+    for (const row of await db().where("intents", { call_id: callId, source: "in_call" })) await db().remove("intents", { id: row.id });
+  }
+  // "Needs help now" surfaces even when the guess is not confident enough to apply (PRD 10).
+  if (!first && subject && cls.primary_intent === "needs_help_now" && cls.confidence < 0.7) {
+    await upsertHelp({ household: subject, zone_id: subject.zone_id, priority: 1, needs: cls.needs, people: cls.people,
+      reason: `Post-call review: possible life safety (${cls.summary})`, source: "stage1" });
   }
   // "Needs help now" from any layer surfaces at once, whatever the confidence.
   if (subject && cls.primary_intent === "needs_help_now" && first && first.primary_intent !== "needs_help_now") {

@@ -1,4 +1,4 @@
-# ArcGIS Online: the Second Key feeds in a web map and a dashboard
+# ArcGIS Online: the VoiceFlare feeds in a web map and a dashboard
 
 Path A from PRD section 12 (backlog item 63, decision D-13): ArcGIS Online reads our GeoJSON feeds **by URL** and refreshes them on an interval, so the EOC's map updates on its own. No Esri write credentials are needed. Path B (pushing rows into a hosted feature layer with `applyEdits`, item 64) is P2 and not built.
 
@@ -44,13 +44,13 @@ Check a URL before the demo: `curl -s "https://<public>/api/feeds/zones.geojson?
    - help: **Types** on `priority_label` (1 red, 2 orange, 3 blue); filter `open = 1` if the map should show only open rows.
    - reports: small points, **Types** on `type`; optional filter `age_min <= 60`.
 6. Pop-ups: zones show `name`, `state_label`, `directive`, `move_text`, `evac_point`, `population_est`; help shows `priority_label`, `needs`, `people`, `status`, `location_age_min`, `precision`.
-7. **Save** the map (title "Second Key: Westside (simulated)"), and share it with the EOC group, or publicly for the demo.
+7. **Save** the map (title "VoiceFlare: Westside (simulated)"), and share it with the EOC group, or publicly for the demo.
 
 Alternative: **Content → New item → URL** with each feed URL creates a GeoJSON-by-URL item you can reuse in several maps; set its refresh interval in the item's settings.
 
 ## 4. The dashboard (ArcGIS Dashboards), three indicators
 
-1. **Create app → Dashboards**, title "Second Key: EOC view (simulated)".
+1. **Create app → Dashboards**, title "VoiceFlare: EOC view (simulated)".
 2. Add a **Map** element: the saved web map. Turn on its legend and layer visibility.
 3. Add three **Indicator** elements (data from the web map's layers):
    1. **Open help rows by priority.** Layer help; filter `open = 1` and `priority = 1`; value: **Count**; title "Life safety (priority 1), open"; color red. Duplicate it for `priority = 2` ("Needs help leaving") and `priority = 3` ("Check later / unreached"), or use one **Serial chart** with category field `priority_label`, statistic Count, filter `open = 1`.

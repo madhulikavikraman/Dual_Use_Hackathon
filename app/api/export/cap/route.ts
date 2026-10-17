@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
           ? `sent on timer, no decision; hold opened by ${hold.opened_by}`
           : `hold opened by ${hold.opened_by}`;
       xml = buildCap({
-        identifier: capIdentifier("SecondKey", hold.zone_id, "hold", hold.id.slice(0, 8)),
+        identifier: capIdentifier("VoiceFlare", hold.zone_id, "hold", hold.id.slice(0, 8)),
         sent: hold.sent_at ?? hold.decided_at ?? hold.started_at,
         state: hold.proposed_state,
         mode: meta.mode,
@@ -44,9 +44,9 @@ export async function GET(req: NextRequest) {
         directive: hold.directive_text ?? hold.alert_text,
         moveText: hold.move_text,
         evacPoint: hold.evac_point,
-        senderName: `Second Key demo desk (${approver})`,
+        senderName: `VoiceFlare demo desk (${approver})`,
         parameters: {
-          SecondKeyHold: hold.id,
+          VoiceFlareHold: hold.id,
           HoldStatus: hold.status,
           HoldDecision: hold.decision ?? "pending",
           SentinelRead: hold.read,
@@ -54,13 +54,13 @@ export async function GET(req: NextRequest) {
           AreaSqMi: +hold.area_sq_mi.toFixed(2),
         },
       });
-      file = `second-key-cap-hold-${hold.id.slice(0, 8)}`;
+      file = `voiceflare-cap-hold-${hold.id.slice(0, 8)}`;
     } else {
       const zone = await db().get("zones", zoneId!);
       if (!zone) throw notFound("Zone");
       const sent = zone.approved_at ?? zone.updated_at;
       xml = buildCap({
-        identifier: capIdentifier("SecondKey", zone.id, `v${zone.version}`, compact(sent)),
+        identifier: capIdentifier("VoiceFlare", zone.id, `v${zone.version}`, compact(sent)),
         sent,
         state: zone.state,
         mode: meta.mode,
@@ -70,14 +70,14 @@ export async function GET(req: NextRequest) {
         directive: zone.directive_text ?? "",
         moveText: zone.move_text,
         evacPoint: zone.evac_point,
-        senderName: `Second Key demo desk (${zone.approved_by ? `approved by ${zone.approved_by}` : desk})`,
+        senderName: `VoiceFlare demo desk (${zone.approved_by ? `approved by ${zone.approved_by}` : desk})`,
         parameters: {
-          SecondKeyZone: zone.id,
+          VoiceFlareZone: zone.id,
           ZoneVersion: zone.version,
           ...(zone.population_est ? { PopulationEstimate: zone.population_est } : {}),
         },
       });
-      file = `second-key-cap-${zone.id}-v${zone.version}`;
+      file = `voiceflare-cap-${zone.id}-v${zone.version}`;
     }
     return new Response(xml, {
       headers: {

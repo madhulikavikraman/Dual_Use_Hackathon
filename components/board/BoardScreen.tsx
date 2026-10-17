@@ -21,7 +21,7 @@ export function BoardWaiting({ error }: { error: string | null }) {
   return (
     <div className="grid h-dvh place-items-center bg-slate-100 p-6 text-slate-900">
       <div className="max-w-md text-center">
-        <div className="text-2xl font-black tracking-tight">Second Key</div>
+        <div className="text-2xl font-black tracking-tight">VoiceFlare</div>
         <span className="mt-2 inline-block rounded bg-amber-400 px-2 py-0.5 text-xs font-black tracking-widest text-slate-950">SIMULATED</span>
         {error ? (
           <p className="mt-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">

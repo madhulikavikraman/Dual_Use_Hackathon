@@ -6,8 +6,8 @@ import PhoneClient from "@/components/phone/PhoneClient";
 // The id is runtime data (no generateStaticParams), so the client part renders inside Suspense.
 
 export const metadata: Metadata = {
-  title: "Phone · Second Key",
-  description: "Browser phone for the Second Key emergency information line (simulated demo).",
+  title: "Phone · VoiceFlare",
+  description: "Browser phone for the VoiceFlare emergency information line (simulated demo).",
 };
 
 export const viewport: Viewport = {

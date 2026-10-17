@@ -1,4 +1,4 @@
-// Second Key domain types. Shared by server routes, the engine and client pages.
+// VoiceFlare domain types. Shared by server routes, the engine and client pages.
 // All timestamps are ISO 8601 UTC strings.
 
 export type Stage = "checkin" | "warning" | "order" | "all_clear";
@@ -25,7 +25,7 @@ export type ZoneState = "monitor" | "watch" | "warning" | "order" | "shelter_in_
 export const ZONE_STATES: ZoneState[] = ["monitor", "watch", "warning", "order", "shelter_in_place", "lifted"];
 
 export type ZoneSource = "human" | "model" | "nws" | "seed";
-export type Scenario = "westside" | "altadena" | "usc";
+export type Scenario = "westside" | "altadena" | "usc" | "chongqing";
 
 export interface Zone {
   id: string; // e.g. "LA-CC"
@@ -173,6 +173,7 @@ export interface CallVars {
   memory_note: string;
   simulated: "true" | "false";
   mode: Mode;
+  emergency_number: string; // what "hang up and call ... now" says in this jurisdiction (911, 119, 112...)
 }
 
 export interface Call {
@@ -381,7 +382,10 @@ export interface Hold {
   reason: string | null;
   decided_at: string | null;
   sent_at: string | null;
+  /** "handed_off" is legacy; a hand-off now keeps the hold open (it still sends at 0:00) and sets handed_off_*. */
   status: "open" | "sent" | "cancelled" | "handed_off";
+  handed_off_by: string | null; // Hand to authority: who handed it, and when; the timer keeps running
+  handed_off_at: string | null;
   opened_by: string;
   open_reason: string;
 }
@@ -489,13 +493,15 @@ export interface SimRun {
   plan: SimEvent[];
 }
 
-export type SimPreset = "normal" | "tower_down" | "fire_spreading" | "mass_no_answer" | "earthquake" | "hoax_flood";
+export type SimPreset = "normal" | "tower_down" | "fire_spreading" | "mass_no_answer" | "earthquake" | "hoax_flood" | "dark_zone";
 
 /** Single-row settings and counters. */
 export interface Meta {
   id: "meta";
   scenario: Scenario;
   mode: Mode;
+  /** Jurisdiction profile code (lib/jurisdictions.ts): vocabulary, emergency number, units, datum. */
+  jurisdiction: string;
   sim_preset: SimPreset;
   verification_phrase: string;
   callback_number: string;
