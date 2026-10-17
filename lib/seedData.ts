@@ -27,6 +27,7 @@ function rng(seed: number) {
 const base = (over: Partial<Household> & Pick<Household, "id" | "name" | "lat" | "lng">): Household => ({
   address: null,
   has_device: false,
+  device_label: null,
   synthetic: true,
   ...EN,
   afn_flags: [],
@@ -35,6 +36,16 @@ const base = (over: Partial<Household> & Pick<Household, "id" | "name" | "lat" |
   linked_contact_name: null,
   can_drive_neighbors: false,
   seats: 0,
+  phone_e164: null,
+  role: "resident",
+  channel: "voice",
+  zone_id: null,
+  on_post: false,
+  reliability: 0.9,
+  last_heard: null,
+  presence_at: null,
+  scenario: "altadena",
+  sim_profile: "leaving",
   ...over,
 });
 
