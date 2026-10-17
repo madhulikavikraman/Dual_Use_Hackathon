@@ -88,8 +88,9 @@ create table sim_runs (
   plan jsonb default '[]'                -- scheduled events: [{household_id, at_ms, done}]
 );
 
--- Row level security: browsers (anon key) may READ everything; all writes go through
--- server routes using the service-role key, which bypasses RLS.
+-- Row level security on, and NO anon policy: the anon key ships to every browser, and these rows hold names,
+-- phones and transcripts. All reads and writes go through server routes using the service-role key, which
+-- bypasses RLS. (No page reads Supabase directly; the board and phones poll the API routes.)
 alter table households enable row level security;
 alter table campaigns enable row level security;
 alter table calls enable row level security;
@@ -97,14 +98,6 @@ alter table household_status enable row level security;
 alter table alerts_feed enable row level security;
 alter table twist_log enable row level security;
 alter table sim_runs enable row level security;
-
-create policy "anon read" on households for select using (true);
-create policy "anon read" on campaigns for select using (true);
-create policy "anon read" on calls for select using (true);
-create policy "anon read" on household_status for select using (true);
-create policy "anon read" on alerts_feed for select using (true);
-create policy "anon read" on twist_log for select using (true);
-create policy "anon read" on sim_runs for select using (true);
 
 -- Realtime (postgres changes)
 alter publication supabase_realtime add table household_status, calls, alerts_feed, campaigns;

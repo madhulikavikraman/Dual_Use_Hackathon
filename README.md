@@ -29,7 +29,7 @@ ETA, say anyone is safe, or tell a caller where another person is.
 
 ## Run it
 
-Requirements: Node 20.9+ and an Anthropic API key. Supabase and Retell are optional.
+Requirements: Node 22+ (supabase-js crashes on Node 20: no native WebSocket) and an Anthropic API key. Supabase and Retell are optional.
 
 ```bash
 npm install

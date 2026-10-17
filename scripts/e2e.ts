@@ -1,12 +1,14 @@
 // End-to-end check of the demo path, in-process, against its own data file (the dev server is untouched).
 // Run: npx tsx --conditions=react-server scripts/e2e.ts
 // The simulator answers for every phone (autopilot), so no volunteers or API calls are needed.
+// E2E_STORAGE=supabase runs it against the Supabase project in .env.local instead. That WIPES the run there and
+// reloads Westside, so stop anyone else using that database first.
 import { config } from "dotenv";
 
 config({ path: ".env.local" });
 config();
 process.env.SECONDKEY_DATA_FILE ??= ".data/e2e.json";
-process.env.STORAGE = "local";
+process.env.STORAGE = process.env.E2E_STORAGE === "supabase" ? "supabase" : "local";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;
@@ -26,6 +28,7 @@ async function main() {
   const { towerDown } = await import("../lib/engine/sim");
   const { buildBoard } = await import("../lib/engine/board");
   const { hid } = await import("../lib/scenarios/common");
+  console.log(`store: ${db().backend}`);
 
   const tickFor = async (ms: number, until?: () => Promise<boolean>) => {
     const end = Date.now() + ms;

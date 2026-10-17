@@ -59,8 +59,11 @@ create index if not exists dispatches_help_idx on dispatches (help_request_id);
 create index if not exists locations_help_idx on locations (help_request_id, observed_at desc);
 
 -- RLS on, and NO anon policy: these rows hold the link tokens (the keys) and live positions. Only the server's
--- service-role key reads or writes them. (Every other table lets anon read; these two must not.)
+-- service-role key reads or writes them. The explicit grant is needed on projects created since 2026-05-30, which no
+-- longer expose new public tables to the Data API by default (same as the loop at the end of 002).
 alter table location_shares enable row level security;
 alter table dispatches enable row level security;
 drop policy if exists "anon read" on location_shares;
 drop policy if exists "anon read" on dispatches;
+revoke all on table public.location_shares, public.dispatches from anon, authenticated;
+grant select, insert, update, delete on table public.location_shares, public.dispatches to service_role;
