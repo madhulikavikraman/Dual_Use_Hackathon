@@ -153,7 +153,7 @@ export interface RegistryPatchBody {
 }
 
 export interface DemoResetBody {
-  scenario?: "westside" | "usc" | "altadena" | "chongqing";
+  scenario?: "westside" | "usc" | "altadena" | "chongqing" | "norte";
 }
 
 export interface DemoSimBody {

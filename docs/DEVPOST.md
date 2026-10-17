@@ -42,6 +42,13 @@ VoiceFlare is the gentlest response that still works, on a ladder: watch, ask, s
   is printed on screen.
 - **The same screen on an ordinary Tuesday.** USC DPS mode: buildings as zones, RAs and officers on post as
   sentinels, monthly test calls that keep the roster alive. Base mode: an installation's lockdown desk.
+- **Collections line.** Museums, libraries, archives, galleries and collectors keep a short grab list of what cannot
+  be replaced. At Warning only, the call asks once whether they need help moving it while there is time; the request
+  is a P4 salvage row that never outranks a person. Under an Order the call says leave now. Lives first, always.
+- **Any country.** Six things never change (a named human approves, the edge is asked, the dose shows and the hold
+  sends on time, verbatim relay with an AI disclosure, a canary, the ledger); six adapters do (ladder words, decider,
+  emergency number, public channel, voice and model, privacy and maps). A Chongqing scenario runs on China's own
+  ladder, with 119 and grid-worker sentinels.
 
 ## How we built it
 
@@ -82,7 +89,7 @@ Unit for installations.
 ## Built with
 
 Claude (Haiku 5.5, Sonnet 5.5), Retell AI, Next.js, TypeScript, Tailwind, Supabase, Leaflet, Turf.js, ArcGIS
-(GeoJSON feeds), National Weather Service API, USGS feed format, OpenStreetMap / CARTO tiles.
+(GeoJSON feeds), National Weather Service API, USGS feed format, Esri World Light Gray basemap, motion.
 
 ## Responsible use (two lines)
 
@@ -118,4 +125,6 @@ and last location, is visible only to the response team, and is purged 72 hours 
 
   Japan (Ōfunato 2025), Greece (Rhodes 2023), India (Cyclone Dana 2024) and Australia (Black Summer) are profiled too.
   Proof: a live Mandarin call reads the Chinese directive word for word and files a "needs help leaving" row.
-- **Twist 3:** (fill in)
+- **Twist 3 (poster):** a 24 x 36 inch poster built from the live app (the /poster page renders it from the same data
+  as the product; exported to PDF for print and JPG for this gallery): the problem, the ladder, the board, one call in
+  any language, global, the collections line, who pays, results and responsible use.

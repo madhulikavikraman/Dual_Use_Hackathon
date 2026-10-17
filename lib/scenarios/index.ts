@@ -4,6 +4,7 @@ import type { Mode, Scenario, Zone, ZoneState } from "@/lib/types";
 import { ALTADENA_PRESETS, buildAltadena } from "./altadena";
 import { CENTRAL_CHONGQING_POLYGON, CENTRAL_CHONGQING_POPULATION, CHONGQING_PRESETS, buildChongqing } from "./chongqing";
 import type { MovePresets } from "./common";
+import { NORTE_PRESETS, ORANGE_COUNTY_POLYGON, ORANGE_COUNTY_POPULATION, buildNorte } from "./norte";
 import { USC_PRESETS, buildUsc } from "./usc";
 import { COUNTYWIDE_POLYGON, COUNTYWIDE_POPULATION, WESTSIDE_PRESETS, buildWestside, type ScenarioBuild } from "./westside";
 
@@ -12,6 +13,7 @@ export type { ScenarioBuild } from "./westside";
 
 export const SCENARIOS: { id: Scenario; label: string; mode: Mode }[] = [
   { id: "westside", label: "Westside Fire (LA)", mode: "civilian" },
+  { id: "norte", label: "Norte Fire, San Clemente (live location, Oct 2026)", mode: "civilian" },
   { id: "usc", label: "USC DPS (ordinary Tuesday)", mode: "campus" },
   { id: "altadena", label: "West Altadena (Eaton fire framing)", mode: "civilian" },
   { id: "chongqing", label: "Chongqing mountain fire (China, Twist 2)", mode: "civilian" },
@@ -25,16 +27,18 @@ export function buildScenario(s: Scenario, at: string, devicePhones: (string | n
   if (s === "usc") return buildUsc(at, devicePhones);
   if (s === "altadena") return buildAltadena(at, devicePhones);
   if (s === "chongqing") return buildChongqing(at, devicePhones);
+  if (s === "norte") return buildNorte(at, devicePhones);
   return buildWestside(at, devicePhones);
 }
 
 function presetsFor(s: Scenario): MovePresets {
-  return s === "usc" ? USC_PRESETS : s === "altadena" ? ALTADENA_PRESETS : s === "chongqing" ? CHONGQING_PRESETS : WESTSIDE_PRESETS;
+  return s === "usc" ? USC_PRESETS : s === "altadena" ? ALTADENA_PRESETS : s === "chongqing" ? CHONGQING_PRESETS : s === "norte" ? NORTE_PRESETS : WESTSIDE_PRESETS;
 }
 
 /** The deliberately wrong polygon for the hold demo (the January 9 failure, or its local equivalent). */
 export function wrongPolygonFor(s: Scenario): { polygon: GeoJSON.Polygon; population: number; label: string } {
   if (s === "chongqing") return { polygon: CENTRAL_CHONGQING_POLYGON, population: CENTRAL_CHONGQING_POPULATION, label: "重庆中心城区 Central Chongqing (wrong polygon)" };
+  if (s === "norte") return { polygon: ORANGE_COUNTY_POLYGON, population: ORANGE_COUNTY_POPULATION, label: "All of Orange County (wrong polygon)" };
   return { polygon: COUNTYWIDE_POLYGON, population: COUNTYWIDE_POPULATION, label: "Countywide (wrong polygon)" };
 }
 

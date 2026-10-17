@@ -14,6 +14,8 @@ const SCENARIOS = [
   { id: "westside", label: "Westside Fire (LA)", hint: "The demo path: Santa Monica on fire, Culver City next" },
   { id: "usc", label: "USC DPS (ordinary Tuesday)", hint: "Campus zones, RAs and officers on post" },
   { id: "altadena", label: "West Altadena (Eaton framing)", hint: "One-zone fallback for the problem slide" },
+  { id: "norte", label: "Norte Fire, San Clemente (live)", hint: "The real fire on demo weekend: live CAL FIRE status and NWS alerts in the feed; zones and residents simulated" },
+  { id: "chongqing", label: "Chongqing, China (Twist 2)", hint: "China's ladder, 119, grid-worker sentinels" },
 ] as const;
 
 const MODES: { id: Mode; label: string; hint: string }[] = [

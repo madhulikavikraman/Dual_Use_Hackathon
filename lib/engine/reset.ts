@@ -4,6 +4,7 @@ import { TABLES } from "@/lib/db/tables";
 import { serverEnv } from "@/lib/env";
 import { STATE_LABEL } from "@/lib/directives";
 import { jurisdictionForScenario } from "@/lib/jurisdictions";
+import { NORTE_SNAPSHOT, liveCalFire, liveNwsAlerts, ptTime } from "./live";
 import { buildScenario, modeFor, SCENARIOS } from "@/lib/scenarios";
 import type { Scenario, TwistEntry, ZoneEvent } from "@/lib/types";
 import { defaultMeta, feed, ledger, setMeta } from "./log";
@@ -73,6 +74,7 @@ export async function resetScenario(scenario: Scenario) {
   }
   const label = SCENARIOS.find((s) => s.id === scenario)?.label ?? scenario;
   await feed({ kind: "info", title: `Scenario loaded: ${label}`, detail: "All residents are synthetic except the six volunteer phones. Every send is simulated." });
+  if (scenario === "norte") await liveNorteFeed();
   for (const p of build.proposals) {
     const zone = build.zones.find((z) => z.id === p.zone_id)!;
     await feed({ kind: "proposal", severity: "warn", zone_id: p.zone_id, title: `Model proposes ${STATE_LABEL[p.proposed_state]} for ${zone.name}`,
@@ -86,4 +88,25 @@ export async function resetScenario(scenario: Scenario) {
     devices: build.households.filter((h) => h.has_device).length,
     proposals: build.proposals.length,
   };
+}
+
+/** Norte Fire: put the live CAL FIRE status and NWS alerts at the ignition point in the feed (advisory only). */
+async function liveNorteFeed() {
+  const [fire, alerts] = await Promise.all([
+    liveCalFire(/norte/i).catch(() => null),
+    liveNwsAlerts(NORTE_SNAPSHOT.lat, NORTE_SNAPSHOT.lng).catch(() => [] as Awaited<ReturnType<typeof liveNwsAlerts>>),
+  ]);
+  const f = fire ?? NORTE_SNAPSHOT;
+  const size = [
+    f.acres !== null ? `${f.acres.toLocaleString()} acres` : null,
+    f.contained !== null ? `${f.contained}% contained` : null,
+  ].filter(Boolean).join(", ");
+  await feed({
+    kind: "info", severity: "warn",
+    title: `${fire ? "Live" : "Snapshot"}: ${f.name} ${size} (CAL FIRE, updated ${ptTime(f.updated)})`,
+    detail: `${f.location}. ${f.agency}. Started ${ptTime(f.started)}. ${f.url} Zone states, routes and residents here are simulated; real orders come from OCFA and the county.`,
+  });
+  for (const a of alerts.slice(0, 4)) {
+    await feed({ kind: "info", severity: "info", title: `NWS at the ignition point: ${a.event}`, detail: a.headline });
+  }
 }

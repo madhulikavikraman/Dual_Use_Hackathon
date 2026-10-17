@@ -59,8 +59,17 @@ export interface Stat {
   source: string;
 }
 
-/** The fire burning now (Orange County, Oct 2026); null until the research confirms it. */
-export const LIVE: LiveIncident | null = null;
+/** The fire burning on demo weekend (CAL FIRE's public incident list; the /demo "norte" scenario fetches it live). */
+export const LIVE: LiveIncident | null = {
+  name: "Norte Fire",
+  as_of: "Oct 17, 2026, 9:47 AM PT (CAL FIRE)",
+  status_line: "570 acres, 5% contained",
+  place: "San Clemente, Orange County (Portico Del Norte and Eminencia Del Norte); Orange County Fire Authority",
+  lat: 33.4813,
+  lng: -117.63618,
+  alert_notes: "The National Weather Service had a Wind Advisory (until noon), a Heat Advisory and an Air Quality Alert out for the area on Oct 17.",
+  links: ["https://www.fire.ca.gov/incidents/2026/10/16/norte-fire/"],
+};
 
 export const FIRES: FireStory[] = [
   {

@@ -25,7 +25,7 @@ export type ZoneState = "monitor" | "watch" | "warning" | "order" | "shelter_in_
 export const ZONE_STATES: ZoneState[] = ["monitor", "watch", "warning", "order", "shelter_in_place", "lifted"];
 
 export type ZoneSource = "human" | "model" | "nws" | "seed";
-export type Scenario = "westside" | "altadena" | "usc" | "chongqing";
+export type Scenario = "westside" | "altadena" | "usc" | "chongqing" | "norte";
 
 export interface Zone {
   id: string; // e.g. "LA-CC"
