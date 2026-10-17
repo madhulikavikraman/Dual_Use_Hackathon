@@ -71,49 +71,91 @@ export const LIVE: LiveIncident | null = {
   links: ["https://www.fire.ca.gov/incidents/2026/10/16/norte-fire/"],
 };
 
+// The top three fires of 2025-2026 for VoiceFlare's story (user, Oct 17: "just the top 3"). Facts from the
+// Governor-commissioned UL FSRI incident analysis (Oct 2, 2026), LA County's after-action review (McChrystal Group),
+// LAFD's after-action report, CAL FIRE incident pages, and press as linked.
 export const FIRES: FireStory[] = [
   {
-    id: "jan-9-alert",
-    name: "The alert that woke 10 million phones",
-    when: "January 9, 2025",
-    where: "Los Angeles County",
-    damage: "",
+    id: "eaton",
+    name: "Eaton fire: the west side was told last",
+    when: "January 7-8, 2025",
+    where: "Altadena, Los Angeles County",
+    damage: "14,021 acres; 9,419 structures destroyed; 19 deaths (CAL FIRE)",
     what_went_wrong: [
-      "A Kenneth Fire evacuation warning meant for part of the West Hills and Calabasas area reached about 10 million phones across the county.",
-      "The polygon never reached the distribution system; a correction followed about 20 minutes later, and false alerts repeated through the night.",
+      "East Altadena got evacuation orders at 7:26 PM; west of Lake Avenue the first orders came at 3:25 AM, about 8 hours later. 18 of the 19 people who died lived west of Lake.",
+      "Just after midnight a county paramedic squad saw embers falling \"like snow\" and houses burning west of Lake; it was not assigned to the incident, so no one in command heard it.",
+      "A father who used a wheelchair and his son with cerebral palsy died at home after three 911 calls.",
     ],
     voiceflare: [
-      { feature: "Dose preview + hold", how: "Before the send, the supervisor sees \"wakes about 9.8 million\" for a three-city warning, with 90 seconds to edit the polygon. The alert still sends on time if nobody acts." },
-      { feature: "Sentinels", how: "Sentinels far from the fire, in Long Beach or downtown, answer \"nothing here\", which flags a polygon far bigger than the fire." },
-      { feature: "Canary", how: "A phone known to be outside the zone reports \"I got it\" within a minute of the send, so the over-broad delivery is caught at once." },
+      { feature: "Sentinels", how: "People enrolled at the west edge are asked \"does this match what you see?\" before and during the night, so a sighting like the paramedics' reaches the person deciding within minutes." },
+      { feature: "Edge-first + needs-first calls", how: "The first calls go to the households nearest the fire and to people who cannot leave alone, and each \"I can't leave\" becomes a P1 or P2 registry row with a location for the response team." },
+      { feature: "Ledger", how: "Every order is logged with who decided, when and why; the county review found no reliable record of who ordered each alert." },
     ],
-    limits: "VoiceFlare cannot fix a carrier or vendor fault; it detects it in minutes and puts it on the ledger.",
+    limits: "VoiceFlare does not decide evacuations or add deputies; a named human still decides. It shortens the path from someone seeing fire to that person.",
     sources: [
-      "https://garcia.house.gov/",
-      "https://www.nbclosangeles.com/",
-      "https://www.cbsnews.com/losangeles/",
+      "https://file.lacounty.gov/SDSInter/lac/1192777_AAR_EatonFireSynopsisofFindingsandTimeline.pdf",
+      "https://ulri.figshare.com/articles/report/Southern_California_Fires_Incident_Analysis_Report/31982232",
+      "https://www.kqed.org/news/12048956/despite-three-911-calls-two-homebound-disabled-men-died-in-eaton-fire",
+      "https://www.fire.ca.gov/incidents/2025/1/7/eaton-fire/",
     ],
   },
   {
-    id: "west-altadena",
-    name: "The warning that came nine hours late",
-    when: "January 7-8, 2025 (Eaton fire)",
-    where: "West Altadena",
-    damage: "",
+    id: "palisades",
+    name: "Palisades fire: alerts after the homes were burning",
+    when: "January 7, 2025",
+    where: "Pacific Palisades, Los Angeles",
+    damage: "23,448 acres; 6,845 structures destroyed; 12 deaths (CAL FIRE)",
     what_went_wrong: [
-      "Residents west of Lake Avenue did not get evacuation orders until about 3:30 AM, more than nine hours after the fire started; most of the deaths were on that side.",
+      "Some residents nearest the ignition point got their first alert 40 to 90 minutes after homes had begun burning (FSRI).",
+      "City staff drew evacuation zones by hand from street names read over the radio, and officials were cautious about over-warning.",
+      "Late warnings meant everyone left at once: gridlock on Palisades Drive and Sunset, about 350 cars abandoned and pushed aside by a bulldozer, while cell networks were down or overloaded.",
     ],
     voiceflare: [
-      { feature: "Sentinels", how: "Sentinels on the west side would have reported what they saw, so the edge of the danger was not left to a desk." },
-      { feature: "Edge-first + needs-first calls", how: "Calls start at the households nearest the fire and at people who cannot leave alone, in their own language." },
-      { feature: "Silence rules", how: "No answer means a retry, then a call to a named neighbor or relative, then a door-knock row for the response team." },
+      { feature: "Dose preview + hold", how: "The supervisor sees exactly who an order wakes (a neighborhood, not a county), so a targeted order is safe to send fast; the hold never blocks it and sends on time." },
+      { feature: "Edge-first + needs-first calls", how: "Calls ring out in rings from the fire's edge, so the people nearest the ignition hear first, by name and in their language." },
+      { feature: "Dark zone", how: "When a block's phones go silent at once, the board flags a dark zone and moves those households to door-knock lists." },
     ],
-    limits: "VoiceFlare does not decide when to evacuate; a named human still does. It shortens the time between someone seeing danger and the person deciding.",
-    sources: ["https://www.cbsnews.com/losangeles/", "https://apnews.com/"],
+    limits: "VoiceFlare cannot clear roads or direct traffic, and it needs a working phone network or a door knock to reach people.",
+    sources: [
+      "https://ulri.figshare.com/articles/report/Southern_California_Fires_Incident_Analysis_Report/31982232",
+      "https://lafd.org/sites/default/files/pdf_files/Palisades_AARR_10_08_2025_final.pdf",
+      "https://lafd.org/sites/default/files/pdf_files/AARR_Fact_Sheet.pdf",
+      "https://www.fire.ca.gov/incidents/2025/1/7/palisades-fire/",
+    ],
+  },
+  {
+    id: "norte",
+    name: "Norte fire: an Order with no warning first",
+    when: "October 16, 2026 (burning on demo weekend)",
+    where: "San Clemente, Orange County",
+    damage: "570 acres, 5% contained as of Oct 17, 9:47 AM; about 16,000 residents under evacuation orders (CAL FIRE, OCFA)",
+    what_went_wrong: [
+      "The 911 call came at 11:33 AM; Orders for five zones went out at 12:54 PM, with no Warning step before them.",
+      "A mother and her 6-year-old were still at their door with the fire about 300 feet away; a passer-by who had seen a phone alert knocked and got them out.",
+      "The county's written order notice came about four hours later, as an English-only scanned image.",
+    ],
+    voiceflare: [
+      { feature: "Sentinels", how: "Edge sentinels and the fire model propose a Warning early, so people who need time get a head start before an Order." },
+      { feature: "Silence rules", how: "A household that does not answer gets a retry, then its named neighbor, then a door-knock row: no one depends on a passer-by." },
+      { feature: "Verbatim relay", how: "Each call reads the approved order in the person's language, with the route and shelter, minutes after it is approved." },
+    ],
+    limits: "VoiceFlare does not fight the fire or decide the order; the order is still OCFA's and the county's.",
+    sources: [
+      "https://www.fire.ca.gov/incidents/2026/10/16/norte-fire/",
+      "https://www.nbclosangeles.com/news/local/norte-fire-good-samaritan-helps-family-evacuate/3957518/",
+      "https://www.sanclemente.gov/DocumentCenter/View/5158/02-Press-Release-Norte-Fire-10-16-26--1650",
+      "https://www.ocsheriff.gov/nortefire",
+    ],
   },
 ];
 
-export const STATS: Stat[] = [];
+export const STATS: Stat[] = [
+  { value: "10 million", label: "phones got a Jan 9, 2025 evacuation warning meant for one fire area; the target polygon was never saved to the wireless channel", source: "https://robertgarcia.house.gov/sites/evo-subsites/robertgarcia.house.gov/files/evo-media-document/false-alerts-final-report-5.10.pdf" },
+  { value: "18 of 19", label: "Eaton fire deaths were west of Lake Avenue, where orders came about 8 hours after the east side", source: "https://file.lacounty.gov/SDSInter/lac/1192777_AAR_EatonFireSynopsisofFindingsandTimeline.pdf" },
+  { value: "40-90 min", label: "after homes began burning, some Palisades residents nearest the ignition got their first alert", source: "https://ulri.figshare.com/articles/report/Southern_California_Fires_Incident_Analysis_Report/31982232" },
+  { value: "2 of 66", label: "notified survey respondents in the Eaton and Palisades fires were told by a phone call (convenience sample)", source: "https://ulri.figshare.com/articles/report/Southern_California_Fires_Incident_Analysis_Report/31982232" },
+];
+
 
 /** The collections use case (museums, libraries, archives, galleries, collectors). Life safety always first. */
 export const HERITAGE: {
