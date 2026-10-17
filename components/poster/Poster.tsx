@@ -246,7 +246,7 @@ function Board() {
       <div className="relative overflow-hidden rounded-[14px] border-2 border-vf-ash">
         <Image
           src="/poster/board.png"
-          alt="The VoiceFlare supervisor's board during the Westside demo"
+          alt="The VoiceFlare supervisor's board during the simulated Westside fire: the hold on Culver City and Palms, with its dose and sentinels"
           width={3840}
           height={2160}
           unoptimized
@@ -258,8 +258,8 @@ function Board() {
         </span>
       </div>
       <figcaption className="mt-[12px] text-[30px] leading-[1.26] text-vf-bone/85">
-        Nobody decided within 90 s, so the Order sent on time, its dose (about 9.8 million phones, wrong polygon) and the
-        sentinels&apos; disputed read on record. Canaries ring; calls run in Spanish, French, Tagalog, Chinese.
+        The Order waits in the 90 s hold. The supervisor edited the countywide polygon back to Culver City and Palms, so the
+        dose fell from about 9.8 million phones to 41,000; wave 1 is about 4,540 people in 7 blocks. Sentinels at the edge ring.
       </figcaption>
     </figure>
   );
@@ -354,7 +354,7 @@ const CHONGQING = [
   "Colour warnings are hazard levels; only a relocation order (转移指令) moves people. A red warning is never auto-promoted.",
   "Calls say 119. The dose counts 12379 and carrier SMS audiences.",
   "Sentinels are the grid workers China already asks to acknowledge (叫应).",
-  "A CAC-filed domestic model sits behind the same seven tools (no Claude in mainland China). PIPL consent; GCJ-02 maps.",
+  "A CAC-filed domestic model sits behind the same eight tools (no Claude in mainland China). PIPL consent; GCJ-02 maps.",
 ];
 
 function Global() {

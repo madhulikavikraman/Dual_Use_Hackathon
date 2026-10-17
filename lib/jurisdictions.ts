@@ -95,7 +95,7 @@ const CN: Jurisdiction = {
   telephony:
     "A registered, number-authenticated government line through a domestic carrier or cloud platform (no Retell); one canary phone on each of China Mobile, China Telecom, China Unicom and China Broadcast Network; every call opens with an AI-voice disclosure (CAC AI content labeling measures; GB 45438-2025)",
   ai_model:
-    "Claude is not available in mainland China (Anthropic supported regions). A CAC-filed domestic model, hosted in-country, sits behind the same seven tools and the same verbatim-relay rule (Interim Measures for Generative AI Services, 2023)",
+    "Claude is not available in mainland China (Anthropic supported regions). A CAC-filed domestic model, hosted in-country, sits behind the same eight tools and the same verbatim-relay rule (Interim Measures for Generative AI Services, 2023)",
   privacy:
     "PIPL: last-seen locations and health needs are sensitive personal information (Art. 28) needing separate consent (Art. 29) unless the emergency basis applies (Art. 13(4)); vulnerable residents are pre-registered with named help-responsible persons (Chongqing 2026 regulation, Art. 8); everything stays on in-country government cloud",
   maps:

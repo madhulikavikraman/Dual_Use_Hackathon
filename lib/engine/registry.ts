@@ -1,4 +1,5 @@
 import "server-only";
+import { LOCATION_SOURCE_LABEL } from "@/lib/client/labels";
 import { db, isoIn, nowIso, uid } from "@/lib/db";
 import { centroidOf, metersBetween } from "@/lib/geo";
 import type { HelpKind, HelpRequest, HelpSource, Household, LocationFix, LocationSource, Need, PickupRun, Zone } from "@/lib/types";
@@ -134,7 +135,7 @@ async function announce(row: HelpRequest) {
   await feed({
     kind: "needs_help", severity: "critical", zone_id: row.zone_id,
     title: `Life safety: ${row.name ?? "caller"} (${row.people ?? "?"} people)`,
-    detail: `${row.reason}. Told to hang up and call the emergency number. Last seen: ${row.last_stated_text ?? row.last_source}.`,
+    detail: `${(row.reason ?? "").replace(/_/g, " ")}. Told to hang up and call the emergency number. Last seen: ${row.last_stated_text ?? LOCATION_SOURCE_LABEL[row.last_source] ?? row.last_source}.`,
   });
 }
 

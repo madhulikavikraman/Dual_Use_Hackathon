@@ -42,8 +42,8 @@ function Allowlist() {
         </ul>
       </div>
       <p className="border-t sm:col-span-2 border-slate-200 pt-1.5 text-xs text-slate-600">
-        Seven tools: <code>record_status</code> · <code>report_hazard</code> · <code>request_human</code> · <code>end_call</code> ·{" "}
-        <code>lookup_zone</code> · <code>read_observation</code> · <code>received_alert</code>. Every refusal and every human decision is
+        Eight tools: <code>record_status</code> · <code>report_hazard</code> · <code>request_human</code> · <code>end_call</code> ·{" "}
+        <code>lookup_zone</code> · <code>read_observation</code> · <code>received_alert</code> · <code>share_live_location</code>. Every refusal and every human decision is
         written below with a timestamp.
       </p>
     </section>
