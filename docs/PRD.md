@@ -470,6 +470,40 @@ Retell signature verification on every webhook and tool call; secrets in environ
 
 The grounding events for each column are real: Los Angeles, January 9, 2025 (ten million phones for a three-city warning) and the late warnings in west Altadena the day before; Hawaii, January 13, 2018 (a false missile alert, and a two-person rule as the fix); Wright-Patterson AFB, August 2, 2018 (one 911 call during a drill, an hours-long lockdown with about 50 armed responders). VoiceFlare is the two-person rule with the second person at a window.
 
+### 16.1 Real fires, real failures (researched Oct 17, 2026; top three by damage, as the user asked)
+
+| Fire | What went wrong (sourced) | What VoiceFlare does | What it would not change |
+| --- | --- | --- | --- |
+| **Eaton**, Jan 7-8, 2025, Altadena: 14,021 acres, 9,419 structures destroyed, 19 deaths (CAL FIRE) | East Altadena ordered out at 7:26 PM; west of Lake Avenue at 3:25 AM, about 8 hours later; 18 of the 19 who died lived west of Lake (LA County after-action review; FSRI). A paramedic squad saw embers "like snow" west of Lake after midnight, but no one in command heard it. A father in a wheelchair and his son with cerebral palsy died after three 911 calls (KQED) | **Sentinels** at the west edge are asked what they see; **edge-first, needs-first calls** turn "I can't leave" into P1/P2 registry rows with a location; the **ledger** records who ordered what and when (the county review found no reliable record) | It does not decide evacuations or add deputies |
+| **Palisades**, Jan 7, 2025: 23,448 acres, 6,845 destroyed, 12 deaths (CAL FIRE) | Some residents nearest the ignition got their first alert 40 to 90 minutes after homes began burning; zones were hand-drawn from street names read over the radio; officials were cautious about over-warning; gridlock and about 350 abandoned cars; cell networks down or overloaded (FSRI; LAFD after-action report) | The **dose preview and hold** make a targeted order safe to send fast; **rings from the fire's edge** reach the nearest first; a **dark zone** turns silent blocks into door-knock lists | It cannot clear roads or direct traffic |
+| **Norte**, Oct 16, 2026, San Clemente (burning on demo weekend): 570 acres, 5% contained as of Oct 17, 9:47 AM; about 16,000 residents under orders (CAL FIRE, OCFA) | Orders for five zones 81 minutes after the 911 call, with no Warning step first; a mother and her 6-year-old were still home with the fire about 300 feet away until a passer-by knocked (NBC LA); the county's written order notice came about four hours later as an English-only scanned image | Sentinels and the model **propose a Warning early**; **silence rules** end in a door-knock row, so no one depends on a passer-by; the **verbatim relay** reads the order in each person's language minutes after approval | The order is still OCFA's and the county's |
+
+Headline numbers:
+- **10 million** phones got the Jan 9, 2025 warning meant for one fire area (Garcia report).
+- **18 of 19** Eaton deaths were west of Lake Avenue.
+- **40 to 90 minutes** passed between the first homes burning and the first alert, for some Palisades residents.
+- **2 of 66** notified survey respondents were told by a phone call (FSRI, convenience sample).
+
+The live `norte` scenario places the board on the Norte Fire's real ignition point and neighborhoods. A reset pulls CAL FIRE's live status and the NWS alerts into the feed. Zone states, routes and residents are simulated and labeled so (`lib/scenarios/norte.ts`, `lib/engine/live.ts`).
+
+### 16.2 Collections line (D-42)
+
+**Who enrolls.** Museums, libraries, archives, galleries, artists and collectors. On an ordinary Tuesday they keep a short grab list (`collection_note`).
+
+**At Warning only.** After the life-safety questions, the call asks once: "Do you need help moving the items on your list while there is still time?" A yes files a P4 salvage row that:
+- never merges with a person's row;
+- never outranks one;
+- never counts as a person in need.
+
+**Under an Order or Shelter in Place.** The call says leave now. A request is only logged for after the event. The agent never tells anyone to stay or go back for objects, and never promises anyone will come.
+
+**Why Warning only, from the record:**
+- In Altadena, collectors woken by a 3 AM warning saved three works.
+- Art handlers pulled work out of yellow (prepare to leave) zones but would not enter red ones; one storage firm had 5 to 10 times its normal requests in the first week (The Art Newspaper).
+- Two artists went back into the flames for 11 paintings.
+
+**Pune.** The July 2026 Pimpri-Chinchwad floods (a week of rain, 268 mm in 24 hours at Chinchwad, more than 1,500 people trapped) are confirmed. No report naming a library that lost historic books was found, so none is claimed; Kerala's 2018 floods hit more than 225 public libraries.
+
 ## 17. Twists
 
 Three twists drop: Friday 11:30 PM, Saturday 4:30 AM, Saturday 7:00 AM, with six hours to respond to each. Adapting to twists is one of the five scored criteria and has its own award (Best Shift Adapter), judged on "what changed, why, and proof it works," with the note that "the best adapters change the build, not just the slides."
