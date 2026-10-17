@@ -6,6 +6,7 @@ import type { Call, HelpRequest, HouseholdStatus, Status } from "@/lib/types";
 import { getMeta } from "./log";
 
 const FINAL: Status[] = ["safe", "leaving", "needs_help", "wont_leave", "unclear", "wrong_number", "unreachable"];
+const COST_PER_MIN = 0.1; // estimate, labeled on screen
 const newest = <T>(rows: T[], key: (r: T) => string) => [...rows].sort((a, b) => (key(a) < key(b) ? 1 : -1));
 
 function lastLine(call: Call): string | null {
@@ -83,9 +84,11 @@ export async function buildBoard(): Promise<BoardSnapshot> {
   const reachedViews = views.filter((v) => reachedIds.has(v.id) && v.role === "resident");
   const understoodKnown = reachedViews.filter((v) => v.understood !== null);
   const devices = views.filter((v) => v.has_device && v.role === "resident");
+  // Accounted for = a final answer in any campaign (a later wave re-queues people without erasing what they said).
+  const everFinal = new Set(statuses.filter((st) => FINAL.includes(st.status)).map((st) => st.household_id));
   const metrics: BoardMetrics = {
     real_phones: views.filter((v) => v.has_device).length,
-    real_accounted: devices.filter((v) => FINAL.includes(v.status)).length,
+    real_accounted: devices.filter((v) => everFinal.has(v.id)).length,
     reached: reachedIds.size,
     in_campaigns: residentsCalled.size,
     understood_pct: understoodKnown.length ? Math.round((100 * understoodKnown.filter((v) => v.understood).length) / understoodKnown.length) : null,
@@ -94,8 +97,11 @@ export async function buildBoard(): Promise<BoardSnapshot> {
     calls_queued: calls.filter((c) => c.state === "queued").length,
     refusals: ledger.filter((l) => !l.allowed || l.kind === "refusal").length,
     human_decisions: ledger.filter((l) => l.kind === "decision" && !["system", "agent", "timer"].includes(l.actor)).length,
-    cost_minutes: +meta.cost_minutes.toFixed(1),
-    cost_usd: +meta.cost_usd.toFixed(2),
+    // Estimated as if every connected minute ran on Retell (~$0.10/min all-in); real Retell minutes add to meta.
+    ...(() => {
+      const minutes = calls.reduce((m, c) => (c.answered_at ? m + (Date.parse(c.ended_at ?? nowIso()) - Date.parse(c.answered_at)) / 60_000 : m), 0);
+      return { cost_minutes: +minutes.toFixed(1), cost_usd: +(minutes * COST_PER_MIN).toFixed(2) };
+    })(),
   };
 
   return {

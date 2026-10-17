@@ -8,16 +8,18 @@ const optionalString = z
   .string()
   .optional()
   .transform((v) => (v && v.trim() ? v.trim() : undefined));
+/** Empty env lines (FOO=) count as unset, so defaults apply. */
+const blankToUndefined = (v: unknown) => (typeof v === "string" && !v.trim() ? undefined : v);
 
 const serverSchema = z.object({
   ANTHROPIC_API_KEY: z.string().min(1, "ANTHROPIC_API_KEY is required"),
-  AGENT_MODEL: z.string().default("claude-haiku-5-5"),
-  ANALYSIS_MODEL: z.string().default("claude-sonnet-5-5"),
+  AGENT_MODEL: z.preprocess(blankToUndefined, z.string().default("claude-haiku-5-5")),
+  ANALYSIS_MODEL: z.preprocess(blankToUndefined, z.string().default("claude-sonnet-5-5")),
   NEXT_PUBLIC_SUPABASE_URL: optionalString,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: optionalString,
   SUPABASE_SERVICE_ROLE_KEY: optionalString,
   /** "local" forces the file store even when Supabase is configured. */
-  STORAGE: z.enum(["auto", "local", "supabase"]).default("auto"),
+  STORAGE: z.preprocess(blankToUndefined, z.enum(["auto", "local", "supabase"]).default("auto")),
   APP_BASE_URL: optionalString,
   // Retell AI (phone-network transport). All optional.
   RETELL_API_KEY: optionalString,
@@ -36,12 +38,12 @@ const serverSchema = z.object({
   DEVICE_PHONE_5: optionalString,
   DEVICE_PHONE_6: optionalString,
   // Feeds and integrations.
-  FEED_TOKEN: z.string().default("demo"),
+  FEED_TOKEN: z.preprocess(blankToUndefined, z.string().default("demo")),
   ARCGIS_API_KEY: optionalString,
   NASA_FIRMS_MAP_KEY: optionalString,
-  SUPERVISOR_NAME: z.string().default("Overnight supervisor"),
-  CALLBACK_NUMBER: z.string().default("(213) 555-0142"),
-  VERIFICATION_PHRASE: z.string().default("blue heron"),
+  SUPERVISOR_NAME: z.preprocess(blankToUndefined, z.string().default("Overnight supervisor")),
+  CALLBACK_NUMBER: z.preprocess(blankToUndefined, z.string().default("(213) 555-0142")),
+  VERIFICATION_PHRASE: z.preprocess(blankToUndefined, z.string().default("blue heron")),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

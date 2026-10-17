@@ -14,7 +14,8 @@ interface Holder {
   timer: ReturnType<typeof setTimeout> | null;
 }
 
-const FILE = path.join(process.cwd(), ".data", "secondkey.json");
+// SECONDKEY_DATA_FILE lets a test script run against its own file without touching the dev server's data.
+const FILE = process.env.SECONDKEY_DATA_FILE ?? path.join(process.cwd(), ".data", "secondkey.json");
 
 const g = globalThis as unknown as { __secondKeyStore?: Holder };
 

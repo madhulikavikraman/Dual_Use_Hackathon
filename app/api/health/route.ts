@@ -1,6 +1,6 @@
 import { connection } from "next/server";
-import { checkEnv, serverEnv } from "@/lib/env";
-import { supabaseAdmin } from "@/lib/supabase/server";
+import { checkEnv, retellEnabled, serverEnv } from "@/lib/env";
+import { db as dataStore } from "@/lib/db";
 import { anthropic } from "@/lib/anthropic";
 
 type Check = { ok: boolean; detail?: string };
@@ -21,9 +21,9 @@ export async function GET() {
     const [db, agent, analysis] = await Promise.allSettled([
       timed(
         (async () => {
-          const { count, error } = await supabaseAdmin().from("households").select("id", { count: "exact", head: true });
-          if (error) throw new Error(error.message);
-          return `${count ?? 0} households`;
+          const store = dataStore();
+          const households = await store.all("households");
+          return `${store.backend} store, ${households.length} households`;
         })(),
       ),
       // models.retrieve confirms the configured model IDs exist for this key (no tokens spent).
@@ -35,8 +35,10 @@ export async function GET() {
     checks.database = toCheck(db);
     checks.agent_model = toCheck(agent);
     checks.analysis_model = toCheck(analysis);
+    // Optional: without Retell the browser phone carries the calls (D-05).
+    checks.retell = { ok: true, detail: retellEnabled() ? "phone network enabled" : "not configured; browser phone transport" };
   }
 
   const ok = Object.values(checks).every((c) => c.ok);
-  return Response.json({ ok, service: "allclear", time: new Date().toISOString(), checks }, { status: ok ? 200 : 503 });
+  return Response.json({ ok, service: "second-key", time: new Date().toISOString(), checks }, { status: ok ? 200 : 503 });
 }

@@ -200,8 +200,18 @@ export interface Call {
   started_at: string | null; // rang
   answered_at: string | null;
   ended_at: string | null;
+  last_activity_at: string | null; // last turn on the browser transport (abandoned-call timeout)
   simulated: boolean;
+  sim: SimPlan | null; // simulator script for synthetic people (and autopilot devices)
   created_at: string;
+}
+
+/** How the simulator will play a call: when it answers (null = never) and when it finishes. */
+export interface SimPlan {
+  profile: SimProfile;
+  answer_at: string | null;
+  done_at: string;
+  applied: boolean;
 }
 
 export interface HouseholdStatus {
