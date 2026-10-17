@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Closing, Footer } from "@/components/landing/Closing";
+import { DualUse } from "@/components/landing/DualUse";
 import { Global } from "@/components/landing/Global";
 import { Hero } from "@/components/landing/Hero";
 import { Ladder } from "@/components/landing/Ladder";
@@ -25,6 +26,7 @@ export default function Home() {
       <LiveStrip />
       <main className="flex-1">
         <Hero />
+        <DualUse />
         <Stories />
         <Ladder />
         <Screens />

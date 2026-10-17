@@ -8,6 +8,7 @@ import { SignalArcs } from "./SignalArcs";
 import { Container, Cta, ExternalLink, PlayIcon, hostOf } from "./ui";
 
 const ON_THIS_PAGE = [
+  { href: "#dual-use", label: "Dual-use" },
   { href: "#how", label: "How it works" },
   { href: "#screens", label: "Screens" },
   { href: "#global", label: "Any country" },
@@ -82,20 +83,33 @@ export function Hero() {
               VoiceFlare holds an evacuation order 90 seconds for a named human, asks the people at the zone&rsquo;s edge what they
               see, and then calls residents in their own language with only the words that human approved.
             </p>
+            <p className="vf-rise mt-5 flex max-w-[60ch] flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[15px] leading-relaxed text-vf-bone/90" style={delay(210)}>
+              <span className="rounded-[3px] border border-vf-ember/60 px-1.5 py-0.5 text-[11px] font-black tracking-[0.12em] text-vf-ember">DUAL-USE</span>
+              <span>
+                One system, two days: <span aria-hidden="true">🔥</span> the rules that run a wildfire night also run{" "}
+                <span aria-hidden="true">🌡️</span> a heat check-in line for older residents on an ordinary hot Tuesday.{" "}
+                <a
+                  href="#dual-use"
+                  className="whitespace-nowrap text-vf-smoke underline decoration-white/25 underline-offset-4 transition-colors hover:text-vf-bone hover:decoration-vf-ember focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vf-ember"
+                >
+                  See both days
+                </a>
+              </span>
+            </p>
 
             <div id="hero-ctas" className="vf-rise mt-9 flex flex-wrap items-center gap-3" style={delay(250)}>
-              <Cta href="/board?tour=1" icon={<PlayIcon />}>
-                Start the guided tour
+              <Cta href="/board?autoplay=1" icon={<PlayIcon />}>
+                Play the full fire
               </Cta>
-              <Cta href="/board" variant="secondary">
-                Open the board
+              <Cta href="/board?tour=1" variant="secondary">
+                Start the guided tour
               </Cta>
               <Cta href="/phones" variant="secondary">
                 Pick up a phone
               </Cta>
             </div>
             <p className="vf-rise mt-4 text-sm text-vf-smoke" style={delay(300)}>
-              The tour opens the board and explains each part of the screen.
+              Play the full fire runs the whole simulated fire on the real board in about 4 minutes. The tour explains each part of the screen.
             </p>
 
             {proof || story ? (
