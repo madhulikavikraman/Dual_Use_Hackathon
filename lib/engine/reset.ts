@@ -18,7 +18,7 @@ export const TWIST_ONE: Omit<TwistEntry, "id" | "created_at"> = {
   why:
     "A funding pathway is credible when the product already measures what the grant pays for. The October 2025 to April 2026 SBIR lapse is why customer revenue paid from FEMA grants is the second leg.",
   proof: "Run the demo path, open /evidence: the three Phase I milestones fill from the run; download the CSV. PRD section 17.1; decisions D-26 to D-28.",
-  commits: ["f3b21f9"],
+  commits: ["f3b21f9", "4db9d76"],
 };
 
 export async function ensureTwistOne() {
