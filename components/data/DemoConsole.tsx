@@ -292,6 +292,17 @@ export default function DemoConsole({ feedToken, defaultBase }: { feedToken: str
           </p>
         </div>
         <nav className="flex flex-wrap gap-2">
+          {/* One click: resets Westside and plays the whole run on the board, with captions (lib/autoplay). */}
+          <Link
+            href="/board?autoplay=1"
+            title="Resets the Westside Fire and plays the whole run on /board with captions, about 4 minutes. Autopilot answers for the six phones."
+            className="inline-flex items-center gap-1.5 rounded-md bg-sky-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-sky-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true" className="size-3.5" fill="currentColor">
+              <path d="M4.5 2.8v10.4a.6.6 0 0 0 .92.5l8.1-5.2a.6.6 0 0 0 0-1L5.42 2.3a.6.6 0 0 0-.92.5Z" />
+            </svg>
+            Play end-to-end
+          </Link>
           {PAGES.map((p) => (
             <Link
               key={p.href}
@@ -449,6 +460,13 @@ export default function DemoConsole({ feedToken, defaultBase }: { feedToken: str
               onChange={(v) => void sim(`Wrong polygon ${v ? "on" : "off"}`, { wrong_polygon: v })}
             />
           </div>
+          <p className="mt-3 text-xs text-neutral-500">
+            No volunteers?{" "}
+            <Link href="/board?autoplay=1" className="font-semibold text-sky-700 underline underline-offset-2 hover:text-sky-800 dark:text-sky-400">
+              Play end-to-end
+            </Link>{" "}
+            resets Westside and plays the whole run on the board with captions, autopilot on; Exit puts autopilot back.
+          </p>
         </Card>
 
         <Card title="Models (they propose; a human decides)">

@@ -780,8 +780,11 @@ function callForRefusal(c: Ctx, l: LedgerEntry): Call | undefined {
 
 function safety(c: Ctx): EvidenceItem {
   const refusals = c.ledger.filter((l) => l.kind === "refusal" || !l.allowed).sort(byTime((l) => l.created_at));
-  // Seeded approvals written by a scenario reset are not decisions anyone made in this run (the board counts the same way).
-  const decisions = c.ledger.filter((l) => l.kind === "decision" && !NON_HUMAN.has(l.actor) && !l.actor.includes("(seed)"));
+  // Seeded approvals written by a scenario reset are not decisions anyone made in this run, and neither are the demo
+  // autoplay's ("Autoplay supervisor (simulated)"); the board counts the same way.
+  const decisions = c.ledger.filter(
+    (l) => l.kind === "decision" && !NON_HUMAN.has(l.actor) && !l.actor.includes("(seed)") && !l.actor.includes("(simulated)"),
+  );
   // Adversarial test calls: the agent refused something a caller asked for (an ETA, "is it safe to stay", where a neighbor
   // went). They count on real phones only (D-20); allowlist blocks are counted apart.
   const refusalCall = new Map(refusals.map((l) => [l.id, callForRefusal(c, l)]));

@@ -5,6 +5,7 @@ import { getBoard } from "@/lib/client/api";
 import { fmtClock } from "@/lib/client/format";
 import { usePoll } from "@/lib/client/usePoll";
 import { BoardTour } from "@/components/tour/BoardTour";
+import { AutoplayOverlay } from "@/components/autoplay/AutoplayOverlay";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AskBoard } from "./AskBoard";
 import { BoardProvider, useBoard } from "./BoardContext";
@@ -89,6 +90,8 @@ export function BoardScreen() {
           <Layout />
         </div>
         <BoardTour />
+        {/* "Play the full fire": ?autoplay=1 or the header button. */}
+        <AutoplayOverlay />
       </BoardProvider>
     </ToastProvider>
   );

@@ -7,6 +7,7 @@ import { fmtInt, fmtPct, fmtUsd } from "@/lib/client/format";
 import { MODE_LABEL, WORDING } from "@/lib/client/labels";
 import { BOARD_TOUR } from "@/components/tour/boardSteps";
 import { TourButton } from "@/components/tour/TourButton";
+import { PlayFireButton } from "@/components/autoplay/PlayFireButton";
 import { useBoard } from "./BoardContext";
 import { LiveClock, ScenarioSwitcher, SupervisorInput } from "./HeaderControls";
 
@@ -51,6 +52,7 @@ export function BoardHeader() {
       <div className="ml-auto flex shrink-0 items-center gap-3">
         <LiveClock />
         <SupervisorInput />
+        <PlayFireButton />
         <TourButton tour={BOARD_TOUR} />
         <nav data-tour="links" className="flex gap-3 text-sm font-semibold text-slate-300">
           <Link href="/qrt" target="_blank" className="hover:text-white">
