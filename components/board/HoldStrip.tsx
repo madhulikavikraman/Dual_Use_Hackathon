@@ -18,6 +18,7 @@ import {
 } from "@/lib/client/labels";
 import { STATE_COLOR } from "@/lib/directives";
 import { Emoji, People } from "@/lib/ui/Emoji";
+import { HoldWaveDose } from "./BlockPlanPanel";
 import { ICON, STATE_ICON } from "@/lib/ui/icons";
 import type { Hold, HoldDecision, HoldTally, SentinelAnswer, Zone } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
@@ -222,6 +223,7 @@ function OpenHold({ hold, others, onSelect }: { hold: Hold; others: Hold[]; onSe
           <div className="text-[13px] leading-snug text-slate-600">
             across {fmtArea(hold.area_sq_mi)} sq mi (estimate) · polygon: <b className="text-slate-900">{hold.polygon_label}</b>
           </div>
+          {zone && hold.polygon_label === zone.name ? <HoldWaveDose zoneId={hold.zone_id} className="mt-0.5" /> : null}
           {oversize >= 3 && zone?.population_est ? (
             <p className="mt-1 rounded bg-red-100 px-2 py-0.5 text-[13px] font-semibold text-red-900">
               {fmtInt(oversize)}× the zone&apos;s <People n={zone.population_est} />. Check the polygon.

@@ -11,7 +11,7 @@ import {
 import { runScript, type BeatLine, type BeatResult } from "@/lib/autoplay/runner";
 import { BOARD_TOUR } from "@/components/tour/boardSteps";
 import { stopTour } from "@/components/tour/store";
-import { captureView, isDrawerWidth, setBoardView, viewForTab, viewForTarget, type BoardView } from "@/lib/ui/boardView";
+import { captureView, isDrawerWidth, selectZone, setBoardView, viewForTab, viewForTarget, type BoardView } from "@/lib/ui/boardView";
 
 export type AutoplayStatus = "closed" | "intro" | "running" | "end";
 
@@ -121,7 +121,10 @@ function showFocus(focus: Beat["focus"]) {
     view = viewForTarget(t);
   }
   if (view) setBoardView(view);
-  if (!targets.length || !isDrawerWidth()) return;
+  if (focus.zone) selectZone(focus.zone);
+  // On a desktop only a zone's detail (the block plan, low in the Map column) needs scrolling to.
+  const nearest = !isDrawerWidth();
+  if (!targets.length || (nearest && !focus.zone)) return;
   // Two frames: the view renders, then it is measured.
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
@@ -132,7 +135,7 @@ function showFocus(focus: Beat["focus"]) {
         if (r.width < 2 || r.height < 2) continue;
         if (r.top < 0 || r.bottom > window.innerHeight) {
           const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-          el.scrollIntoView({ block: "start", behavior: smooth ? "smooth" : "auto" });
+          el.scrollIntoView({ block: nearest ? "nearest" : "start", behavior: smooth ? "smooth" : "auto" });
         }
         return;
       }

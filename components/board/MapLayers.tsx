@@ -320,7 +320,7 @@ export function HoldLabel({ hold }: { hold: Hold }) {
   return (
     <Marker
       position={[top[1], top[0]]}
-      icon={icon(holdLabelHtml(hold.polygon_label, `${fmtPeople(hold.population_est)} people`, w1 ? `wave ${w1.wave} now: ${fmtPeople(w1.people)}` : null))}
+      icon={icon(holdLabelHtml(hold.polygon_label, `~${fmtPeople(hold.population_est)}`, w1 ? `wave ${w1.wave} now: ${fmtPeople(w1.people)}` : null))}
       interactive={false}
       keyboard={false}
     />

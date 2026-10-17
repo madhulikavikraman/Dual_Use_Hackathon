@@ -79,8 +79,25 @@ function pickWarningZone(zoneId: string | null) {
   };
 }
 
-/** `warningZoneId`: a zone in Warning, if any (the hold step points at its Compose Order button). */
-export function boardSteps(mode: Mode, holdOpen: boolean, warningZoneId: string | null = null): TourStep[] {
+/** Shows the Map view with the zone that has a block plan picked, so its plan is in the zone detail. */
+function pickPlanZone(zoneId: string | null) {
+  return () => {
+    setBoardView("map");
+    if (!zoneId) return undefined;
+    const before = getSelectedZoneId();
+    selectZone(zoneId);
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => document.querySelector('[data-tour="block-plan"]')?.scrollIntoView({ block: "nearest" })),
+    );
+    return () => selectZone(before);
+  };
+}
+
+/**
+ * `warningZoneId`: a zone in Warning, if any (the hold step points at its Compose Order button).
+ * `planZoneId`: a zone with a block-by-block plan, if any (the blocks step opens its detail).
+ */
+export function boardSteps(mode: Mode, holdOpen: boolean, warningZoneId: string | null = null, planZoneId: string | null = null): TourStep[] {
   const registry = WORDING[mode].registry;
   return [
     {
@@ -197,6 +214,21 @@ export function boardSteps(mode: Mode, holdOpen: boolean, warningZoneId: string 
           bodyWhenMissing:
             "Send now, Hold once (60 s more), Edit polygon, Cancel or Hand to authority, each with your name and a reason. If nobody decides, it sends at 0:00; then a canary phone outside the polygon is asked whether the alert reached it.",
         },
+    ...(mode === "heat"
+      ? []
+      : [
+          {
+            id: "blocks",
+            target: '[data-tour="block-plan"]',
+            placement: "left" as const,
+            padding: 6,
+            onEnter: pickPlanZone(planZoneId),
+            title: "Block by block, not the whole city",
+            body: "An Order covers the whole zone, but people leave in waves, one patch of about 10 to 12 city blocks at a time, nearest the fire first, each on its own exit road, so no road takes more cars than it carries. A named person approves the plan and can start the next wave, hold it, or send everyone now. On the map, red patches go now, orange go next and yellow get ready.",
+            bodyWhenMissing:
+              "When an Order is composed for a zone with exit roads set up, a block plan is proposed: waves of patches of about 10 to 12 city blocks, nearest the fire first, each on its own road. A named person approves it; until then every call reads the full Order.",
+          },
+        ]),
     {
       id: "calls",
       target: '[data-tour="calls"]',

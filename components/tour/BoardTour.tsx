@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import { useBoard } from "@/components/board/BoardContext";
+import { usePlans } from "@/components/board/usePlans";
 import { BOARD_TOUR, boardSteps, captureTab } from "./boardSteps";
 import { claimAutoStart, startTour } from "./store";
 import { Tour } from "./Tour";
@@ -16,7 +17,11 @@ export function BoardTour() {
   const mode = snap.meta.mode;
   const holdOpen = snap.holds.some((h) => h.status === "open");
   const warningZoneId = snap.zones.find((z) => z.state === "warning")?.id ?? null;
-  const steps = useMemo(() => boardSteps(mode, holdOpen, warningZoneId), [mode, holdOpen, warningZoneId]);
+  // The zone whose block-by-block plan the tour points at: one in an Order first (its waves are running).
+  const plans = usePlans();
+  const planZoneId =
+    (plans.find((p) => p.status === "active" || p.status === "all_go") ?? plans.find((p) => p.status !== "rejected" && p.status !== "closed"))?.zone_id ?? null;
+  const steps = useMemo(() => boardSteps(mode, holdOpen, warningZoneId, planZoneId), [mode, holdOpen, warningZoneId, planZoneId]);
 
   useEffect(() => {
     const asked = new URLSearchParams(window.location.search).get("tour");

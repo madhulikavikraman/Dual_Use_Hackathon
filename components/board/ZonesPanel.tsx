@@ -15,7 +15,9 @@ import { ApproveZoneDialog } from "./ApproveZoneDialog";
 import { useBoard } from "./BoardContext";
 import { CampaignDialog, type CampaignAction } from "./CampaignDialog";
 import { ComposeOrderDialog } from "./ComposeOrderDialog";
+import { BlockPlanPanel } from "./BlockPlanPanel";
 import { ProposalsPanel } from "./ProposalsPanel";
+import { useZonePlan } from "./usePlans";
 
 type Pending = { kind: "approve" | "compose"; zone: Zone } | { kind: "campaign"; zone: Zone; action: CampaignAction };
 
@@ -190,13 +192,19 @@ function ZoneDetail({ zone, onAction }: { zone: Zone; onAction: (p: Pending) => 
           Monthly test call
         </Button>
       </div>
-      {/*
-        Zone plan slot: the block-by-block evacuation plan for this zone renders here, e.g.
-        <BlockPlanPanel zone={zone} /> (components/board/BlockPlanPanel.tsx, merged from its own branch).
-        The wrapper hides itself while it is empty.
-      */}
-      <div data-slot="zone-plan" className="mt-3 empty:hidden" />
+      <ZonePlan zoneId={zone.id} />
     </article>
+  );
+}
+
+/** The zone's block-by-block evacuation plan, when it has one (zones with exit roads set up). */
+function ZonePlan({ zoneId }: { zoneId: string }) {
+  const plan = useZonePlan(zoneId);
+  if (!plan || plan.status === "rejected" || plan.status === "closed") return null;
+  return (
+    <div data-slot="zone-plan" className="mt-3">
+      <BlockPlanPanel zoneId={zoneId} />
+    </div>
   );
 }
 

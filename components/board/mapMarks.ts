@@ -115,7 +115,7 @@ export const countHtml = (color: string, text: string) => `<div class="sk-hex-co
 export const epHtml = () => `<div class="sk-ep">EP</div>`;
 
 export function holdLabelHtml(label: string, dose: string, wave1: string | null = null) {
-  return `<div class="sk-hold-label">HOLD · ${esc(label)}<br/>wakes about ${esc(dose)}${wave1 ? `<br/><span aria-hidden="true">🏃</span> ${esc(wave1)}` : ""}</div>`;
+  return `<div class="sk-hold-label"><span aria-hidden="true">⏳</span> HOLD · ${esc(label)}<br/>wakes <span aria-hidden="true">👥</span> ${esc(dose)}${wave1 ? `<br/><span aria-hidden="true">🏃</span> ${esc(wave1)}` : ""}</div>`;
 }
 
 export function zoneLabelHtml(input: {

@@ -162,7 +162,8 @@ export interface Beat {
   /** One or two short sentences for the room. */
   caption: string;
   /** What the board should show: a side-panel tab, and the element to spotlight (tour anchors, first match wins). */
-  focus?: { tab?: SideTab; target?: string | string[] };
+  /** zone: the zone the Map view should detail while the beat plays (its block plan shows there). */
+  focus?: { tab?: SideTab; target?: string | string[]; zone?: string };
   /** Minimum time on screen at 1x, in ms. */
   dwellMs: number;
   /** After a late condition or a timeout: time to read the result line at 1x (default 3.5 s). */
@@ -585,7 +586,7 @@ export const BEATS: Beat[] = [
     title: "Block by block, not the whole zone at once",
     caption:
       "The Order stays the Order for all of Culver City and Palms. The supervisor approves the block plan: blocks nearest the fire go first, each on its own road, so no road gets more cars than it carries. Later blocks hear when to get ready, and to leave at once if they see fire or smoke.",
-    focus: { target: ['[data-tour="block-plan"]', '[data-tour="map"]'] },
+    focus: { target: ['[data-tour="block-plan"]', '[data-tour="map"]'], zone: ZONE },
     dwellMs: 11_000,
     optional: true,
     async skip({ env, signal }) {
@@ -704,7 +705,7 @@ export const BEATS: Beat[] = [
     title: "A person starts the next wave",
     caption:
       "The roads are moving, so the supervisor starts wave 2 early, with a name and a reason. Its blocks hear “leave now” on their roads. Hold next wave and Everyone go now are one click away too.",
-    focus: { target: ['[data-tour="block-plan"]', '[data-tour="map"]'] },
+    focus: { target: ['[data-tour="block-plan"]', '[data-tour="map"]'], zone: ZONE },
     dwellMs: 9000,
     optional: true,
     quiet: true,
