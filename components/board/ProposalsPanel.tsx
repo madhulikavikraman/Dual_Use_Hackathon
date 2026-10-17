@@ -6,6 +6,8 @@ import { fmtAgo } from "@/lib/client/format";
 import { MODEL_LABEL, stateLabel, STATE_TEXT } from "@/lib/client/labels";
 import { STATE_COLOR } from "@/lib/directives";
 import type { Mode, Proposal, Zone } from "@/lib/types";
+import { Emoji } from "@/lib/ui/Emoji";
+import { ICON, STATE_ICON } from "@/lib/ui/icons";
 import { Button } from "@/components/ui/Button";
 import { ColorChip } from "@/components/ui/Chip";
 import { ApproveZoneDialog } from "./ApproveZoneDialog";
@@ -32,7 +34,9 @@ function ProposalCard({
   return (
     <article className="rounded-md border-2 border-dashed bg-white px-3 py-1.5" style={{ borderColor: STATE_COLOR[proposal.proposed_state] }}>
       <div className="flex items-center gap-2">
-        <span className="text-[10px] font-black uppercase tracking-wide text-amber-800">Proposed by model — needs a human</span>
+        <span className="text-[10px] font-black uppercase tracking-wide text-amber-800">
+          <Emoji e={ICON.model} /> Proposed by model — needs a human
+        </span>
         <span className="ml-auto text-xs text-slate-500">
           {MODEL_LABEL[proposal.model]} · {proposal.score.toFixed(2)} · {fmtAgo(proposal.created_at, now)}
         </span>
@@ -41,6 +45,7 @@ function ProposalCard({
         <span className="text-[15px] font-bold">{zone.name}</span>
         <span className="text-slate-500">→</span>
         <ColorChip color={STATE_COLOR[proposal.proposed_state]} text={STATE_TEXT[proposal.proposed_state]}>
+          <Emoji e={STATE_ICON[proposal.proposed_state]} />
           {stateLabel(proposal.proposed_state, mode)}
         </ColorChip>
       </div>
@@ -74,7 +79,7 @@ export function ProposalsPanel() {
   return (
     <section>
       <h3 className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600">
-        Model proposals · need a human
+        <Emoji e={ICON.model} /> Model proposals · need a human
         {open.length ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-900">{open.length} open</span> : null}
       </h3>
       <div className="space-y-2">

@@ -1,19 +1,27 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import type { ReactNode } from "react";
-import { fmtInt, fmtPct, fmtUsd } from "@/lib/client/format";
-import { MODE_LABEL, WORDING } from "@/lib/client/labels";
+import { useNow } from "@/lib/client/clock";
+import { fmtCountdown } from "@/lib/client/format";
+import { WORDING } from "@/lib/client/labels";
+import { Emoji } from "@/lib/ui/Emoji";
+import { ICON } from "@/lib/ui/icons";
+import { BOARD_VIEWS, setBoardView, setDrawer, useBoardView } from "@/lib/ui/boardView";
 import { BOARD_TOUR } from "@/components/tour/boardSteps";
 import { TourButton } from "@/components/tour/TourButton";
 import { PlayFireButton } from "@/components/autoplay/PlayFireButton";
+import type { Hold } from "@/lib/types";
 import { useBoard } from "./BoardContext";
-import { LiveClock, ScenarioSwitcher, SupervisorInput } from "./HeaderControls";
+import { LiveClock, SupervisorInput } from "./HeaderControls";
+import { viewLabel } from "./sidebar/BoardSidebar";
 
-function HeaderChip({ on, className = "", children }: { on: boolean; className?: string; children: ReactNode }) {
+const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vf-ember";
+
+function HeaderChip({ on, className = "", title, children }: { on: boolean; className?: string; title?: string; children: ReactNode }) {
   return (
     <span
+      title={title}
       className={`shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${
         on ? "bg-slate-800 text-slate-100 ring-slate-600" : "bg-transparent text-slate-400 ring-slate-700"
       } ${className}`}
@@ -23,96 +31,70 @@ function HeaderChip({ on, className = "", children }: { on: boolean; className?:
   );
 }
 
-/** Product name, the always-on SIMULATED badge, scenario and mode, storage and Retell, clock, name. */
-export function BoardHeader() {
-  const { snap } = useBoard();
+/** Outside the Map view, an open hold stays one click away: its countdown and zone, and a button back to it. */
+function HoldChip({ hold }: { hold: Hold }) {
+  const { zoneById, clockOffset } = useBoard();
+  const now = useNow();
+  const remaining = now === null ? Date.parse(hold.deadline) - Date.parse(hold.started_at) : Date.parse(hold.deadline) - (now + clockOffset);
+  const zone = zoneById.get(hold.zone_id)?.name ?? hold.zone_id;
   return (
-    <header data-tour="header" className="flex h-14 shrink-0 items-center gap-3 bg-slate-900 px-4 text-white">
-      <div className="flex shrink-0 items-center gap-2">
-        <span className="flex items-center gap-2 text-xl font-black tracking-tight">
-          <Image src="/brand/voiceflare-mark.png" alt="" width={28} height={28} className="size-7" loading="eager" />
-          VoiceFlare
-        </span>
-        <span className="hidden text-xs text-slate-400 2xl:inline">the supervisor&apos;s screen</span>
-      </div>
-      <span
-        className="shrink-0 rounded bg-amber-400 px-2 py-0.5 text-xs font-black tracking-widest text-slate-950"
-        title="Every send is simulated. Residents are synthetic except the volunteer phones."
+    <button
+      type="button"
+      onClick={() => setBoardView("map")}
+      title="Open the hold on the Map view"
+      className={`inline-flex min-w-0 shrink items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-1 text-xs font-bold text-white shadow-[0_0_18px_-4px_rgb(220_38_38/0.9)] hover:bg-red-500 ${FOCUS}`}
+    >
+      <Emoji e={ICON.hold} className="motion-safe:animate-pulse" />
+      <span className="font-mono tabular-nums">{fmtCountdown(remaining)}</span>
+      <span className="min-w-0 truncate">
+        Hold<span className="hidden sm:inline"> · {zone}</span>
+      </span>
+      <span className="sr-only">. Open the hold.</span>
+    </button>
+  );
+}
+
+/** The top bar: the view on screen, an open hold, Retell and storage, the clock, your name, autoplay and the tour. */
+export function BoardHeader() {
+  const { snap, hold } = useBoard();
+  const { view, drawer } = useBoardView();
+  const def = BOARD_VIEWS.find((v) => v.id === view) ?? BOARD_VIEWS[0];
+  const title = view === "help" ? WORDING[snap.meta.mode].registry : viewLabel(view, snap.meta.mode);
+  return (
+    <header data-tour="header" className="flex h-14 shrink-0 items-center gap-2 bg-slate-900 px-3 text-white sm:gap-3 sm:px-4">
+      <button
+        type="button"
+        data-board-menu
+        onClick={() => setDrawer(!drawer)}
+        aria-expanded={drawer}
+        aria-controls="board-drawer"
+        className={`grid size-9 shrink-0 place-items-center rounded-md text-lg hover:bg-white/10 lg:hidden ${FOCUS}`}
       >
-        SIMULATED
-      </span>
-      <ScenarioSwitcher current={snap.meta.scenario} />
-      <span className="min-w-0 truncate text-sm text-slate-300" title={MODE_LABEL[snap.meta.mode]}>
-        {MODE_LABEL[snap.meta.mode]}
-      </span>
-      <HeaderChip on className="hidden min-[1360px]:inline">
-        Storage: {snap.backend}
-      </HeaderChip>
-      <HeaderChip on={snap.retell}>Retell {snap.retell ? "on" : "off"}</HeaderChip>
-      <div className="ml-auto flex shrink-0 items-center gap-3">
-        <LiveClock />
-        <SupervisorInput />
+        <span aria-hidden="true">{ICON.menu}</span>
+        <span className="sr-only">Menu: scenario, live numbers and other screens</span>
+      </button>
+      <Image src="/brand/voiceflare-mark.png" alt="VoiceFlare" width={24} height={24} className="size-6 shrink-0 lg:hidden" loading="eager" />
+      <h1 className="flex min-w-0 shrink items-center gap-2 truncate text-[17px] font-bold">
+        <Emoji e={def.icon} />
+        <span className="truncate">{title}</span>
+      </h1>
+      {hold && view !== "map" ? <HoldChip hold={hold} /> : null}
+      <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+        <HeaderChip on className="hidden 2xl:inline" title="Where the board's state is stored">
+          Storage: {snap.backend}
+        </HeaderChip>
+        <HeaderChip on={snap.retell} className="hidden md:inline" title="Whether real phone calls go out through Retell AI">
+          <Emoji e={ICON.calls} /> Retell {snap.retell ? "on" : "off"}
+        </HeaderChip>
+        <span className="hidden xl:block">
+          <LiveClock />
+        </span>
+        <span className="hidden sm:block">
+          <SupervisorInput />
+        </span>
         <PlayFireButton />
         <TourButton tour={BOARD_TOUR} />
-        <nav data-tour="links" className="flex gap-3 text-sm font-semibold text-slate-300">
-          <Link href="/qrt" target="_blank" className="hover:text-white">
-            QRT ↗
-          </Link>
-          <Link href="/phones" target="_blank" className="hover:text-white">
-            Phones ↗
-          </Link>
-        </nav>
       </div>
     </header>
-  );
-}
-
-function Metric({ label, value, note, alert = false }: { label: string; value: ReactNode; note: ReactNode; alert?: boolean }) {
-  return (
-    <div className="min-w-0 px-3 py-1.5">
-      <div className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</div>
-      <div className={`text-[28px] font-black leading-none tabular-nums ${alert ? "text-red-700" : "text-slate-900"}`}>{value}</div>
-      <div className="truncate text-xs text-slate-500">{note}</div>
-    </div>
-  );
-}
-
-/** The numbers a judge asks for, real phones only (synthetic rows are labeled and excluded). */
-export function MetricsStrip() {
-  const { snap } = useBoard();
-  const m = snap.metrics;
-  const words = WORDING[snap.meta.mode];
-  // Volunteer resident phones, as the engine counts real_accounted: public-line callers are real people but
-  // not part of the demo roster, so they are not in the denominator either.
-  const realResidents = snap.households.filter((h) => h.has_device && h.device_label !== "Public line" && h.role === "resident").length;
-  return (
-    <div data-tour="metrics" className="grid shrink-0 grid-cols-8 divide-x divide-slate-200 border-b border-slate-300 bg-white">
-      <Metric
-        label="Real phones"
-        value={
-          <>
-            {m.real_accounted}
-            <span className="text-lg text-slate-400">/{realResidents}</span>
-          </>
-        }
-        note="accounted, real only"
-      />
-      <Metric label={words.reached} value={fmtInt(m.reached)} note={`of ${fmtInt(m.in_campaigns)} called`} />
-      <Metric label="Understood" value={fmtPct(m.understood_pct)} note="teach-back passed" />
-      <Metric label={words.needsHelp} value={fmtInt(m.needs_help_open)} note={words.registry.toLowerCase()} alert={m.needs_help_open > 0} />
-      <Metric
-        label="Calls"
-        value={
-          <>
-            {m.calls_active}
-            <span className="text-lg text-slate-400"> live</span>
-          </>
-        }
-        note={`${fmtInt(m.calls_queued)} queued`}
-      />
-      <Metric label="Refusals" value={fmtInt(m.refusals)} note="the agent said no" />
-      <Metric label="Human decisions" value={fmtInt(m.human_decisions)} note="named, in the ledger" />
-      <Metric label="Cost (estimate)" value={fmtUsd(m.cost_usd)} note={`${m.cost_minutes.toFixed(1)} call minutes`} />
-    </div>
   );
 }

@@ -3,7 +3,9 @@
 import { useState } from "react";
 import type { ApproveZoneResult } from "@/lib/contracts";
 import { approveZone, decideProposal, type Signed } from "@/lib/client/api";
-import { fmtArea, fmtPeople } from "@/lib/client/format";
+import { fmtArea } from "@/lib/client/format";
+import { Emoji, People } from "@/lib/ui/Emoji";
+import { ICON, STATE_ICON } from "@/lib/ui/icons";
 import { campaignLabel, MODEL_LABEL, stateLabel, STATE_TEXT } from "@/lib/client/labels";
 import { STATE_COLOR, STATE_RUNG } from "@/lib/directives";
 import { ZONE_STATES, type Proposal, type Zone, type ZoneState } from "@/lib/types";
@@ -87,10 +89,15 @@ export function ApproveZoneDialog({ zone, proposal, onClose }: { zone: Zone; pro
       title={proposal ? `Approve the model's proposal for ${zone.name}` : `Change state: ${zone.name}`}
       subtitle={
         <span className="inline-flex flex-wrap items-center gap-1.5">
-          Now <ColorChip color={STATE_COLOR[live.state]} text={STATE_TEXT[live.state]}>{stateLabel(live.state, mode)}</ColorChip>
+          Now{" "}
+          <ColorChip color={STATE_COLOR[live.state]} text={STATE_TEXT[live.state]}>
+            <Emoji e={STATE_ICON[live.state]} />
+            {stateLabel(live.state, mode)}
+          </ColorChip>
           {zone.population_est ? (
             <span>
-              · about {fmtPeople(zone.population_est)} people{zone.area_sq_mi ? ` across ${fmtArea(zone.area_sq_mi)} sq mi` : ""} (estimate)
+              · <People n={zone.population_est} />
+              {zone.area_sq_mi ? ` across ${fmtArea(zone.area_sq_mi)} sq mi` : ""} (estimate)
             </span>
           ) : null}
         </span>
@@ -111,7 +118,9 @@ export function ApproveZoneDialog({ zone, proposal, onClose }: { zone: Zone; pro
       {moved ? <ZoneMovedNotice name={zone.name} moved={moved} onAcknowledge={acknowledge} /> : null}
       {proposal ? (
         <div className="rounded-md border-2 border-dashed px-3 py-2 text-sm" style={{ borderColor: STATE_COLOR[proposal.proposed_state] }}>
-          <div className="text-xs font-black uppercase tracking-wide text-amber-800">Proposed by model — needs a human</div>
+          <div className="text-xs font-black uppercase tracking-wide text-amber-800">
+            <Emoji e={ICON.model} /> Proposed by model — needs a human
+          </div>
           <div className="mt-0.5 text-slate-800">{proposal.reason}</div>
           <div className="mt-0.5 text-xs text-slate-500">
             {MODEL_LABEL[proposal.model]} · score {proposal.score.toFixed(2)}
@@ -138,7 +147,9 @@ export function ApproveZoneDialog({ zone, proposal, onClose }: { zone: Zone; pro
       </Field>
       {state === "order" ? (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-950">
-          <p className="font-semibold">Opens a 90-second hold with sentinels before the send.</p>
+          <p className="font-semibold">
+            <Emoji e={ICON.hold} /> Opens a 90-second hold with sentinels <Emoji e={ICON.sentinel} /> before the send.
+          </p>
           <p className="mt-0.5">The machine can delay an alert, never stop one: at 0:00 it sends on time (simulated).</p>
           {proposal ? null : (
             <label className="mt-2 flex items-center gap-2 font-semibold">

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { EXPORT_CSV_URL, getBoard } from "@/lib/client/api";
@@ -14,6 +15,8 @@ import { SupervisorInput } from "@/components/board/HeaderControls";
 import { PickupRuns } from "@/components/board/PickupRuns";
 import { LiveRegistryCard } from "@/components/locate/LiveRegistry";
 import { LiveRegistryProvider } from "@/components/locate/LiveRegistryContext";
+import { Emoji } from "@/lib/ui/Emoji";
+import { ICON } from "@/lib/ui/icons";
 import { Button } from "@/components/ui/Button";
 import { ToastProvider } from "@/components/ui/Toast";
 import { DoorKnockSheet, doorKnockRows, silenceClusters } from "./DoorKnockSheet";
@@ -59,28 +62,36 @@ function QrtLayout({ error, receivedAt }: { error: string | null; receivedAt: nu
   return (
     <>
       <div className="flex h-dvh flex-col overflow-hidden bg-slate-100 text-slate-900 print:hidden">
-        <header className="flex h-14 shrink-0 items-center gap-3 bg-slate-900 px-4 text-white">
-          <span className="text-xl font-black tracking-tight">VoiceFlare</span>
-          <span className="text-sm text-slate-300">Quick response team · {WORDING[snap.meta.mode].registry}</span>
+        <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 bg-slate-900 px-4 py-2.5 text-white lg:h-14 lg:flex-nowrap lg:py-0">
+          <span className="flex shrink-0 items-center gap-2 text-xl font-black tracking-tight">
+            <Image src="/brand/voiceflare-mark.png" alt="" width={26} height={26} className="size-[26px]" loading="eager" />
+            VoiceFlare
+          </span>
           <span className="rounded bg-amber-400 px-2 py-0.5 text-xs font-black tracking-widest text-slate-950">SIMULATED</span>
-          <span className="min-w-0 truncate text-sm text-slate-300">{scenarioLabel(snap.meta.scenario)}</span>
-          <div className="ml-auto flex shrink-0 items-center gap-4">
+          <h1 className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold">
+            <Emoji e={ICON.qrt} />
+            <span className="truncate">Quick response team · {WORDING[snap.meta.mode].registry}</span>
+          </h1>
+          <span className="hidden min-w-0 truncate text-sm text-slate-400 xl:inline">
+            <Emoji e={ICON.scenario} /> {scenarioLabel(snap.meta.scenario)}
+          </span>
+          <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 lg:ml-auto lg:w-auto lg:shrink-0 lg:flex-nowrap">
             <SupervisorInput />
             <Button size="sm" onClick={() => window.print()}>
-              Print door-knock sheet ({knock})
+              <Emoji e={ICON.print} /> Print door-knock sheet ({knock})
             </Button>
             <a href={EXPORT_CSV_URL} className="text-sm font-semibold text-slate-300 hover:text-white">
-              Export CSV
+              <Emoji e={ICON.csv} /> Export CSV
             </a>
             <Link href="/board" className="text-sm font-semibold text-slate-300 hover:text-white">
-              Board
+              <Emoji e={ICON.map} /> Board
             </Link>
           </div>
         </header>
         {error ? <OfflineBanner error={error} receivedAt={receivedAt} /> : null}
         <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-slate-300 bg-white px-4 py-2">
           <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-            Zone
+            <Emoji e={ICON.location} /> Zone
             <select
               value={zone}
               onChange={(e) => setZone(e.target.value)}
@@ -100,7 +111,7 @@ function QrtLayout({ error, receivedAt }: { error: string | null; receivedAt: nu
               {HELP_STATUS_LABEL[s]} {inZone.filter((r) => r.status === s).length}
             </FilterChip>
           ))}
-          <span className="ml-auto flex items-center gap-3 text-sm text-slate-600">
+          <span className="flex items-center gap-3 text-sm text-slate-600 sm:ml-auto">
             {([1, 2, 3, 4] as const).map((p) => (
               <span key={p} className="inline-flex items-center gap-1">
                 <span className="inline-block size-3 rounded-full" style={{ backgroundColor: PRIORITY_COLOR[p] }} aria-hidden="true" />P{p}{" "}
@@ -109,11 +120,11 @@ function QrtLayout({ error, receivedAt }: { error: string | null; receivedAt: nu
             ))}
           </span>
         </div>
-        <main className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] gap-3 p-3">
-          <div className="relative min-h-0 overflow-hidden rounded-lg border border-slate-300 bg-slate-200">
+        <main className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto p-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:overflow-hidden">
+          <div className="relative h-[45dvh] min-h-[280px] overflow-hidden rounded-lg border border-slate-300 bg-slate-200 lg:h-auto lg:min-h-0">
             <BoardMap variant="qrt" registry={rows} selectedId={selectedId} onSelectRegistry={selectFromMap} />
           </div>
-          <div className="min-h-0 space-y-3 overflow-y-auto pr-1">
+          <div className="space-y-3 lg:min-h-0 lg:overflow-y-auto lg:pr-1">
             {rows.length ? (
               rows.map((r) => (
                 <LiveRegistryCard key={r.id} row={r} now={snap.now} selected={r.id === selectedId} onLocate={setSelectedId} showCall />

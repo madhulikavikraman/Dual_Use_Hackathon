@@ -187,3 +187,21 @@ body:has(.vf-landing) {
     opacity: 0;
   }
 }
+
+/* Board emoji (lib/ui/Emoji.tsx): the platform's color emoji font, upright, not stretching the line. */
+.vf-emoji {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1;
+}
+
+/* The board's phone-width drawer (components/board/sidebar/BoardSidebar.tsx). */
+@keyframes vf-drawer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}

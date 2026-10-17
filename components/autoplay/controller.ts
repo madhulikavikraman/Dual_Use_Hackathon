@@ -5,13 +5,13 @@
 // Mode's double effects from starting two runs; leaving the board stops it and puts autopilot back.
 import { useSyncExternalStore } from "react";
 import type { BoardSnapshot } from "@/lib/contracts";
-import { WORDING } from "@/lib/client/labels";
 import {
-  BEATS, abortError, api, isAbort, newMemo, recap, restoreAfterAutoplay, type AutoplayEnv, type Beat, type Rung, type SideTab,
+  BEATS, abortError, api, isAbort, newMemo, recap, restoreAfterAutoplay, type AutoplayEnv, type Beat, type Rung,
 } from "@/lib/autoplay/script";
 import { runScript, type BeatLine, type BeatResult } from "@/lib/autoplay/runner";
-import { BOARD_TOUR, captureTab } from "@/components/tour/boardSteps";
+import { BOARD_TOUR } from "@/components/tour/boardSteps";
 import { stopTour } from "@/components/tour/store";
+import { captureView, isDrawerWidth, setBoardView, viewForTab, viewForTarget, type BoardView } from "@/lib/ui/boardView";
 
 export type AutoplayStatus = "closed" | "intro" | "running" | "end";
 
@@ -106,20 +106,38 @@ let undoTab: (() => void) | null = null;
 let detachTimer: ReturnType<typeof setTimeout> | null = null;
 let autoStarted = false;
 
-const SIDE_PANEL = '[data-tour="side-panel"]';
-
-function tabLabel(tab: SideTab): string {
-  if (tab === "registry") return WORDING[latest?.meta.mode ?? "civilian"].registry;
-  return tab === "zones" ? "Zones" : tab === "feed" ? "Feed" : "Ledger";
-}
-
-/** Opens a side-panel tab by its label (the label is followed by a count badge in the same button). */
-function showTab(tab: SideTab) {
-  const label = tabLabel(tab);
-  const el = Array.from(document.querySelectorAll<HTMLButtonElement>(`${SIDE_PANEL} [role="tab"]`)).find((t) =>
-    (t.textContent ?? "").trim().startsWith(label),
+/**
+ * Puts the board on the view a beat talks about: the old side-panel tab names map to views (zones: Map, registry:
+ * Help), else the first target that lives in one view (the calls panel, the hold). The map and the sidebar are on
+ * screen in every view, so a beat that points only at them leaves the view alone. At phone width, where the view
+ * sits below the map, the target is then scrolled into view.
+ */
+function showFocus(focus: Beat["focus"]) {
+  if (!focus) return;
+  const targets = focus.target ? (Array.isArray(focus.target) ? focus.target : [focus.target]) : [];
+  let view: BoardView | null = focus.tab ? viewForTab(focus.tab) : null;
+  for (const t of targets) {
+    if (view) break;
+    view = viewForTarget(t);
+  }
+  if (view) setBoardView(view);
+  if (!targets.length || !isDrawerWidth()) return;
+  // Two frames: the view renders, then it is measured.
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      for (const t of targets) {
+        const el = document.querySelector(t);
+        if (!el) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width < 2 || r.height < 2) continue;
+        if (r.top < 0 || r.bottom > window.innerHeight) {
+          const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          el.scrollIntoView({ block: "start", behavior: smooth ? "smooth" : "auto" });
+        }
+        return;
+      }
+    }),
   );
-  if (el && el.getAttribute("aria-selected") !== "true") el.click();
 }
 
 function stripQuery() {
@@ -139,7 +157,7 @@ async function run() {
   abort = controller;
   skipPressed = false;
   stopTour(BOARD_TOUR);
-  if (!undoTab) undoTab = captureTab();
+  if (!undoTab) undoTab = captureView();
   set({
     status: "running", paused: false, collapsed: false, shown: null, shownCount: 0, extraShown: 0, line: null, frac: 0,
     waiting: false, results: [], startedAt: Date.now(), endedAt: null,
@@ -158,7 +176,7 @@ async function run() {
           shown: i, shownCount: state.shownCount + 1, extraShown: state.extraShown + (beat.quiet ? 1 : 0), line: null, frac: 0,
           waiting: false,
         });
-        if (beat.focus?.tab) showTab(beat.focus.tab);
+        showFocus(beat.focus);
       },
       onLine: (_i, line) => set({ line }),
       onTick: (_i, frac, waiting) => {

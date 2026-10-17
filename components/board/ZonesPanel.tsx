@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import type { HouseholdView } from "@/lib/contracts";
-import { fmtArea, fmtPeople, fmtTime } from "@/lib/client/format";
+import { fmtArea, fmtTime } from "@/lib/client/format";
 import { campaignLabel, displayStatus, stateLabel, STATE_TEXT, STATUS_COLOR, statusLabel } from "@/lib/client/labels";
 import { STATE_COLOR, STATE_RUNG } from "@/lib/directives";
-import type { Mode, Status, Zone } from "@/lib/types";
+import type { Hold, Mode, Status, Zone, ZoneState } from "@/lib/types";
+import { Emoji, People } from "@/lib/ui/Emoji";
+import { ICON, STATE_ICON } from "@/lib/ui/icons";
+import { selectZone, useBoardView } from "@/lib/ui/boardView";
 import { Button } from "@/components/ui/Button";
 import { Chip, ColorChip } from "@/components/ui/Chip";
 import { ApproveZoneDialog } from "./ApproveZoneDialog";
@@ -28,6 +31,30 @@ const GROUPS: Status[][] = [
   ["unreachable"],
 ];
 
+/** Most urgent first: the zone the Map view details when nobody has picked one. */
+const URGENCY: Record<ZoneState, number> = { order: 5, shelter_in_place: 4, warning: 3, watch: 2, lifted: 1, monitor: 0 };
+
+/** The zone the Map view details: the one picked, else the open hold's, else the most urgent. */
+export function useSelectedZone(): Zone | null {
+  const { snap, hold } = useBoard();
+  const { zoneId } = useBoardView();
+  const picked = zoneId ? snap.zones.find((z) => z.id === zoneId) : undefined;
+  if (picked) return picked;
+  const held = hold ? snap.zones.find((z) => z.id === hold.zone_id) : undefined;
+  if (held) return held;
+  return snap.zones.reduce<Zone | null>((best, z) => (!best || URGENCY[z.state] > URGENCY[best.state] ? z : best), null);
+}
+
+/** "⚠️ Warning" as a filled chip in the state's color. */
+export function StateChip({ state, mode, className = "" }: { state: ZoneState; mode: Mode; className?: string }) {
+  return (
+    <ColorChip className={className} color={STATE_COLOR[state]} text={STATE_TEXT[state]}>
+      <Emoji e={STATE_ICON[state]} />
+      {stateLabel(state, mode)}
+    </ColorChip>
+  );
+}
+
 function ZoneProgress({ residents, mode }: { residents: HouseholdView[]; mode: Mode }) {
   const statuses = residents.map(displayStatus);
   if (statuses.every((s) => s === "pending")) return null;
@@ -37,7 +64,7 @@ function ZoneProgress({ residents, mode }: { residents: HouseholdView[]; mode: M
     n: statuses.filter((s) => g.includes(s)).length,
   })).filter((g) => g.n);
   return (
-    <div className="mt-1.5">
+    <div className="mt-2">
       <div className="flex h-2 overflow-hidden rounded-full bg-slate-200" aria-hidden="true">
         {counts.map((g) => (
           <span key={g.label} style={{ width: `${(100 * g.n) / residents.length}%`, backgroundColor: g.color }} />
@@ -50,7 +77,49 @@ function ZoneProgress({ residents, mode }: { residents: HouseholdView[]; mode: M
   );
 }
 
-function ZoneCard({ zone, onAction }: { zone: Zone; onAction: (p: Pending) => void }) {
+/** One line per zone: state, name, people. Picking one opens its detail below the list. */
+function ZoneRow({ zone, selected, hold }: { zone: Zone; selected: boolean; hold: Hold | undefined }) {
+  const { snap } = useBoard();
+  const mode = snap.meta.mode;
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => selectZone(zone.id)}
+        aria-pressed={selected}
+        className={`flex w-full items-center gap-2 rounded-md border border-l-[5px] px-2.5 py-1.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600 motion-reduce:transition-none ${
+          selected ? "border-slate-400 bg-slate-50 shadow-sm" : "border-slate-200 bg-white hover:bg-slate-50"
+        }`}
+        style={{ borderLeftColor: STATE_COLOR[zone.state] }}
+      >
+        <Emoji e={STATE_ICON[zone.state]} className="text-base leading-none" />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-bold text-slate-900">{zone.name}</span>
+          <span className="block truncate text-xs text-slate-500">
+            {stateLabel(zone.state, mode)}
+            {zone.population_est ? (
+              <>
+                {" · "}
+                <People n={zone.population_est} />
+              </>
+            ) : null}
+          </span>
+        </span>
+        {hold ? (
+          <Chip tone="bad">
+            <Emoji e={ICON.hold} /> Hold
+          </Chip>
+        ) : null}
+        <span aria-hidden="true" className={`text-slate-400 ${selected ? "text-slate-700" : ""}`}>
+          ›
+        </span>
+      </button>
+    </li>
+  );
+}
+
+/** The picked zone in full: its facts, who approved it, call progress, the actions that fit its state, and its plan. */
+function ZoneDetail({ zone, onAction }: { zone: Zone; onAction: (p: Pending) => void }) {
   const { snap } = useBoard();
   const mode = snap.meta.mode;
   const holdOpen = snap.holds.some((h) => h.status === "open" && h.zone_id === zone.id);
@@ -58,33 +127,45 @@ function ZoneCard({ zone, onAction }: { zone: Zone; onAction: (p: Pending) => vo
   const residents = snap.households.filter((h) => h.zone_id === zone.id && h.role === "resident");
 
   return (
-    <article className="rounded-md border border-l-[6px] border-slate-200 bg-white px-3 py-2" style={{ borderLeftColor: STATE_COLOR[zone.state] }}>
-      <header className="flex items-center gap-2">
-        <h4 className="min-w-0 truncate text-[15px] font-bold">{zone.name}</h4>
+    <article
+      data-tour="zone-detail"
+      aria-label={`Zone detail: ${zone.name}`}
+      className="rounded-lg border border-l-[6px] border-slate-200 bg-white px-3 py-2.5 shadow-sm"
+      style={{ borderLeftColor: STATE_COLOR[zone.state] }}
+    >
+      <header className="flex flex-wrap items-center gap-2">
+        <h4 className="min-w-0 truncate text-base font-bold">{zone.name}</h4>
         <span className="font-mono text-xs text-slate-500">{zone.id}</span>
-        {holdOpen ? <Chip tone="bad">Hold open</Chip> : null}
-        <ColorChip className="ml-auto" color={STATE_COLOR[zone.state]} text={STATE_TEXT[zone.state]}>
-          {stateLabel(zone.state, mode)}
-        </ColorChip>
+        {holdOpen ? (
+          <Chip tone="bad">
+            <Emoji e={ICON.hold} /> Hold open
+          </Chip>
+        ) : null}
+        <StateChip state={zone.state} mode={mode} className="ml-auto" />
       </header>
-      <p className="mt-0.5 text-sm text-slate-600">
-        {zone.population_est ? `about ${fmtPeople(zone.population_est)} people` : "population not estimated"}
-        {zone.area_sq_mi ? ` · ${fmtArea(zone.area_sq_mi)} sq mi` : ""} · rung: {STATE_RUNG[zone.state]}
-        {zone.evac_point ? <> · evacuation point: {zone.evac_point.split(",")[0]}</> : null}
-      </p>
+      <ul className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-slate-700">
+        <li>{zone.population_est ? <People n={zone.population_est} /> : "Population not estimated"}</li>
+        {zone.area_sq_mi ? <li>{fmtArea(zone.area_sq_mi)} sq mi</li> : null}
+        <li>Rung: {STATE_RUNG[zone.state]}</li>
+        {zone.evac_point ? (
+          <li className="min-w-0">
+            <Emoji e={ICON.evac} /> {zone.evac_point.split(",")[0]}
+          </li>
+        ) : null}
+      </ul>
       {campaign ? (
-        <p className="mt-0.5 text-xs text-slate-600">
-          <b className="text-slate-800">{campaignLabel(campaign)}</b> {campaign.status === "running" ? "running" : campaign.status} since{" "}
-          {fmtTime(campaign.created_at)}, started by {campaign.started_by}
+        <p className="mt-1 text-xs text-slate-600">
+          <Emoji e={ICON.wave} /> <b className="text-slate-800">{campaignLabel(campaign)}</b>{" "}
+          {campaign.status === "running" ? "running" : campaign.status} since {fmtTime(campaign.created_at)}, started by {campaign.started_by}
         </p>
       ) : null}
       {zone.approved_by ? (
         <p className="mt-0.5 text-xs text-slate-500">
-          Approved by {zone.approved_by} at {fmtTime(zone.approved_at)}
+          <Emoji e={ICON.human} /> Approved by {zone.approved_by} at {fmtTime(zone.approved_at)}
         </p>
       ) : null}
       <ZoneProgress residents={residents} mode={mode} />
-      <div className="mt-2 flex flex-wrap gap-1.5">
+      <div className="mt-2.5 flex flex-wrap gap-1.5">
         <Button size="sm" variant="primary" onClick={() => onAction({ kind: "approve", zone })}>
           Change state…
         </Button>
@@ -95,7 +176,7 @@ function ZoneCard({ zone, onAction }: { zone: Zone; onAction: (p: Pending) => vo
             </Button>
             {holdOpen ? null : (
               <Button size="sm" data-tour="compose-order" onClick={() => onAction({ kind: "compose", zone })}>
-                Compose Order (opens hold)
+                <Emoji e={STATE_ICON.order} /> Compose Order (opens hold)
               </Button>
             )}
           </>
@@ -109,31 +190,42 @@ function ZoneCard({ zone, onAction }: { zone: Zone; onAction: (p: Pending) => vo
           Monthly test call
         </Button>
       </div>
+      {/*
+        Zone plan slot: the block-by-block evacuation plan for this zone renders here, e.g.
+        <BlockPlanPanel zone={zone} /> (components/board/BlockPlanPanel.tsx, merged from its own branch).
+        The wrapper hides itself while it is empty.
+      */}
+      <div data-slot="zone-plan" className="mt-3 empty:hidden" />
     </article>
   );
 }
 
-/** Proposals first (they need a human), then every zone with its state and the actions that fit it. */
+/** The Map view's column: proposals first (they need a human), a compact zone list, and the picked zone in detail. */
 export function ZonesPanel() {
   const { snap } = useBoard();
   const [pending, setPending] = useState<Pending | null>(null);
+  const selected = useSelectedZone();
   const close = () => setPending(null);
+  const openHolds = snap.holds.filter((h) => h.status === "open");
 
   return (
-    <div className="space-y-4 p-3">
+    <div className="space-y-3 p-3">
       <ProposalsPanel />
-      <section>
-        <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-600">Zones · a named human sets every state</h3>
+      <section data-tour="zones" aria-label="Zones">
+        <h3 className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-600">
+          <Emoji e={ICON.map} /> Zones <span className="font-semibold normal-case tracking-normal text-slate-500">· a named human sets every state</span>
+        </h3>
         {snap.zones.length ? (
-          <div className="space-y-2">
+          <ul className="space-y-1">
             {snap.zones.map((z) => (
-              <ZoneCard key={z.id} zone={z} onAction={setPending} />
+              <ZoneRow key={z.id} zone={z} selected={z.id === selected?.id} hold={openHolds.find((h) => h.zone_id === z.id)} />
             ))}
-          </div>
+          </ul>
         ) : (
-          <p className="text-sm text-slate-500">No zones loaded. Reset a scenario from the header.</p>
+          <p className="text-sm text-slate-500">No zones loaded. Pick a scenario in the sidebar.</p>
         )}
       </section>
+      {selected ? <ZoneDetail zone={selected} onAction={setPending} /> : null}
       {pending?.kind === "approve" ? <ApproveZoneDialog zone={pending.zone} onClose={close} /> : null}
       {pending?.kind === "compose" ? <ComposeOrderDialog zone={pending.zone} onClose={close} /> : null}
       {pending?.kind === "campaign" ? <CampaignDialog zone={pending.zone} action={pending.action} onClose={close} /> : null}

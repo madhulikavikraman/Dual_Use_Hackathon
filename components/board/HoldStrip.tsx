@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { HoldDecisionBody } from "@/lib/contracts";
 import { decideHold } from "@/lib/client/api";
 import { useNow } from "@/lib/client/clock";
-import { fmtArea, fmtCountdown, fmtInt, fmtPeople, fmtTime } from "@/lib/client/format";
+import { fmtArea, fmtCountdown, fmtInt, fmtTime } from "@/lib/client/format";
 import {
   ANSWER_COLOR,
   ANSWER_LABEL,
@@ -17,6 +17,8 @@ import {
   STATE_TEXT,
 } from "@/lib/client/labels";
 import { STATE_COLOR } from "@/lib/directives";
+import { Emoji, People } from "@/lib/ui/Emoji";
+import { ICON, STATE_ICON } from "@/lib/ui/icons";
 import type { Hold, HoldDecision, HoldTally, SentinelAnswer, Zone } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Chip, ColorChip } from "@/components/ui/Chip";
@@ -27,7 +29,7 @@ type Decision = HoldDecisionBody["decision"];
 
 const DECISIONS: Record<
   Decision,
-  { button: string; title: string; confirm: string; toast: string; suggestions: string[]; describe: (hold: Hold, zone: Zone | undefined) => string }
+  { button: string; title: string; confirm: string; toast: string; suggestions: string[]; describe: (hold: Hold, zone: Zone | undefined) => ReactNode }
 > = {
   send: {
     button: "Send now",
@@ -35,8 +37,12 @@ const DECISIONS: Record<
     confirm: "Send now",
     toast: "Sent (simulated). The canary outside the polygon rings next.",
     suggestions: ["Quorum: two edge reads confirm the hazard", "Incident commander wants it out now"],
-    describe: (h) =>
-      `Sends the alert to “${h.polygon_label}”, waking about ${fmtPeople(h.population_est)} people (estimate). Afterwards a phone outside the polygon is asked whether it arrived.`,
+    describe: (h) => (
+      <>
+        Sends the alert to “{h.polygon_label}”, waking <People n={h.population_est} /> (estimate). Afterwards a canary phone{" "}
+        <Emoji e={ICON.canary} /> outside the polygon is asked whether it arrived.
+      </>
+    ),
   },
   hold_once: {
     button: "Hold once +60 s",
@@ -90,8 +96,10 @@ function Countdown({ hold }: { hold: Hold }) {
   const remaining = now === null ? total : deadline - (now + clockOffset);
   const fraction = Math.min(1, Math.max(0, remaining / total));
   return (
-    <div className="w-[124px] shrink-0 text-right">
-      <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Sends on time in</div>
+    <div className="w-[140px] shrink-0 text-right">
+      <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+        <Emoji e={ICON.hold} /> Sends on time in
+      </div>
       <div className="font-mono text-[38px] font-black leading-none tabular-nums text-slate-900" aria-live="off">
         {fmtCountdown(remaining)}
       </div>
@@ -177,10 +185,13 @@ function OpenHold({ hold, others, onSelect }: { hold: Hold; others: Hold[]; onSe
   return (
     <section data-tour="hold" aria-label="Hold" className="flex min-h-0 flex-col overflow-hidden rounded-lg border-2 border-red-600 bg-white shadow-sm">
       <header className="flex shrink-0 flex-wrap items-center gap-2 bg-red-50 px-3 py-1.5">
-        <span className="rounded bg-red-700 px-1.5 py-0.5 text-[11px] font-black tracking-widest text-white">HOLD</span>
+        <span className="rounded bg-red-700 px-1.5 py-0.5 text-[11px] font-black tracking-widest text-white">
+          <Emoji e={ICON.hold} /> HOLD
+        </span>
         <b className="text-[15px]">{zone?.name ?? hold.zone_id}</b>
         <span className="text-slate-500">→</span>
         <ColorChip color={STATE_COLOR[hold.proposed_state]} text={STATE_TEXT[hold.proposed_state]}>
+          <Emoji e={STATE_ICON[hold.proposed_state]} />
           {stateLabel(hold.proposed_state, mode)}
         </ColorChip>
         <Chip tone={read.tone} className="ml-auto" title={read.detail}>
@@ -205,13 +216,15 @@ function OpenHold({ hold, others, onSelect }: { hold: Hold; others: Hold[]; onSe
       <div className="flex shrink-0 gap-3 px-3 pt-2">
         <div className="min-w-0 flex-1">
           <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Dose preview</div>
-          <div className="text-[23px] font-black leading-tight text-slate-900">Wakes about {fmtPeople(hold.population_est)} people</div>
+          <div className="text-[23px] font-black leading-tight text-slate-900">
+            Wakes <People n={hold.population_est} />
+          </div>
           <div className="text-[13px] leading-snug text-slate-600">
             across {fmtArea(hold.area_sq_mi)} sq mi (estimate) · polygon: <b className="text-slate-900">{hold.polygon_label}</b>
           </div>
           {oversize >= 3 && zone?.population_est ? (
             <p className="mt-1 rounded bg-red-100 px-2 py-0.5 text-[13px] font-semibold text-red-900">
-              {fmtInt(oversize)}× the zone&apos;s {fmtPeople(zone.population_est)} people. Check the polygon.
+              {fmtInt(oversize)}× the zone&apos;s <People n={zone.population_est} />. Check the polygon.
             </p>
           ) : null}
         </div>
@@ -231,6 +244,9 @@ function OpenHold({ hold, others, onSelect }: { hold: Hold; others: Hold[]; onSe
         ))}
       </div>
       <div className="mt-1 min-h-[64px] flex-1 overflow-y-auto">
+        <h4 className="px-3 pt-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          <Emoji e={ICON.sentinel} /> Sentinels at the edge
+        </h4>
         <SentinelRows hold={hold} />
       </div>
       <p className="shrink-0 px-3 pt-1 text-xs text-slate-600">{read.detail}</p>
@@ -284,7 +300,9 @@ function ClosedHold({ hold, onDismiss }: { hold: Hold; onDismiss: () => void }) 
   return (
     <section data-tour="last-hold" aria-label="Last hold" className="shrink-0 rounded-lg border border-slate-300 bg-white">
       <header className="flex items-start gap-2 px-3 pt-2">
-        <span className="mt-0.5 shrink-0 rounded bg-slate-800 px-1.5 py-0.5 text-[11px] font-black tracking-widest text-white">LAST HOLD</span>
+        <span className="mt-0.5 shrink-0 rounded bg-slate-800 px-1.5 py-0.5 text-[11px] font-black tracking-widest text-white">
+          <Emoji e={ICON.hold} /> LAST HOLD
+        </span>
         <div className="min-w-0 flex-1">
           <b className="block text-[15px] leading-snug">{HOLD_OUTCOME[outcomeOf(hold)]}</b>
           <span className="block truncate text-[13px] text-slate-600">
@@ -300,7 +318,7 @@ function ClosedHold({ hold, onDismiss }: { hold: Hold; onDismiss: () => void }) 
       <div className="space-y-1.5 px-3 pb-2.5 pt-1">
         {sent ? (
           <p className="text-[13px] text-slate-700">
-            Woke about <b>{fmtPeople(hold.population_est)}</b> people · {hold.polygon_label} · tally {hold.tally.yes} yes, {hold.tally.no} no,{" "}
+            Woke <b><People n={hold.population_est} /></b> · {hold.polygon_label} · tally {hold.tally.yes} yes, {hold.tally.no} no,{" "}
             {hold.tally.silent} silent
           </p>
         ) : null}
@@ -309,14 +327,20 @@ function ClosedHold({ hold, onDismiss }: { hold: Hold; onDismiss: () => void }) 
             Handed to the duty officer by {hold.handed_off_by} at {fmtTime(hold.handed_off_at)}.
           </p>
         ) : null}
-        {sent && !canaries.length ? <p className="text-sm text-slate-500">Canary: rings outside the polygon about 15 s after the send…</p> : null}
+        {sent && !canaries.length ? (
+          <p className="text-sm text-slate-500">
+            <Emoji e={ICON.canary} /> Canary: rings outside the polygon about 15 s after the send…
+          </p>
+        ) : null}
         {canaries.map((c) => {
           const h = householdById.get(c.household_id);
           const flag = c.flag ? CANARY_FLAG[c.flag] : null;
           return (
             <div key={c.id} className="rounded-md bg-slate-50 px-2.5 py-1.5 text-sm">
               <div className="flex items-center gap-2">
-                <span className="font-bold">Canary</span>
+                <span className="font-bold">
+                  <Emoji e={ICON.canary} /> Canary
+                </span>
                 <span className="min-w-0 truncate">
                   {h?.name ?? "Canary phone"}
                   {h?.device_label ? ` · ${h.device_label}` : ""} · {c.inside ? "inside" : "outside"} the polygon

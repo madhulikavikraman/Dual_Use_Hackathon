@@ -4,7 +4,7 @@
 // live-location link, the helper sent, and "Send helper". Used by the board's registry tab and the QRT view.
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { EXPORT_CSV_URL } from "@/lib/client/api";
 import { fmtAgo, isFresh } from "@/lib/client/format";
 import { HELP_SOURCE_LABEL, HELP_STATUS_LABEL, HELP_STATUS_TONE, NEED_LABEL, PRIORITY_COLOR, PRIORITY_LABEL } from "@/lib/client/labels";
@@ -14,6 +14,8 @@ import { useAct, useBoard } from "@/components/board/BoardContext";
 import { DecisionDialog } from "@/components/board/DecisionDialog";
 import { PickupRuns } from "@/components/board/PickupRuns";
 import { RegistryActions } from "@/components/board/RegistryActions";
+import { Emoji } from "@/lib/ui/Emoji";
+import { ICON, NEED_ICON } from "@/lib/ui/icons";
 import { Button } from "@/components/ui/Button";
 import { Chip, ColorChip } from "@/components/ui/Chip";
 import { Field, inputClass } from "@/components/ui/Field";
@@ -28,15 +30,44 @@ function PriorityChip({ priority }: { priority: 1 | 2 | 3 | 4 }) {
   );
 }
 
-function needsLine(row: HelpRequest): string {
-  return [
-    row.needs.length ? row.needs.map((n) => NEED_LABEL[n]).join(", ") : (row.reason ?? "").replaceAll("_", " "),
-    row.people ? `${row.people} ${row.people === 1 ? "person" : "people"}` : "",
-    row.device_battery_hours !== null ? `battery ${row.device_battery_hours} h` : "",
-    row.animals ? `animals: ${row.animals}` : "",
-  ]
-    .filter(Boolean)
-    .join(" · ");
+/** Needs, people, battery and animals, each with its icon (decorative: the words carry the meaning). */
+function NeedsLine({ row }: { row: HelpRequest }) {
+  const parts: ReactNode[] = [];
+  if (row.needs.length) {
+    row.needs.forEach((n, i) =>
+      parts.push(
+        <span key={`n${n}`}>
+          {NEED_ICON[n] ? <Emoji e={NEED_ICON[n]} /> : null} {NEED_LABEL[n]}
+          {i < row.needs.length - 1 ? "," : ""}
+        </span>,
+      ),
+    );
+  } else if (row.reason) {
+    parts.push(<span key="reason">{row.reason.replaceAll("_", " ")}</span>);
+  }
+  if (row.people) {
+    parts.push(
+      <span key="people">
+        <Emoji e={ICON.people} /> {row.people} {row.people === 1 ? "person" : "people"}
+      </span>,
+    );
+  }
+  if (row.device_battery_hours !== null) {
+    parts.push(
+      <span key="battery">
+        <Emoji e="🔋" /> battery {row.device_battery_hours} h
+      </span>,
+    );
+  }
+  if (row.animals) {
+    parts.push(
+      <span key="animals">
+        <Emoji e="🐾" /> animals: {row.animals}
+      </span>,
+    );
+  }
+  if (!parts.length) return <>Needs not recorded</>;
+  return <span className="inline-flex flex-wrap gap-x-2 gap-y-0.5">{parts}</span>;
 }
 
 /** Where the row's location came from, how precise and how old: "Live GPS · 6 m · 12 s ago". */
@@ -55,7 +86,7 @@ export function LocationBadge({ row, now }: { row: HelpRequest; now: string }) {
           {fresh ? <span className="absolute inline-flex size-full rounded-full bg-blue-500 opacity-70 motion-safe:animate-ping" /> : null}
           <span className={`relative inline-flex size-2.5 rounded-full ${fresh ? "bg-blue-600" : "bg-slate-400"}`} />
         </span>
-        Live GPS{row.last_accuracy_m !== null ? ` · ${Math.round(row.last_accuracy_m)} m` : ""} · {age}
+        <Emoji e={ICON.gps} /> Live GPS{row.last_accuracy_m !== null ? ` · ${Math.round(row.last_accuracy_m)} m` : ""} · {age}
         {fresh ? "" : " · stale"}
       </span>
     );
@@ -64,11 +95,16 @@ export function LocationBadge({ row, now }: { row: HelpRequest; now: string }) {
   if (row.last_source === "stated") {
     return (
       <Chip tone={tone} className="max-w-full whitespace-normal" title={`Stated ${age}`}>
-        Stated: “{row.last_stated_text ?? "a place"}” · {age}
+        <Emoji e={ICON.location} /> Stated: “{row.last_stated_text ?? "a place"}” · {age}
       </Chip>
     );
   }
-  if (row.last_source === "enrolled") return <Chip tone={tone}>Enrolled address · {age}</Chip>;
+  if (row.last_source === "enrolled")
+    return (
+      <Chip tone={tone}>
+        <Emoji e="🏠" /> Enrolled address · {age}
+      </Chip>
+    );
   return <Chip tone="warn">Zone centre (low precision)</Chip>;
 }
 
@@ -126,12 +162,14 @@ const DISPATCH_TONE: Record<DispatchStatus, "info" | "good" | "neutral" | "warn"
 function DispatchLine({ d }: { d: DispatchSummary }) {
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5 text-xs text-slate-600">
-      <span className="font-semibold text-slate-800">Helper: {d.helper_label}</span>
+      <span className="font-semibold text-slate-800">
+        <Emoji e={ICON.helper} /> Helper: {d.helper_label}
+      </span>
       <Chip tone={DISPATCH_TONE[d.status]}>{DISPATCH_TEXT[d.status]}</Chip>
       <span>sent by {d.dispatched_by}</span>
       {d.note ? <span>· “{d.note}”</span> : null}
       <a href={d.link} target="_blank" rel="noreferrer" className="font-semibold text-blue-700 underline-offset-2 hover:underline">
-        Helper link ↗
+        <Emoji e={ICON.navigate} /> Helper link ↗
       </a>
     </span>
   );
@@ -173,7 +211,7 @@ export function SendHelperButton({ row }: { row: HelpRequest }) {
           setOpen(true);
         }}
       >
-        Send helper
+        <Emoji e={ICON.helper} /> Send helper
       </Button>
       {open ? (
         <DecisionDialog
@@ -278,18 +316,28 @@ export function LiveRegistryCard({
         ) : null}
         {row.language ? <span className="text-sm text-slate-600">{row.language}</span> : null}
         <span className="ml-auto flex items-center gap-1.5">
-          {row.synthetic ? <Chip>synthetic</Chip> : <Chip tone="info">real phone</Chip>}
+          {row.synthetic ? (
+            <Chip>synthetic</Chip>
+          ) : (
+            <Chip tone="info">
+              <Emoji e={ICON.phone} /> real phone
+            </Chip>
+          )}
           <Chip tone={HELP_STATUS_TONE[row.status]}>{HELP_STATUS_LABEL[row.status]}</Chip>
           {onLocate && row.last_lat !== null ? (
             <button type="button" onClick={() => onLocate(row.id)} className="rounded px-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50">
-              Locate
+              <Emoji e={ICON.location} /> Locate
             </button>
           ) : null}
         </span>
       </header>
-      <p className="mt-1 text-sm font-medium text-slate-800">{needsLine(row) || "Needs not recorded"}</p>
+      <p className="mt-1 text-sm font-medium text-slate-800">
+        <NeedsLine row={row} />
+      </p>
       <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm">
-        <span className="text-slate-500">Location:</span>
+        <span className="text-slate-500">
+          <Emoji e={ICON.location} /> Location:
+        </span>
         <LocationBadge row={row} now={now} />
       </p>
       {extra?.share ? (
@@ -325,20 +373,24 @@ export function LiveRegistryPanel({ registryLabel }: { registryLabel?: string })
     <div className="space-y-3 p-3">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-semibold text-slate-700">
-          {open.length} open{registryLabel ? ` in the ${registryLabel.toLowerCase()}` : ""}
+          <Emoji e={ICON.help} /> {open.length} open{registryLabel ? ` in the ${registryLabel.toLowerCase()}` : ""}
         </span>
         {byPriority.map(({ p, n }) => (
           <span key={p} className="inline-flex items-center gap-1 text-sm text-slate-700">
             <PriorityChip priority={p} /> {n}
           </span>
         ))}
-        {liveNow ? <Chip tone="info">{liveNow} live GPS</Chip> : null}
+        {liveNow ? (
+          <Chip tone="info">
+            <Emoji e={ICON.gps} /> {liveNow} live GPS
+          </Chip>
+        ) : null}
         <span className="ml-auto flex items-center gap-3 text-sm font-semibold">
           <a href={EXPORT_CSV_URL} className="text-blue-700 underline-offset-2 hover:underline">
-            Export CSV
+            <Emoji e={ICON.csv} /> Export CSV
           </a>
           <Link href="/qrt" target="_blank" className="text-blue-700 underline-offset-2 hover:underline">
-            QRT view ↗
+            <Emoji e={ICON.qrt} /> QRT view ↗
           </Link>
         </span>
       </div>

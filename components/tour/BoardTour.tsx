@@ -15,7 +15,8 @@ export function BoardTour() {
   const { snap } = useBoard();
   const mode = snap.meta.mode;
   const holdOpen = snap.holds.some((h) => h.status === "open");
-  const steps = useMemo(() => boardSteps(mode, holdOpen), [mode, holdOpen]);
+  const warningZoneId = snap.zones.find((z) => z.state === "warning")?.id ?? null;
+  const steps = useMemo(() => boardSteps(mode, holdOpen, warningZoneId), [mode, holdOpen, warningZoneId]);
 
   useEffect(() => {
     const asked = new URLSearchParams(window.location.search).get("tour");

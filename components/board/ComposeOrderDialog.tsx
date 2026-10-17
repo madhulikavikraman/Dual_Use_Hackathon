@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { openHold, type Signed } from "@/lib/client/api";
 import { fmtArea, fmtPeople } from "@/lib/client/format";
+import { People } from "@/lib/ui/Emoji";
 import { stateLabel } from "@/lib/client/labels";
 import type { Zone } from "@/lib/types";
 import { Field, inputClass } from "@/components/ui/Field";
@@ -76,7 +77,8 @@ export function ComposeOrderDialog({ zone, onClose }: { zone: Zone; onClose: () 
             {zone.name}
             {zone.population_est ? (
               <span className="text-slate-500">
-                · about {fmtPeople(zone.population_est)} people{zone.area_sq_mi ? `, ${fmtArea(zone.area_sq_mi)} sq mi` : ""}
+                · <People n={zone.population_est} />
+                {zone.area_sq_mi ? `, ${fmtArea(zone.area_sq_mi)} sq mi` : ""}
               </span>
             ) : null}
           </label>

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { fmtAgo, fmtTime } from "@/lib/client/format";
 import { FEED_KIND_LABEL, SEVERITY_TONE, type Tone } from "@/lib/client/labels";
 import type { AlertItem } from "@/lib/types";
+import { Emoji } from "@/lib/ui/Emoji";
+import { FEED_ICON, ICON } from "@/lib/ui/icons";
 import { Chip } from "@/components/ui/Chip";
 import { useBoard } from "./BoardContext";
 
@@ -20,7 +22,10 @@ function FeedCard({ item, now, onDismiss, compact = false }: { item: AlertItem; 
   return (
     <article className={`rounded-md border border-l-4 border-slate-200 px-3 ${compact ? "py-1.5" : "py-2"} ${CARD[tone]}`}>
       <header className="flex items-center gap-2">
-        <Chip tone={tone}>{FEED_KIND_LABEL[item.kind]}</Chip>
+        <Chip tone={tone}>
+          <Emoji e={FEED_ICON[item.kind] ?? ICON.feed} />
+          {FEED_KIND_LABEL[item.kind] ?? item.kind}
+        </Chip>
         {item.zone_id ? <span className="font-mono text-xs text-slate-500">{item.zone_id}</span> : null}
         <time className="ml-auto text-xs text-slate-500" dateTime={item.created_at} title={fmtTime(item.created_at)}>
           {fmtAgo(item.created_at, now)}
@@ -71,7 +76,7 @@ export function FeedTicker() {
       <FeedCard item={newest} now={snap.now} compact onDismiss={() => setDismissed((d) => [...d, newest.id])} />
       {rest.length ? (
         <p className="mt-1 w-fit rounded bg-white/95 px-2 py-0.5 text-xs font-semibold text-slate-700 shadow">
-          +{rest.length} more in the Feed
+          +{rest.length} more in the <Emoji e={ICON.feed} /> Feed
         </p>
       ) : null}
     </div>

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { buildPickupRuns } from "@/lib/client/api";
 import { NEED_LABEL } from "@/lib/client/labels";
 import type { PickupRun } from "@/lib/types";
+import { Emoji } from "@/lib/ui/Emoji";
+import { ICON } from "@/lib/ui/icons";
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { useAct, useBoard } from "./BoardContext";
@@ -22,7 +24,9 @@ export function PickupRuns() {
   return (
     <section className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
       <header className="flex items-center gap-2">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">Pickup runs</h4>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">
+          <Emoji e={ICON.pickup} /> Pickup runs
+        </h4>
         <Button size="sm" className="ml-auto" onClick={() => setBuilding(true)}>
           Build pickup runs
         </Button>
@@ -32,6 +36,7 @@ export function PickupRuns() {
           {snap.runs.map((run) => (
             <div key={run.id}>
               <div className="flex items-center gap-2 text-sm">
+                <Emoji e={run.vehicle === "accessible_van" ? "♿" : "🚗"} />
                 <b>{run.label}</b>
                 <span className="text-slate-600">{VEHICLE[run.vehicle]}</span>
                 <Chip tone={RUN_TONE[run.status]} className="ml-auto">
