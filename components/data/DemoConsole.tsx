@@ -42,7 +42,11 @@ const EVENTS: {
   { id: "hoax_flood", label: "Hoax flood", hint: "200 unverified reports in Koreatown: the hoax mirror" },
   { id: "fire_spreading", label: "Fire spreading", hint: "The envelope advances 1 h: new proposals" },
   { id: "mass_no_answer", label: "Mass no answer", hint: "70% of residents stop answering" },
-  { id: "dark_zone", label: "Dark zone", hint: "Every sentinel goes silent: the dark-zone card; the alert still sends at 0:00" },
+  {
+    id: "dark_zone",
+    label: "Dark zone",
+    hint: "Simulated sentinels go silent (volunteer phones still ring unless on autopilot). The dark-zone card needs 3+ sentinels asked: on Westside, open the hold on Santa Monica, Venice, West LA or Mid-City. Sends at 0:00",
+  },
 ];
 
 const FEEDS = [

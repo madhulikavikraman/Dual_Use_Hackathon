@@ -210,6 +210,13 @@ export function buildWestside(at: string, devicePhones: (string | null)[] = []):
     }
   }
 
+  // Collections line (synthetic): enrolled holders of things that cannot be replaced. Fixed points, so the seeded
+  // layout of everyone else does not move.
+  synth.push(W({ id: hid(95), name: "Marisol Vega", ...ES, address: "Palms (demo)", lng: -118.4, lat: 34.012, sim_profile: "leaving",
+    collection_note: "Her late father's paintings (about 30 framed works) and two boxes of family letters and negatives; grab list by the front door" }));
+  synth.push(W({ id: hid(96), name: "Palms neighborhood history archive (demo)", address: "Culver City (demo)", lng: -118.385, lat: 34.02, sim_profile: "leaving",
+    collection_note: "Oral-history tapes, photographs and maps from the 1920s on; three archival boxes on the grab list, shelf A" }));
+
   // Synthetic enrolled sentinels near each zone's corners (independent reads).
   let s = 100;
   const sentinel = (zoneId: string, vertex: number, profile: SimProfile, label: string) => {

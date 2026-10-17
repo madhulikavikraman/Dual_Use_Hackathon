@@ -33,7 +33,7 @@ export const TWIST_TWO: Omit<TwistEntry, "id" | "created_at"> = {
     "Every country has its own words for 'leave now', its own emergency number and its own rules on AI and data; what must travel is the safety properties. In mainland China the in-call model is a CAC-filed domestic model behind the same seven tools, since Claude is not offered there.",
   proof:
     "Reset to Chongqing and approve a Warning for Tiansheng: calls carry the Chinese directive and 119. scripts/agent-check-cn.ts: a live Mandarin call opens with the AI disclosure, reads the directive, route and shelter verbatim, confirms 'wheelchair, no car' back and files a P2 help row. PRD 17.2; decisions D-37 to D-41.",
-  commits: [],
+  commits: ["f724ac5"],
 };
 
 /** Twists are part of the record; reset never deletes them, and missing ones are re-filed. */

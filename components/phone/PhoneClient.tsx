@@ -554,6 +554,10 @@ export default function PhoneClient() {
 
   const soundCheck = () => {
     unlockAudio();
+    // A sound check asks for sound: drop a mute left from the call that just ended (that call stays in the
+    // poll for 15 s), or the voice would be skipped. Done keeps that mute, so the muted call's in-flight reply
+    // stays quiet. soundOnRef syncs well before the voice, which plays 1.3 s later.
+    setMutedCallId(null);
     const stop = startRinging({ sound: true });
     window.setTimeout(() => {
       stop();
@@ -662,8 +666,9 @@ export default function PhoneClient() {
               <div className="w-full max-w-md rounded-2xl bg-amber-500/10 p-4 text-left ring-1 ring-amber-500/40">
                 <p className="font-semibold text-amber-100">{canSpeak ? "Did you hear a ring, then a voice?" : "Did you hear a ring?"}</p>
                 <p className="mt-1 text-sm text-amber-100/90">
-                  If not, turn off Silent mode (on an iPhone, the switch on the side), turn the volume all the way up,
-                  and play it again. A phone on Silent shows the call but makes no sound.
+                  If not, turn off Silent mode (on an iPhone: the switch on the side; on newer models, hold the Action
+                  button or go to Settings &gt; Sounds &amp; Haptics), turn the volume all the way up, and play it again.
+                  A phone on Silent shows the call but makes no sound.
                 </p>
                 <div className="mt-3 flex gap-2">
                   <button

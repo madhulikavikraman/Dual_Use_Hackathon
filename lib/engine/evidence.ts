@@ -178,8 +178,8 @@ const readBasis = (): ReadBasis => ({ drills: 0, ok: 0, quorum: 0, times: [] });
 
 function m1(c: Ctx): EvidenceItem {
   const rows: Record<string, Cell>[] = [];
-  // Two bases (D-20, D-31). The milestone counts real phones only: holds that rang at least one sentinel on a real
-  // phone, timed to the second real-phone answer. Every answer, simulated sentinels included, is the rehearsal: the
+  // Two bases (D-20, D-31). The milestone counts real phones only: holds that rang at least two sentinels on real
+  // phones (the quorum size), timed to the second real-phone answer. Every answer, simulated sentinels included, is the rehearsal: the
   // simulator answers 8 to 33 s after ringing by construction, so a simulated read proves the pipeline, not 3 AM.
   const real = readBasis();
   const all = readBasis();
@@ -219,7 +219,8 @@ function m1(c: Ctx): EvidenceItem {
     const darkZone = !bypass && h.read === "dark_zone";
     const closed = h.status !== "open";
     const finished = !bypass && !darkZone && (closed || q !== null);
-    const realDrill = !bypass && !darkZone && realAsked > 0 && (closed || rq !== null);
+    // A real-phone quorum needs two real answers, so a hold that rang one real phone can never pass: it is simulation only.
+    const realDrill = !bypass && !darkZone && realAsked >= 2 && (closed || rq !== null);
     if (bypass) bypassed++;
     else if (darkZone) dark++;
     else if (!finished) inProgress++;
@@ -263,7 +264,9 @@ function m1(c: Ctx): EvidenceItem {
           : realDrill
             ? "real-phone drill"
             : finished
-              ? "simulation only"
+              ? realAsked === 1
+                ? "simulation only (1 real phone asked)"
+                : "simulation only"
               : "in progress",
       quorum_at: quorumAt,
       quorum_s: q,
@@ -311,13 +314,13 @@ function m1(c: Ctx): EvidenceItem {
         dark ? `${plural(dark, "dark-zone hold")} excluded (every sentinel silent: the network drill; the alert still sends on time)` : null,
         `Answers from real phones: ${realAnswers}; simulated (synthetic or autopilot): ${synthAnswers}.`,
         !real.drills && all.drills
-          ? "Not a pass: the milestone counts holds that rang real phones (D-20). Simulated sentinels answer on a script 8 to 33 s after ringing; run a hold with the volunteer sentinel phones on the phone page and autopilot off."
+          ? "Not a pass: the milestone counts holds that rang at least two sentinels on real phones (a real-phone quorum, D-20). Simulated sentinels answer on a script 8 to 33 s after ringing; run a hold with the volunteer sentinel phones on the phone page and autopilot off."
           : null,
       ]
         .filter(Boolean)
         .join(" · ") || null,
     method:
-      "Per hold: seconds from holds.started_at to the second sentinel answer (yes, no or unsure; silence is an abstention, never a No). Real phones only: a drill is a hold that rang at least one sentinel on a real phone (browser or Retell; not the simulator, not autopilot) and reached a real-phone quorum or closed; it succeeds when the second real-phone answer came within 90 s and the real-phone read matches ground truth where it can be checked. The same count over every answer, simulated sentinels included, is the rehearsal ('met in simulation'). IC bypasses and dark zones (every sentinel silent) are excluded: no read is possible by design. Ground truth for the seeded scenario: the hazard is real inside the zone's own polygon (expect a confirmed read) and a countywide polygon is wrong (expect a disputed read).",
+      "Per hold: seconds from holds.started_at to the second sentinel answer (yes, no or unsure; silence is an abstention, never a No). Real phones only: a drill is a hold that rang at least two sentinels on real phones (the quorum size; browser or Retell, not the simulator, not autopilot) and reached a real-phone quorum or closed (a hold that rang one real phone cannot reach a real-phone quorum and counts as simulation only); it succeeds when the second real-phone answer came within 90 s and the real-phone read matches ground truth where it can be checked. The same count over every answer, simulated sentinels included, is the rehearsal ('met in simulation'). IC bypasses and dark zones (the hold's dark-zone read: three or more sentinels asked, every one silent) are excluded: no read is possible by design. Ground truth for the seeded scenario: the hazard is real inside the zone's own polygon (expect a confirmed read) and a countywide polygon is wrong (expect a disputed read).",
     figures: [
       {
         label: "Real-phone drills under 90 s, read matching ground truth",

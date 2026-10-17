@@ -103,7 +103,7 @@ export function MapLegend({ mode }: { mode: Mode }) {
             >
               Canary
             </Item>
-            {([1, 2, 3] as const).map((p) => (
+            {([1, 2, 3, 4] as const).map((p) => (
               <Item
                 key={p}
                 mark={

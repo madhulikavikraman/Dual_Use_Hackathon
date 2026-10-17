@@ -114,6 +114,9 @@ export function buildChongqing(at: string, devicePhones: (string | null)[] = [])
       ix++;
     }
   }
+  // Collections line (synthetic): a retired teacher's private library of thread-bound old books.
+  synth.push(C({ id: hid(95), name: "刘老师 Teacher Liu", ...ZH, address: "天生街道（演示）", lng: 106.432, lat: 29.812, sim_profile: "leaving",
+    collection_note: "家藏线装古籍约200册；清单上的两箱放在书房门口" }));
   let s = 100;
   const post = (zoneId: string, vertex: number, label: string, profile: SimProfile) => {
     const [lng, lat] = inset(z(zoneId).geom, vertex, 0.2);

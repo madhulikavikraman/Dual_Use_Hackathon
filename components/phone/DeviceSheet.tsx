@@ -156,8 +156,8 @@ export default function DeviceSheet() {
           <h1 className="text-2xl font-semibold sm:text-3xl">Volunteer phones</h1>
           <p className="mt-1 text-slate-600">
             Scan a code with the volunteer&apos;s phone and tap <em>Tap to enable sound</em>: it plays a test ring and
-            voice. No sound? Turn off Silent mode (the switch on the side of an iPhone) and turn the volume up. Then
-            leave the page open.
+            voice. No sound? Turn off Silent mode (on an iPhone: the switch on the side; on newer models, hold the
+            Action button or go to Settings &gt; Sounds &amp; Haptics) and turn the volume up. Then leave the page open.
             {board && (
               <>
                 {" "}

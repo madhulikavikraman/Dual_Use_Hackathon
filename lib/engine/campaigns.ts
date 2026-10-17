@@ -53,6 +53,7 @@ export function buildVars(opts: {
     simulated: "true",
     mode: meta.mode,
     emergency_number: jurisdictionFor(meta.jurisdiction).call_now,
+    collection_note: (opts.subject ?? household)?.collection_note ?? "",
   };
 }
 

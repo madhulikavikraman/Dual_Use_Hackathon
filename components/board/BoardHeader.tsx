@@ -73,7 +73,9 @@ export function MetricsStrip() {
   const { snap } = useBoard();
   const m = snap.metrics;
   const words = WORDING[snap.meta.mode];
-  const realResidents = snap.households.filter((h) => h.has_device && h.role === "resident").length;
+  // Volunteer resident phones, as the engine counts real_accounted: public-line callers are real people but
+  // not part of the demo roster, so they are not in the denominator either.
+  const realResidents = snap.households.filter((h) => h.has_device && h.device_label !== "Public line" && h.role === "resident").length;
   return (
     <div className="grid shrink-0 grid-cols-8 divide-x divide-slate-200 border-b border-slate-300 bg-white">
       <Metric

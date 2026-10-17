@@ -65,6 +65,9 @@ async function main() {
   check(hale?.via === "linked_contact" && hale.status === "leaving", `Walter Hale accounted for via linked contact (${hale?.status}/${hale?.via}) at ${since(t0)}`);
   const lucia = await statusOf(hid(1));
   check(lucia?.status === "leaving", `Phone 1 (Spanish) recorded leaving (${lucia?.status})`);
+  // Collections line: a collector asks for help moving her grab list at Warning; it is P4 and never counts as a person.
+  const salvage = (await db().where("help_requests", { household_id: hid(95) })).find((r) => r.kind === "salvage");
+  check(Boolean(salvage && salvage.priority === 4), `collections line: salvage request is a P4 row of its own (${salvage?.reason ?? "missing"})`);
 
   // 3. Order with the wrong (countywide) polygon: the hold, the dose, the Long Beach "no", Edit polygon.
   await setMeta({ wrong_polygon: true });

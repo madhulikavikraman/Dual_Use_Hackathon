@@ -163,3 +163,7 @@ begin
 end $$;
 
 alter table meta add column if not exists jurisdiction text default 'US-CA';
+
+-- Collections line (D-42): what a household holds that cannot be replaced, and salvage rows kept apart from people.
+alter table households add column if not exists collection_note text;
+alter table help_requests add column if not exists kind text not null default 'people';

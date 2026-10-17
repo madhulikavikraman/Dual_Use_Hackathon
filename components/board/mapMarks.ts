@@ -100,7 +100,7 @@ export const diamondHtml = (color: string, pulse: boolean, device: boolean) =>
 export const triangleHtml = (color: string, pulse: boolean) =>
   `<div class="${pulse ? "sk-ring" : ""}" style="--c:${color};border-radius:4px"><svg class="sk-tri" width="20" height="18" viewBox="0 0 20 18" aria-hidden="true"><path d="M10 1.5 L18.5 16.5 H1.5 Z" fill="${color}" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg></div>`;
 
-export const helpPinHtml = (priority: 1 | 2 | 3, color: string, fresh: boolean, done: boolean, selected: boolean) =>
+export const helpPinHtml = (priority: 1 | 2 | 3 | 4, color: string, fresh: boolean, done: boolean, selected: boolean) =>
   `<div class="sk-help${fresh ? "" : " sk-stale"}${done ? " sk-done" : ""}${selected ? " sk-selected" : ""}" style="--c:${color};--t:${priority === 3 ? "#111827" : "#fff"}">${priority}</div>`;
 
 export const countHtml = (color: string, text: string) => `<div class="sk-hex-count" style="--c:${color}">${esc(text)}</div>`;

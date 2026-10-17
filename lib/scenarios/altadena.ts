@@ -47,6 +47,10 @@ export function buildAltadena(at: string, devicePhones: (string | null)[] = []):
     return person("altadena", { id: hid(100 + v), name: `Altadena post ${v + 1} (sentinel)`, lng, lat, role: "sentinel", on_post: true,
       sim_profile: v === 3 ? "silent" : "sentinel_yes" });
   });
+  // Collections line (synthetic): a painter's studio archive inside the zone.
+  const [sLng, sLat] = inset(z.geom, 0, 0.55);
+  posts.push(person("altadena", { id: hid(95), name: "Altadena painter's studio (demo)", address: "West Altadena (demo)", lng: sLng, lat: sLat,
+    sim_profile: "leaving", collection_note: "Forty years of canvases and sketchbooks; grab list: the flat files in the garage studio" }));
   posts.push(person("altadena", { id: hid(110), name: "Pasadena (canary)", lng: -118.1445, lat: 34.1478, role: "canary", sim_profile: "canary_no" }));
   return { zones, households: assignZones([...households, ...posts], zones), proposals: [], presets: ALTADENA_PRESETS };
 }

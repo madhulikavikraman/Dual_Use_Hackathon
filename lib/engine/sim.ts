@@ -134,10 +134,29 @@ async function applyOutcome(call: Call, h: Household, plan: SimPlan, meta: Meta)
       } else {
         await executeTool(call.id, "record_status", { ...base, status: "unclear", can_leave: null, location_consent: null });
       }
+      // Collections line: at Warning (Stage 1) only, someone with a collection on file asks for help moving it.
+      const collection = call.purpose === "resident" && v.stage === "1" ? subject?.collection_note : null;
+      if (collection && (p === "leaving" || p === "already_left" || p === "needs_help_leaving")) {
+        await appendTranscript(call.id, [
+          { role: "agent", text: "Do you need help moving the items on your list while there is still time?" },
+          { role: "person", text: SALVAGE_LINE[h.lang_code] ?? SALVAGE_LINE["en-US"] },
+        ]);
+        await executeTool(call.id, "request_human", { reason: "salvage", urgency: "soon", note: collection });
+      }
     }
   }
   await endCall(call.id, "completed");
 }
+
+/** Collections line: what a synthetic collector says when asked about their grab list (Warning only). */
+const SALVAGE_LINE: Record<string, string> = {
+  "en-US": "Yes, please. The boxes on my list are by the front door.",
+  "es-US": "Sí, por favor. Las cajas de mi lista están junto a la puerta.",
+  "zh-CN": "需要，谢谢。清单上的两箱书放在书房门口。",
+  "hi-IN": "हाँ, कृपया। सूची वाले डिब्बे दरवाज़े के पास रखे हैं।",
+  "fr-FR": "Oui, s'il vous plaît. Les cartons de ma liste sont près de la porte.",
+  "ko-KR": "네, 부탁드려요. 목록에 있는 상자는 현관 옆에 있어요.",
+};
 
 /** Advance simulated calls: answer, play out, or ring out. */
 export async function simTick(now: string, meta: Meta): Promise<number> {

@@ -90,7 +90,7 @@ const ReportHazard = z.object({
   direction: text, distance: text, location_text: text,
 });
 const RequestHuman = z.object({
-  reason: z.enum(["medical_emergency", "cannot_answer", "confusion", "distress", "refusal", "doubts_call", "asked_unapproved"]).catch("cannot_answer"),
+  reason: z.enum(["medical_emergency", "cannot_answer", "confusion", "distress", "refusal", "doubts_call", "asked_unapproved", "salvage"]).catch("cannot_answer"),
   urgency: z.enum(["now", "soon", "later"]).catch("soon"),
   note: text,
 });
@@ -245,6 +245,7 @@ async function reportHazard(ctx: Ctx, a: z.infer<typeof ReportHazard>): Promise<
 async function requestHuman(ctx: Ctx, a: z.infer<typeof RequestHuman>): Promise<ToolResult> {
   const { call, subject } = ctx;
   const who = subject?.name ?? "caller";
+  if (a.reason === "salvage") return salvageRequest(ctx, a);
   if (subject) {
     await upsertStatus(call, subject.id, {
       human_requested: true, human_reason: a.note ? `${a.reason}: ${a.note}` : a.reason,
@@ -272,6 +273,32 @@ async function requestHuman(ctx: Ctx, a: z.infer<typeof RequestHuman>): Promise<
       reason: `Call back: ${a.reason.replace(/_/g, " ")}${a.note ? ` (${a.note})` : ""}`, source: helpSource(call) });
   }
   return { result: "Flagged for a person to call back. Tell them a person will call them back." };
+}
+
+/**
+ * Collections line: a request for help moving irreplaceable items. Lives first: it gets its own P4 row that never
+ * merges with or outranks a person's row, and under an Order or Shelter in Place it is logged for after the event only.
+ */
+async function salvageRequest(ctx: Ctx, a: z.infer<typeof RequestHuman>): Promise<ToolResult> {
+  const { call, subject } = ctx;
+  const who = subject?.name ?? "caller";
+  const later = call.vars.zone_state === "order" || call.vars.zone_state === "shelter_in_place";
+  const what = a.note || subject?.collection_note || "items on their grab list";
+  if (subject) {
+    await upsertHelp({
+      household: subject, zone_id: subject.zone_id ?? (call.vars.zone_id || null), priority: 4, kind: "salvage", needs: [],
+      reason: `${later ? "Salvage after the event" : "Salvage help while there is time"}: ${what}`, source: helpSource(call),
+    });
+  }
+  await ledger({
+    actor: "agent", kind: "agent", target: who, reason: what,
+    action: later ? "salvage request logged for after the event (an order is in effect: leave first)" : "salvage request logged (ranks below every person)",
+  });
+  return {
+    result: later
+      ? "Logged for after the event. Say that leaving now comes first and a heritage team may contact them later. Never suggest staying for any object."
+      : "Logged, below every life-safety request. Say a heritage team may call back if there is time, and that leaving on time comes first. Do not promise anyone will come.",
+  };
 }
 
 async function lookupZone(ctx: Ctx, a: z.infer<typeof LookupZone>): Promise<ToolResult> {

@@ -1,7 +1,7 @@
 import "server-only";
 import { db, isoIn, nowIso, uid } from "@/lib/db";
 import { centroidOf, metersBetween } from "@/lib/geo";
-import type { HelpRequest, HelpSource, Household, LocationFix, LocationSource, Need, PickupRun, Zone } from "@/lib/types";
+import type { HelpKind, HelpRequest, HelpSource, Household, LocationFix, LocationSource, Need, PickupRun, Zone } from "@/lib/types";
 import { buildVars, newCall } from "./campaigns";
 import { feed, getMeta, ledger } from "./log";
 
@@ -52,7 +52,9 @@ function better(row: HelpRequest, fix: Fix): boolean {
 export async function upsertHelp(input: {
   household: Household | null;
   zone_id: string | null;
-  priority: 1 | 2 | 3;
+  priority: 1 | 2 | 3 | 4;
+  /** "salvage" (collections line) keeps its own row: it never merges with or outranks a person's row. */
+  kind?: HelpKind;
   needs?: Need[];
   people?: number | null;
   device_battery_hours?: number | null;
@@ -63,13 +65,14 @@ export async function upsertHelp(input: {
 }): Promise<HelpRequest> {
   const h = input.household;
   const now = nowIso();
+  const kind: HelpKind = input.kind ?? "people";
   const existing = h
-    ? (await db().where("help_requests", { household_id: h.id })).find((r) => r.status !== "closed")
+    ? (await db().where("help_requests", { household_id: h.id })).find((r) => r.status !== "closed" && (r.kind ?? "people") === kind)
     : undefined;
   const fix = input.fix ?? null;
   if (existing) {
     const patch: Partial<HelpRequest> = {
-      priority: Math.min(existing.priority, input.priority) as 1 | 2 | 3,
+      priority: Math.min(existing.priority, input.priority) as HelpRequest["priority"],
       needs: [...new Set([...existing.needs, ...(input.needs ?? [])])],
       people: input.people ?? existing.people,
       device_battery_hours: input.device_battery_hours ?? existing.device_battery_hours,
@@ -99,6 +102,7 @@ export async function upsertHelp(input: {
     language: h?.language ?? null,
     zone_id: input.zone_id,
     priority: input.priority,
+    kind,
     needs: input.needs ?? [],
     device_battery_hours: input.device_battery_hours ?? null,
     animals: input.animals ?? null,

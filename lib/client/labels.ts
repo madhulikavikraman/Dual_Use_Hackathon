@@ -185,8 +185,8 @@ export const NEED_LABEL: Record<Need, string> = {
 
 // ---------- Help registry ----------
 
-export const PRIORITY_COLOR: Record<1 | 2 | 3, string> = { 1: "#dc2626", 2: "#ea580c", 3: "#eab308" };
-export const PRIORITY_LABEL: Record<1 | 2 | 3, string> = { 1: "Life safety", 2: "Needs help leaving", 3: "Check later" };
+export const PRIORITY_COLOR: Record<1 | 2 | 3 | 4, string> = { 1: "#dc2626", 2: "#ea580c", 3: "#eab308", 4: "#8b5cf6" };
+export const PRIORITY_LABEL: Record<1 | 2 | 3 | 4, string> = { 1: "Life safety", 2: "Needs help leaving", 3: "Check later", 4: "Salvage (collections, after every person)" };
 
 export const HELP_STATUS_LABEL: Record<HelpStatus, string> = {
   open: "Open",

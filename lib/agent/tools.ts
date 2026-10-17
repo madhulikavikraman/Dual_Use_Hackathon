@@ -67,11 +67,11 @@ export const TOOL_DEFS: ToolDef[] = [
   ),
   def(
     "request_human",
-    "Hand the person to a human. Use for a medical emergency (after telling them to hang up and call 911), for anything you cannot answer from the approved text, and whenever the person is confused, distressed, refuses, or doubts the call. Also use it when the person asks for something you are not allowed to give (an ETA, whether it is safe to stay, where another person is): describe the request in note.",
+    "Hand the person to a human. Use for a medical emergency (after telling them to hang up and call the emergency number), for anything you cannot answer from the approved text, and whenever the person is confused, distressed, refuses, or doubts the call. Also use it when the person asks for something you are not allowed to give (an ETA, whether it is safe to stay, where another person is): describe the request in note. Someone who needs help to leave is recorded with record_status, not here. Collections line only: reason salvage logs a request for help moving the items on their grab list; it always ranks below every person.",
     {
       reason: {
         type: "string",
-        enum: ["medical_emergency", "cannot_answer", "confusion", "distress", "refusal", "doubts_call", "asked_unapproved"],
+        enum: ["medical_emergency", "cannot_answer", "confusion", "distress", "refusal", "doubts_call", "asked_unapproved", "salvage"],
         description: "Why a person is needed.",
       },
       urgency: { type: "string", enum: ["now", "soon", "later"], description: "now = life safety." },

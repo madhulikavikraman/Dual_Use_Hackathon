@@ -111,6 +111,9 @@ export interface Household {
   presence_at: string | null; // browser phone heartbeat
   scenario: Scenario;
   sim_profile: SimProfile | null; // how a synthetic person answers in the simulator
+  /** Collections line: what cannot be replaced and the grab list, in the owner's words (museums, libraries, archives,
+   * galleries, collectors). Lives first: salvage is offered only at Warning, never under an Order. */
+  collection_note?: string | null;
 }
 
 /** Scripted behavior for synthetic people (never used for real phones). */
@@ -174,6 +177,7 @@ export interface CallVars {
   simulated: "true" | "false";
   mode: Mode;
   emergency_number: string; // what "hang up and call ... now" says in this jurisdiction (911, 119, 112...)
+  collection_note: string; // collections line: what they hold and the grab list ("" for most households)
 }
 
 export interface Call {
@@ -284,6 +288,8 @@ export type HelpStatus = "open" | "assigned" | "en_route" | "reached" | "closed"
 export type HelpSource = "stage1" | "stage2" | "stage3" | "inbound" | "rollcall" | "sentinel" | "manual" | "sim";
 export type LocationSource = "gps_link" | "stated" | "enrolled" | "centroid";
 
+export type HelpKind = "people" | "salvage";
+
 export interface HelpRequest {
   id: string;
   household_id: string | null;
@@ -291,7 +297,9 @@ export interface HelpRequest {
   name: string | null;
   language: string | null;
   zone_id: string | null;
-  priority: 1 | 2 | 3; // 1 life safety, 2 needs help leaving, 3 check later / unreached and vulnerable
+  priority: 1 | 2 | 3 | 4; // 1 life safety, 2 needs help leaving, 3 check later / unreached and vulnerable, 4 salvage (collections)
+  /** "salvage" rows (collections line) never merge with or outrank a person's row; absent means "people". */
+  kind?: HelpKind;
   needs: Need[];
   device_battery_hours: number | null;
   animals: string | null;

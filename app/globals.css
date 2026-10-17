@@ -5,11 +5,33 @@
   --foreground: #171717;
 }
 
+/* VoiceFlare brand (D-36), taken from the logo: near-black ground, flare red, ember glow.
+   Shared by the landing page, /global and the guided tour. Utilities: bg-vf-ink, text-vf-flare, font-display... */
+:root {
+  --vf-ink: #050505;
+  --vf-coal: #0e0e11;
+  --vf-ash: #1c1c21;
+  --vf-smoke: #a3a3ad;
+  --vf-bone: #f5f5f4;
+  --vf-flare: #ff2a12;
+  --vf-ember: #ff6b3d;
+  --vf-blood: #a8120a;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-saira), var(--font-geist-sans), system-ui, sans-serif;
+  --color-vf-ink: var(--vf-ink);
+  --color-vf-coal: var(--vf-coal);
+  --color-vf-ash: var(--vf-ash);
+  --color-vf-smoke: var(--vf-smoke);
+  --color-vf-bone: var(--vf-bone);
+  --color-vf-flare: var(--vf-flare);
+  --color-vf-ember: var(--vf-ember);
+  --color-vf-blood: var(--vf-blood);
 }
 
 @media (prefers-color-scheme: dark) {

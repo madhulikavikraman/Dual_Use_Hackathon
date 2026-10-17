@@ -1,0 +1,108 @@
+/* /global (Twist 2). Plain classes, all prefixed vfg-, imported by app/global/page.tsx (like components/board/map.css).
+   Brand tokens (--vf-*) come from app/globals.css. */
+
+/* The same Han character is drawn differently in Chinese and Japanese fonts; lang tags pick the right family. */
+.vfg-root :lang(zh) {
+  font-family: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC",
+    "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+}
+.vfg-root :lang(ja) {
+  font-family: "Yu Gothic UI", "Yu Gothic", YuGothic, Meiryo, "Hiragino Sans", "Hiragino Kaku Gothic ProN",
+    "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
+}
+.vfg-root :lang(el) {
+  font-family: var(--font-geist-sans), "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+}
+.vfg-root :lang(hi) {
+  font-family: "Nirmala UI", "Kohinoor Devanagari", "Noto Sans Devanagari", Mangal, sans-serif;
+}
+
+/* "{zone}" in a directive template */
+.vfg-slot {
+  display: inline-block;
+  margin: 0 0.2em;
+  padding: 0 0.4em;
+  border: 1px dashed color-mix(in srgb, var(--vf-ember) 70%, transparent);
+  border-radius: 4px;
+  color: var(--vf-ember);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.8em;
+  line-height: 1.5;
+  vertical-align: 0.05em;
+}
+
+/* Hero: the one load moment. Text rises once; the six adapter sockets light up in order. */
+@keyframes vfg-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes vfg-socket-on {
+  0% {
+    opacity: 0.25;
+    box-shadow: 0 0 0 0 rgb(255 42 18 / 0);
+  }
+  45% {
+    opacity: 1;
+    box-shadow: 0 0 0 6px rgb(255 42 18 / 0.28);
+  }
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 10px 1px rgb(255 42 18 / 0.55);
+  }
+}
+@keyframes vfg-arc-on {
+  from {
+    opacity: 0.15;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.vfg-rise {
+  animation: vfg-rise 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--vfg-delay, 0ms);
+}
+.vfg-socket {
+  box-shadow: 0 0 10px 1px rgb(255 42 18 / 0.55);
+  animation: vfg-socket-on 900ms ease-out both;
+  animation-delay: calc(500ms + var(--vfg-i, 0) * 90ms);
+}
+.vfg-arcs .vfg-arc-1 {
+  animation: vfg-arc-on 500ms ease-out both;
+}
+.vfg-arcs .vfg-arc-2 {
+  animation: vfg-arc-on 500ms ease-out 180ms both;
+}
+
+/* Wide tables scroll inside their region on phones; soft ember edges show there is more to the side. */
+.vfg-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  background:
+    linear-gradient(to right, var(--vf-coal) 30%, transparent) left / 48px 100% no-repeat local,
+    linear-gradient(to left, var(--vf-coal) 30%, transparent) right / 48px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgb(255 107 61 / 0.28), transparent) left / 14px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgb(255 107 61 / 0.28), transparent) right / 14px 100% no-repeat scroll,
+    var(--vf-coal);
+}
+.vfg-sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--vf-coal);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vfg-rise,
+  .vfg-socket,
+  .vfg-arcs .vfg-arc-1,
+  .vfg-arcs .vfg-arc-2 {
+    animation: none;
+  }
+}

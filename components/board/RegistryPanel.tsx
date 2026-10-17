@@ -33,7 +33,7 @@ function LastSeen({ row, now }: { row: HelpRequest; now: string }) {
   );
 }
 
-function PriorityChip({ priority }: { priority: 1 | 2 | 3 }) {
+function PriorityChip({ priority }: { priority: 1 | 2 | 3 | 4 }) {
   return (
     <ColorChip color={PRIORITY_COLOR[priority]} text={priority === 3 ? "#111827" : "#ffffff"} title={PRIORITY_LABEL[priority]}>
       P{priority}
@@ -113,7 +113,7 @@ export function RegistryCard({
 export function RegistryPanel() {
   const { snap } = useBoard();
   const open = snap.registry.filter((r) => r.status !== "closed" && r.status !== "reached");
-  const byPriority = ([1, 2, 3] as const).map((p) => ({ p, n: open.filter((r) => r.priority === p).length }));
+  const byPriority = ([1, 2, 3, 4] as const).map((p) => ({ p, n: open.filter((r) => r.priority === p).length }));
 
   return (
     <div className="space-y-3 p-3">

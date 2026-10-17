@@ -100,7 +100,7 @@ function QrtLayout({ error, receivedAt }: { error: string | null; receivedAt: nu
             </FilterChip>
           ))}
           <span className="ml-auto flex items-center gap-3 text-sm text-slate-600">
-            {([1, 2, 3] as const).map((p) => (
+            {([1, 2, 3, 4] as const).map((p) => (
               <span key={p} className="inline-flex items-center gap-1">
                 <span className="inline-block size-3 rounded-full" style={{ backgroundColor: PRIORITY_COLOR[p] }} aria-hidden="true" />P{p}{" "}
                 {rows.filter((r) => r.priority === p).length}

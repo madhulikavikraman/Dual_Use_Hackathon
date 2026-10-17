@@ -94,7 +94,7 @@ export async function buildBoard(): Promise<BoardSnapshot> {
     reached: reachedIds.size,
     in_campaigns: residentsCalled.size,
     understood_pct: understoodKnown.length ? Math.round((100 * understoodKnown.filter((v) => v.understood).length) / understoodKnown.length) : null,
-    needs_help_open: registry.filter((r) => r.status !== "closed" && r.status !== "reached").length,
+    needs_help_open: registry.filter((r) => (r.kind ?? "people") === "people" && r.status !== "closed" && r.status !== "reached").length,
     calls_active: calls.filter((c) => c.state === "ringing" || c.state === "active").length,
     calls_queued: calls.filter((c) => c.state === "queued").length,
     refusals: ledger.filter((l) => !l.allowed || l.kind === "refusal").length,
