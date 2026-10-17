@@ -1,7 +1,8 @@
 // Directive vocabularies. The agent reads these verbatim; a named human approves them per zone.
-// Civilian: Cal OES standardized evacuation terminology (May 2020). Campus and base are the
-// Tuesday and defense skins (PRD section 16).
-import type { Mode, ZoneState } from "@/lib/types";
+// Civilian: Cal OES standardized evacuation terminology (May 2020). Heat is the ordinary-Tuesday line (a heat
+// check-in for older residents who opted in); base is the defense skin (PRD section 16).
+import { NWS_HEAT_LEVEL, RANK } from "@/lib/scenarios/heatLadder";
+import type { Mode, ZoneState, ZoneWeather } from "@/lib/types";
 
 type Vocab = Record<ZoneState, (zone: string) => string>;
 
@@ -17,15 +18,62 @@ const CIVILIAN: Vocab = {
   lifted: (zone) => `Evacuation orders for ${zone} are lifted.`,
 };
 
-const CAMPUS: Vocab = {
+// Heat: the approved heat message. Without a reading it is the plain message; heatDirective() adds the zone's
+// reading and any active NWS heat product. 211 is LA County's line for the nearest cooling center (lacounty.gov/heat).
+const HEAT_211 = "Call 211 for the nearest cooling center.";
+const HEAT_OPEN: Record<ZoneState, (zone: string) => string> = {
   monitor: () => "",
-  watch: (zone) => `Be aware of police activity near ${zone}. No action is required right now.`,
-  warning: (zone) => `Avoid the area: stay away from ${zone} until further notice.`,
-  order: (zone) => `Leave ${zone} now by the nearest safe exit.`,
-  shelter_in_place: () =>
-    "Shelter in place: go into the nearest room that locks, lock or barricade the door, silence your phone, and stay away from windows.",
-  lifted: (zone) => `All clear for ${zone}.`,
+  watch: (zone) => `This is a heat check for ${zone}.`,
+  warning: (zone) => `This is a heat check for ${zone}.`,
+  order: (zone) => `This is an extreme heat alert for ${zone}.`,
+  shelter_in_place: (zone) => `This is a heat alert for ${zone}.`,
+  lifted: (zone) => `The heat check for ${zone} is over.`,
 };
+const HEAT_ACTION: Record<ZoneState, string> = {
+  monitor: "",
+  watch: "Dangerous heat may come in the next few days. We are checking on older neighbors who live alone.",
+  warning: "Dangerous heat is here today. Cooling centers are open.",
+  order: "The heat today is extremely dangerous. Get to a cool place now.",
+  shelter_in_place: "Stay inside, in the coolest room you have, until we call again.",
+  lifted: "Thank you for staying in touch.",
+};
+
+const HEAT: Vocab = {
+  monitor: () => "",
+  watch: (zone) => heatDirective("watch", zone, null),
+  warning: (zone) => heatDirective("warning", zone, null),
+  order: (zone) => heatDirective("order", zone, null),
+  shelter_in_place: (zone) => heatDirective("shelter_in_place", zone, null),
+  lifted: (zone) => heatDirective("lifted", zone, null),
+};
+
+/**
+ * The heat message a human approves: the opening, the zone's reading (labeled when it is the simulated heat wave),
+ * the NWS heat product if one is active at the zone, what the level means, and 211. Read verbatim on the call.
+ */
+export function heatDirective(state: ZoneState, zone: string, weather: ZoneWeather | null | undefined): string {
+  if (state === "monitor") return "";
+  if (state === "lifted") return `${HEAT_OPEN.lifted(zone)} ${HEAT_ACTION.lifted}`;
+  const parts = [HEAT_OPEN[state](zone)];
+  if (weather) {
+    const n = Math.round(weather.feels_like_high_f);
+    parts.push(
+      weather.basis === "simulated"
+        ? `In the simulated heat wave for this demonstration, it may feel like ${n} degrees here today.`
+        : `It may feel like ${n} degrees here today.`,
+    );
+    const product = heatProduct(weather);
+    if (product) parts.push(`The National Weather Service has issued a ${product} for this area.`);
+  }
+  parts.push(HEAT_ACTION[state], HEAT_211);
+  return parts.join(" ");
+}
+
+/** The highest active NWS heat product at the zone, by its current name, or null. */
+export function heatProduct(weather: ZoneWeather | null | undefined): string | null {
+  const names = (weather?.nws ?? []).map((a) => a.event).filter((e) => e in NWS_HEAT_LEVEL);
+  return names.sort((a, b) => RANK[NWS_HEAT_LEVEL[b]] - RANK[NWS_HEAT_LEVEL[a]])[0] ?? null;
+}
 
 const BASE: Vocab = {
   monitor: () => "",
@@ -37,10 +85,10 @@ const BASE: Vocab = {
   lifted: (zone) => `All clear for ${zone}.`,
 };
 
-const BY_MODE: Record<Mode, Vocab> = { civilian: CIVILIAN, campus: CAMPUS, base: BASE };
+const BY_MODE: Record<Mode, Vocab> = { civilian: CIVILIAN, heat: HEAT, base: BASE };
 
 export function directiveFor(state: ZoneState, mode: Mode, zoneName: string): string {
-  return BY_MODE[mode][state](zoneName);
+  return (BY_MODE[mode] ?? CIVILIAN)[state](zoneName);
 }
 
 export const STATE_LABEL: Record<ZoneState, string> = {
@@ -60,6 +108,30 @@ export const STATE_SHORT: Record<ZoneState, string> = {
   shelter_in_place: "Shelter",
   lifted: "Lifted",
 };
+
+/** Heat line ladder, mapped onto the same stored states (rung names follow the NWS heat products; demo thresholds). */
+export const HEAT_STATE_LABEL: Record<ZoneState, string> = {
+  monitor: "Monitor",
+  watch: "Heat watch · check on seniors alone",
+  warning: "Heat Advisory · call every senior",
+  order: "Extreme Heat Warning · call everyone",
+  shelter_in_place: "Stay indoors · coolest room",
+  lifted: "Heat over",
+};
+
+export const HEAT_STATE_SHORT: Record<ZoneState, string> = {
+  monitor: "Monitor",
+  watch: "Heat watch",
+  warning: "Heat Advisory",
+  order: "Extreme Heat",
+  shelter_in_place: "Stay indoors",
+  lifted: "Heat over",
+};
+
+/** Server-side wording (ledger, feed) in the run's vocabulary. */
+export function stateLabelFor(state: ZoneState, mode: Mode): string {
+  return mode === "heat" ? HEAT_STATE_LABEL[state] : STATE_LABEL[state];
+}
 
 /** Map colors per state (PRD 6.1): grey, yellow, orange, red, purple, green. */
 export const STATE_COLOR: Record<ZoneState, string> = {

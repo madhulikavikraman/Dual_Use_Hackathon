@@ -2,7 +2,8 @@
 // All timestamps are ISO 8601 UTC strings.
 
 export type Stage = "checkin" | "warning" | "order" | "all_clear";
-export type Mode = "civilian" | "campus" | "base";
+/** Directive vocabulary: civilian (Cal OES), heat (the heat check-in line for older residents), base (installation). */
+export type Mode = "civilian" | "heat" | "base";
 
 export type Status =
   | "pending" | "queued" | "ringing" | "on_call"
@@ -25,7 +26,7 @@ export type ZoneState = "monitor" | "watch" | "warning" | "order" | "shelter_in_
 export const ZONE_STATES: ZoneState[] = ["monitor", "watch", "warning", "order", "shelter_in_place", "lifted"];
 
 export type ZoneSource = "human" | "model" | "nws" | "seed";
-export type Scenario = "westside" | "altadena" | "usc" | "chongqing" | "norte";
+export type Scenario = "westside" | "altadena" | "heat" | "chongqing" | "norte";
 
 export interface Zone {
   id: string; // e.g. "LA-CC"
@@ -42,11 +43,40 @@ export interface Zone {
   population_est: number | null; // dose preview (estimate)
   area_sq_mi: number | null;
   hazard_origin: [number, number] | null; // [lng, lat] the hazard comes from (edge-first ordering)
+  /** Heat scenario only: the live reading at the zone's centre, any NWS heat product, and the labeled simulated overlay. */
+  weather?: ZoneWeather | null;
   source: ZoneSource;
   approved_by: string | null;
   approved_at: string | null;
   version: number;
   updated_at: string;
+}
+
+/** One weather reading at a zone's centre (Open-Meteo forecast API: current conditions and today's highs, in °F). */
+export interface WeatherReading {
+  temp_f: number;
+  feels_like_f: number; // apparent temperature
+  humidity_pct: number | null;
+  high_f: number | null; // today's forecast high
+  feels_like_high_f: number | null; // today's forecast apparent-temperature high
+  observed_local: string; // the source's own timestamp, America/Los_Angeles (e.g. "2026-10-17T14:30")
+  fetched_at: string; // ISO, when we asked
+}
+
+/** Heat scenario: what the threshold table saw for a zone, and where every number came from. */
+export interface ZoneWeather {
+  live: WeatherReading | null; // null when the live fetch failed (network off, timeout)
+  live_error: string | null;
+  source: string; // human-readable source line
+  source_url: string;
+  nws: { event: string; headline: string | null; expires: string | null }[]; // active NWS alerts at the zone centre
+  nws_checked: boolean; // false when api.weather.gov did not answer
+  /** The demo's simulated heat wave, used (and labeled) when live conditions are below the thresholds. */
+  simulated: { feels_like_high_f: number; high_f: number } | null;
+  basis: "live" | "simulated";
+  feels_like_high_f: number; // the number the threshold table used
+  proposed: ZoneState; // the level the threshold table (or an active NWS heat product) proposes
+  checked_at: string;
 }
 
 export interface ZoneEvent {
@@ -61,7 +91,7 @@ export interface ZoneEvent {
   created_at: string;
 }
 
-export type ProposalModel = "fire_envelope" | "call_pattern" | "nws";
+export type ProposalModel = "fire_envelope" | "call_pattern" | "nws" | "heat_threshold";
 export type ProposalStatus = "open" | "approved" | "edited" | "rejected";
 
 export interface Proposal {
@@ -114,12 +144,24 @@ export interface Household {
   /** Collections line: what cannot be replaced and the grab list, in the owner's words (museums, libraries, archives,
    * galleries, collectors). Lives first: salvage is offered only at Warning, never under an Order. */
   collection_note?: string | null;
+  /** Heat check-in line: what an older resident told us when they opted in. Enum-like flags only, never a diagnosis.
+   * Mobility limits and powered equipment live in afn_flags (walker, wheelchair, oxygen, powered_medical_device). */
+  heat_profile?: HeatProfile | null;
+}
+
+export type AgeBand = "65-74" | "75-84" | "85+";
+
+export interface HeatProfile {
+  age_band: AgeBand;
+  lives_alone: boolean;
+  no_ac: boolean; // no working air conditioning at home
 }
 
 /** Scripted behavior for synthetic people (never used for real phones). */
 export type SimProfile =
   | "leaving" | "needs_help_leaving" | "needs_help_now" | "staying" | "already_left"
   | "no_answer" | "unclear" | "voicemail"
+  | "wants_check_in" // heat line: at home, would like someone to come and check on them
   | "sentinel_yes" | "sentinel_no" | "sentinel_unsure" | "silent"
   | "canary_no" | "canary_yes";
 

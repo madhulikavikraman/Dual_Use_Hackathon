@@ -69,22 +69,181 @@ function line(h: Household, p: SimProfile): string {
   return SAY[h.lang_code]?.[p] ?? SAY["en-US"][p] ?? "";
 }
 
+/**
+ * Heat check-in line: what a synthetic older resident says to "Can you stay cool right now? Do you need water, a ride
+ * to a cooling center, or someone to check on you?", in every language the simulator speaks. needs_help_now uses
+ * CDC heat-stroke warning signs (dizziness, confusion, headache); linked is a linked contact who has not heard from
+ * them; eta is Phone 2 asking when the ride comes (the agent never gives an ETA).
+ */
+type HeatLine = "leaving" | "already_left" | "staying" | "needs_help_leaving" | "needs_help_now" | "wants_check_in" | "unclear" | "linked" | "eta";
+export const HEAT_SAY: Record<string, Record<HeatLine, string>> = {
+  "en-US": {
+    leaving: "Yes. My son is driving me to the cooling center now.",
+    already_left: "I'm home and the air conditioning works. It's cool in here.",
+    staying: "I'll stay home. I have a fan and water.",
+    needs_help_leaving: "I don't drive anymore. I need a ride to the cooling center.",
+    needs_help_now: "I feel dizzy and confused, and my head hurts.",
+    wants_check_in: "I live alone. Could someone come and check on me?",
+    unclear: "Sorry, who is this?",
+    linked: "No, I haven't heard from them today. Can someone knock on their door?",
+    eta: "When will the ride get here?",
+  },
+  "es-US": {
+    leaving: "Sí. Mi hijo me lleva ahora al centro de enfriamiento.",
+    already_left: "Estoy en casa, el aire acondicionado funciona y aquí está fresco.",
+    staying: "Me quedo en casa. Tengo un ventilador y agua.",
+    needs_help_leaving: "Ya no manejo. Necesito que alguien me lleve al centro de enfriamiento.",
+    needs_help_now: "Tengo mareos y confusión, y me duele la cabeza.",
+    wants_check_in: "Vivo sin compañía. ¿Puede venir alguien a ver cómo estoy?",
+    unclear: "¿Perdón? ¿Quién habla?",
+    linked: "No, hoy no he sabido nada. ¿Puede alguien ir a tocar a su puerta?",
+    eta: "¿A qué hora llega el transporte?",
+  },
+  "ko-KR": {
+    leaving: "네, 아들이 지금 무더위 쉼터로 데려다줘요.",
+    already_left: "집에 있어요. 에어컨이 잘 돼서 시원해요.",
+    staying: "집에 있을게요. 선풍기랑 물이 있어요.",
+    needs_help_leaving: "이제 운전을 못 해요. 쉼터까지 태워 줄 사람이 필요해요.",
+    needs_help_now: "어지럽고 정신이 혼미하고 머리가 아파요.",
+    wants_check_in: "혼자 살아요. 누가 와서 좀 봐 줄 수 있을까요?",
+    unclear: "네? 누구세요?",
+    linked: "아니요, 오늘은 연락이 없었어요. 누가 문을 두드려 봐 줄 수 있나요?",
+    eta: "차는 언제 와요?",
+  },
+  "zh-CN": {
+    leaving: "好的，我儿子现在送我去降温中心。",
+    already_left: "我在家，空调好用，屋里很凉快。",
+    staying: "我待在家里，有风扇也有水。",
+    needs_help_leaving: "我不开车了，需要有人送我去降温中心。",
+    needs_help_now: "我头晕，有点糊涂，头也很痛。",
+    wants_check_in: "我一个人住，能不能有人来看看我？",
+    unclear: "什么？你是谁？",
+    linked: "没有，今天一直没联系上。能不能派人去敲敲门？",
+    eta: "车什么时候到？",
+  },
+  "hi-IN": {
+    leaving: "हाँ, मेरा बेटा मुझे अभी कूलिंग सेंटर ले जा रहा है।",
+    already_left: "मैं घर पर हूँ, एसी चल रहा है, यहाँ ठंडक है।",
+    staying: "मैं घर पर ही रहूँगा। मेरे पास पंखा और पानी है।",
+    needs_help_leaving: "मैं अब गाड़ी नहीं चलाता। मुझे कूलिंग सेंटर तक ले जाने के लिए कोई चाहिए।",
+    needs_help_now: "मुझे चक्कर आ रहे हैं, उलझन हो रही है और सिर में दर्द है।",
+    wants_check_in: "मैं अकेला रहता हूँ। क्या कोई आकर मुझे देख सकता है?",
+    unclear: "क्या? आप कौन बोल रहे हैं?",
+    linked: "नहीं, आज उनसे कोई बात नहीं हुई। क्या कोई उनका दरवाज़ा खटखटा सकता है?",
+    eta: "गाड़ी कब आएगी?",
+  },
+  "fr-FR": {
+    leaving: "Oui, mon fils m'emmène au centre de rafraîchissement maintenant.",
+    already_left: "Je suis chez moi, la climatisation marche, il fait frais.",
+    staying: "Je reste chez moi. J'ai un ventilateur et de l'eau.",
+    needs_help_leaving: "Je ne conduis plus. Il me faut quelqu'un pour m'emmener au centre de rafraîchissement.",
+    needs_help_now: "J'ai des vertiges, je me sens confus et j'ai mal à la tête.",
+    wants_check_in: "Je vis seul. Quelqu'un pourrait venir voir comment je vais ?",
+    unclear: "Pardon ? Qui est à l'appareil ?",
+    linked: "Non, pas de nouvelles aujourd'hui. Quelqu'un peut aller frapper à sa porte ?",
+    eta: "Quand est-ce que la voiture arrive ?",
+  },
+  "hy-AM": {
+    leaving: "Այո, տղաս հիմա ինձ տանում է զովացման կենտրոն:",
+    already_left: "Տանն եմ, օդորակիչը աշխատում է, զով է:",
+    staying: "Տանը կմնամ: Օդափոխիչ ու ջուր ունեմ:",
+    needs_help_leaving: "Այլևս մեքենա չեմ վարում: Պետք է, որ մեկն ինձ տանի զովացման կենտրոն:",
+    needs_help_now: "Գլուխս պտտվում է, շփոթված եմ, ու գլուխս ցավում է:",
+    wants_check_in: "Մենակ եմ ապրում: Կարո՞ղ է մեկը գալ ու ինձ տեսնել:",
+    unclear: "Ի՞նչ: Ո՞վ է:",
+    linked: "Ոչ, այսօր լուր չունեմ: Կարո՞ղ է մեկը գնալ ու դուռը թակել:",
+    eta: "Մեքենան ե՞րբ կգա:",
+  },
+  "fil-PH": {
+    leaving: "Oo, ihahatid ako ng anak ko sa cooling center ngayon.",
+    already_left: "Nasa bahay ako, gumagana ang aircon, malamig dito.",
+    staying: "Dito lang ako sa bahay. May bentilador at tubig ako.",
+    needs_help_leaving: "Hindi na ako nagmamaneho. Kailangan ko ng masasakyan papunta sa cooling center.",
+    needs_help_now: "Nahihilo ako, nalilito, at masakit ang ulo ko.",
+    wants_check_in: "Mag-isa lang ako rito. Puwede bang may pumunta para silipin ako?",
+    unclear: "Ano po? Sino ito?",
+    linked: "Hindi, wala pa akong balita ngayong araw. Puwede bang may kumatok sa pinto?",
+    eta: "Kailan darating ang sasakyan?",
+  },
+};
+
+const heatLine = (h: Household, k: HeatLine) => HEAT_SAY[h.lang_code]?.[k] ?? HEAT_SAY["en-US"][k];
+
+/** Heat check-in line: a resident (or a linked contact) call, played through the same tools as a real call. */
+async function heatOutcome(call: Call, h: Household, plan: SimPlan, agentOpen: string) {
+  const v = call.vars;
+  const subject = call.subject_household_id ? await db().get("households", call.subject_household_id) : h;
+  if (call.purpose === "linked_contact") {
+    // Someone who lives alone did not answer twice: their linked contact has not heard from them, so a door knock.
+    await appendTranscript(call.id, [
+      { role: "agent", text: `${agentOpen} We're calling because ${v.subject_name} did not answer our heat check-in twice. Have you heard from them today, and can someone check on them in person soon?` },
+      { role: "person", text: heatLine(h, "linked") },
+    ]);
+    await executeTool(call.id, "request_human", { reason: "distress", urgency: "soon", note: "door knock: lives alone, no answer twice; linked contact has not heard from them today" });
+    return;
+  }
+  const p = plan.profile;
+  const said = p === "leaving" || p === "already_left" || p === "staying" || p === "needs_help_leaving" || p === "needs_help_now" || p === "wants_check_in"
+    ? heatLine(h, p)
+    : heatLine(h, "unclear");
+  await appendTranscript(call.id, [
+    { role: "agent", text: `${agentOpen} ${v.directive_text} ${v.move_text} Can you stay cool right now? Do you need water, a ride to a cooling center, or someone to check on you?` },
+    { role: "person", text: said },
+  ]);
+  const base = { understood: null, destination: null, people: 1, needs: [], device_battery_hours: null, animals: null, location_text: null,
+    location_consent: true, can_leave: true, refusal_reason: null, memory_note: null };
+  if (p === "leaving") {
+    await executeTool(call.id, "record_status", { ...base, status: "leaving", destination: "a cooling center", understood: hash(call.id + "u") < 0.85 });
+  } else if (p === "already_left") {
+    await executeTool(call.id, "record_status", { ...base, status: "already_left", destination: "home, with air conditioning" });
+  } else if (p === "staying") {
+    await executeTool(call.id, "record_status", { ...base, status: "staying", refusal_reason: "prefers to stay home with a fan and water" });
+  } else if (p === "needs_help_leaving") {
+    // Needs a ride to a cooling center: registry priority 2, on a pickup run.
+    const needs = [...new Set([...(subject?.afn_flags ?? []), "no_car"])];
+    await executeTool(call.id, "record_status", { ...base, status: "needs_help_leaving", needs, can_leave: false, destination: "a cooling center" });
+    await simLinkConsent(call, h);
+    if (h.has_device && v.stage === "1") {
+      await appendTranscript(call.id, [
+        { role: "person", text: heatLine(h, "eta") },
+        { role: "agent", text: "I can't answer that; a person will call you back." },
+      ]);
+      await executeTool(call.id, "request_human", { reason: "asked_unapproved", urgency: "soon", note: "asked when the ride will arrive (an ETA)" });
+    }
+  } else if (p === "needs_help_now") {
+    // CDC heat-stroke warning signs: hang up and call 911 now comes first; a person is flagged (priority 1).
+    await appendTranscript(call.id, [{ role: "agent", text: `Hang up and call ${v.emergency_number || "911"} now. A person from the response team is flagged.` }]);
+    await executeTool(call.id, "record_status", { ...base, status: "needs_help_now", needs: subject?.afn_flags ?? [], can_leave: false });
+    await executeTool(call.id, "request_human", { reason: "medical_emergency", urgency: "now", note: "heat-stroke warning signs: dizziness, confusion, headache" });
+    await simLinkConsent(call, h);
+  } else if (p === "wants_check_in") {
+    // At home and wants a visit: a check-in visit is a helper (registry priority 3).
+    await executeTool(call.id, "record_status", { ...base, status: "staying", refusal_reason: null });
+    await executeTool(call.id, "request_human", { reason: "distress", urgency: "later", note: "wants a check-in visit" });
+  } else {
+    await executeTool(call.id, "record_status", { ...base, status: "unclear", can_leave: null, location_consent: null });
+  }
+}
+
 /** Play out an answered simulated call through the shared tools, then end it. */
 async function applyOutcome(call: Call, h: Household, plan: SimPlan, meta: Meta) {
   const v = call.vars;
-  const agentOpen = `This is the ${meta.mode === "campus" ? "campus" : "city"} emergency information line, verification phrase ${v.verification_phrase}. Simulated call.`;
-  const hazard = meta.usgs_event ? "Yes, strong shaking. A wall is down on Pico." : "Yes. Smoke and a glow to the west.";
+  const heat = meta.mode === "heat";
+  const agentOpen = heat
+    ? `This is the heat check-in line, an automated AI voice, verification phrase ${v.verification_phrase}. Simulated call.`
+    : `This is the city emergency information line, verification phrase ${v.verification_phrase}. Simulated call.`;
+  const hazard = heat ? "Yes. It's very hot here; people are looking for shade." : meta.usgs_event ? "Yes, strong shaking. A wall is down on Pico." : "Yes. Smoke and a glow to the west.";
   switch (plan.profile) {
     case "sentinel_yes":
     case "sentinel_no":
     case "sentinel_unsure": {
       const sees = plan.profile === "sentinel_yes" ? "yes" : plan.profile === "sentinel_no" ? "no" : "unsure";
-      const what = sees === "yes" ? hazard.replace(/^Yes\.?\s*/, "") : sees === "no" ? "nothing here, all quiet" : "hard to tell, some haze";
+      const what = sees === "yes" ? hazard.replace(/^Yes\.?\s*/, "") : sees === "no" ? (heat ? "mild here" : "nothing here, all quiet") : heat ? "warm, hard to say" : "hard to tell, some haze";
       await appendTranscript(call.id, [
         { role: "agent", text: `${agentOpen} ${v.alert_text} Does this match what you see?` },
-        { role: "person", text: sees === "yes" ? hazard : sees === "no" ? "No. Nothing here." : "Not sure, there's some haze." },
+        { role: "person", text: sees === "yes" ? hazard : sees === "no" ? (heat ? "No. It's mild here." : "No. Nothing here.") : heat ? "Hard to say. It's warm." : "Not sure, there's some haze." },
       ]);
-      await executeTool(call.id, "read_observation", { sees, what, direction: sees === "yes" ? "west" : null });
+      await executeTool(call.id, "read_observation", { sees, what, direction: sees === "yes" && !heat ? "west" : null });
       break;
     }
     case "canary_yes":
@@ -98,6 +257,10 @@ async function applyOutcome(call: Call, h: Household, plan: SimPlan, meta: Meta)
       break;
     }
     default: {
+      if (heat) {
+        await heatOutcome(call, h, plan, agentOpen);
+        break;
+      }
       const subject = call.subject_household_id ? await db().get("households", call.subject_household_id) : h;
       // Autopilot plays the demo's device beats too: Phone 2 asks for an ETA in Stage 1 (a refusal in the
       // ledger) and says "we can't leave" when the Order is relayed in Stage 3 (priority 1).

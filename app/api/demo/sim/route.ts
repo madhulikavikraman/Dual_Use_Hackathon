@@ -6,7 +6,7 @@ import { towerDown } from "@/lib/engine/sim";
 import { body, handle, json } from "@/lib/http";
 
 const Body = z.object({
-  mode: z.enum(["civilian", "campus", "base"]).optional(),
+  mode: z.enum(["civilian", "heat", "base"]).optional(),
   preset: z.enum(["normal", "tower_down", "fire_spreading", "mass_no_answer", "earthquake", "hoax_flood", "dark_zone"]).optional(),
   autopilot_devices: z.boolean().optional(),
   wrong_polygon: z.boolean().optional(),

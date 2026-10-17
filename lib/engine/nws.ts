@@ -41,6 +41,28 @@ export async function activeNwsAlerts(area = "CA"): Promise<NwsAlert[]> {
     }));
 }
 
+export interface PointAlert {
+  event: string; // e.g. "Heat Advisory", "Extreme Heat Warning" (NWS names since March 4, 2025)
+  headline: string | null;
+  expires: string | null;
+}
+
+/** Active NWS alerts at one point (any geometry: zone- and county-based alerts included). Short timeout; throws on failure. */
+export async function nwsAlertsAtPoint(lat: number, lng: number, ms = 3500): Promise<PointAlert[]> {
+  const res = await fetch(`https://api.weather.gov/alerts/active?point=${lat.toFixed(4)},${lng.toFixed(4)}`, {
+    headers: { "User-Agent": UA, Accept: "application/geo+json" },
+    signal: AbortSignal.timeout(ms),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`NWS alerts HTTP ${res.status}`);
+  const data = (await res.json()) as { features?: { properties?: Record<string, unknown> }[] };
+  return (data.features ?? []).map((f) => ({
+    event: String(f.properties?.event ?? "Alert"),
+    headline: (f.properties?.headline as string) ?? null,
+    expires: (f.properties?.expires as string) ?? null,
+  }));
+}
+
 /** Adopt one alert's polygon as a Monitor zone in the current scenario. */
 export async function adoptNws(alertId: string, actor: string): Promise<Zone> {
   const alert = (await activeNwsAlerts()).find((a) => a.id === alertId);

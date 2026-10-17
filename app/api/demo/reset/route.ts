@@ -4,7 +4,7 @@ import { warmAgent } from "@/lib/agent/warmup";
 import { resetScenario } from "@/lib/engine/reset";
 import { body, handle, json } from "@/lib/http";
 
-const Body = z.object({ scenario: z.enum(["westside", "usc", "altadena", "chongqing", "norte"]).default("westside") });
+const Body = z.object({ scenario: z.enum(["westside", "heat", "altadena", "chongqing", "norte"]).default("westside") });
 
 /** POST /api/demo/reset {scenario} — wipe the run (not the twist log) and load a scenario. */
 export async function POST(req: Request) {

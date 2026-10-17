@@ -154,12 +154,12 @@ export interface RegistryPatchBody {
 }
 
 export interface DemoResetBody {
-  scenario?: "westside" | "usc" | "altadena" | "chongqing" | "norte";
+  scenario?: "westside" | "heat" | "altadena" | "chongqing" | "norte";
 }
 
 export interface DemoSimBody {
-  /** Directive vocabulary: civilian (Cal OES), campus (USC DPS), base (installation lockdown). */
-  mode?: "civilian" | "campus" | "base";
+  /** Directive vocabulary: civilian (Cal OES), heat (heat check-in line for older residents), base (installation lockdown). */
+  mode?: "civilian" | "heat" | "base";
   preset?: SimPreset; // switch the simulator preset
   autopilot_devices?: boolean;
   wrong_polygon?: boolean;

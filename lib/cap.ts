@@ -59,6 +59,7 @@ interface StateMap {
 }
 
 function mapState(state: ZoneState, mode: Mode, quake: boolean): StateMap {
+  if (mode === "heat") return heatState(state);
   const civil = mode === "civilian";
   switch (state) {
     case "order":
@@ -77,10 +78,29 @@ function mapState(state: ZoneState, mode: Mode, quake: boolean): StateMap {
   }
 }
 
+/** Heat check-in line: the ladder's rung names (no EAS/SAME code is claimed for a demo line). */
+function heatState(state: ZoneState): StateMap {
+  switch (state) {
+    case "order":
+      return { event: "Extreme Heat (heat check-in line)", responseType: "Execute", urgency: "Immediate", severity: "Extreme", certainty: "Likely", same: null };
+    case "warning":
+      return { event: "Heat Advisory (heat check-in line)", responseType: "Prepare", urgency: "Expected", severity: "Severe", certainty: "Likely", same: null };
+    case "shelter_in_place":
+      return { event: "Stay indoors (heat check-in line)", responseType: "Shelter", urgency: "Immediate", severity: "Severe", certainty: "Likely", same: null };
+    case "watch":
+      return { event: "Heat watch (heat check-in line)", responseType: "Monitor", urgency: "Future", severity: "Moderate", certainty: "Possible", same: null };
+    case "lifted":
+      return { event: "Heat over", responseType: "AllClear", urgency: "Past", severity: "Minor", certainty: "Observed", same: null };
+    case "monitor":
+    default:
+      return { event: "Monitor", responseType: "None", urgency: "Unknown", severity: "Unknown", certainty: "Unknown", same: null };
+  }
+}
+
 function category(input: CapInput): string {
   if (input.category) return input.category;
   if (input.mode === "base") return "Security";
-  if (input.mode === "campus") return "Safety";
+  if (input.mode === "heat") return "Met";
   if (input.state === "shelter_in_place") return input.quake ? "Geo" : "Safety";
   return "Fire";
 }
