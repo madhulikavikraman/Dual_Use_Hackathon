@@ -11,10 +11,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400..600&family=Saira:wght@400..800&display=swap" rel="stylesheet" />
 <script>
   // Defined before the body so the inline onerror handlers below always exist, even for images that fail early.
-  // An <img data-fallback="..."> tries its fallback first; after that its .shot frame shows the styled placeholder.
+  // An <img data-fallback="a.png|b.png"> tries each fallback in turn; after that its .shot frame shows the styled placeholder.
   function vfImg(img) {
     var fb = img.getAttribute('data-fallback');
-    if (fb) { img.removeAttribute('data-fallback'); img.src = fb; return; }
+    if (fb) {
+      var rest = fb.split('|'), next = rest.shift();
+      if (rest.length) img.setAttribute('data-fallback', rest.join('|')); else img.removeAttribute('data-fallback');
+      img.src = next; return;
+    }
     var frame = img.closest('.shot');
     if (frame) frame.classList.add('missing');
     img.hidden = true;
@@ -192,7 +196,12 @@
     max-width: 1220px; margin: 0 auto 22px; text-wrap: balance;
   }
   #s1 .lede { font-size: 26px; max-width: 900px; margin: 0 auto; }
-  .badges { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 44px; }
+  .days { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 22px; font: 500 22px/1 var(--ff-body); color: var(--vf-bone); }
+  .days .l { color: var(--vf-smoke); font-weight: 400; margin-right: 4px; }
+  .days .d { display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px 10px 14px; border-radius: 999px; border: 1.5px solid rgba(255,42,18,0.55); background: rgba(255,42,18,0.1); }
+  .days .d.heat { border-color: rgba(251,191,36,0.5); background: rgba(251,191,36,0.08); }
+  .days .emo { font-size: 21px; line-height: 1; }
+  .badges { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 36px; }
   .badges li {
     font: 600 15px/1 var(--ff-body); letter-spacing: 0.12em; text-transform: uppercase;
     padding: 11px 20px; border-radius: 999px; border: 1.5px solid rgba(255,107,61,0.4);
@@ -424,21 +433,84 @@
   #s9 .privacy b { color: var(--vf-bone); font-weight: 600; }
 
   /* ════════════ 10. NOVELTY ════════════ */
-  #s10 .h2 { margin-bottom: 34px; }
+  #s10 .h2 { margin-bottom: 30px; }
+  .novel { display: grid; grid-template-columns: 1fr 404px; gap: 26px; align-items: start; }
   .compare { border: 1px solid var(--line-2); border-radius: 18px; overflow: hidden; }
-  .compare .row { display: grid; grid-template-columns: 0.85fr 1.15fr; }
+  .compare .row { display: grid; grid-template-columns: 0.8fr 1.2fr; }
   .compare .row + .row { border-top: 1px solid var(--line); }
-  .compare .row > div { padding: 21px 30px; display: flex; align-items: center; gap: 16px; }
-  .compare .today { font: 400 25px/1.3 var(--ff-body); color: #8d8d97; background: rgba(255,255,255,0.015); }
-  .compare .vf { font: 600 30px/1.2 var(--ff-display); color: var(--vf-bone); background: rgba(255,42,18,0.05); border-left: 1px solid rgba(255,42,18,0.35); }
+  .compare .row > div { padding: 18px 24px; display: flex; align-items: center; gap: 14px; }
+  .compare .today { font: 400 21px/1.3 var(--ff-body); color: #8d8d97; background: rgba(255,255,255,0.015); }
+  .compare .vf { font: 600 25px/1.2 var(--ff-display); color: var(--vf-bone); background: rgba(255,42,18,0.05); border-left: 1px solid rgba(255,42,18,0.35); }
+  .compare .row.new .vf { background: rgba(255,42,18,0.12); }
+  .compare .row.new .vf .tag { margin-left: auto; flex: none; font: 700 11px/1 var(--ff-body); letter-spacing: 0.14em; text-transform: uppercase; color: #fff; background: var(--vf-flare); padding: 6px 9px; border-radius: 999px; }
+  .blocks-side .shot { height: 330px; }
+  .blocks-cap { margin-top: 16px; font: 400 18px/1.45 var(--ff-body); color: var(--vf-smoke); }
+  .blocks-cap b { color: var(--vf-bone); font-weight: 600; }
+  .blocks-cap .emo { margin-right: 6px; }
   .compare .head > div { padding: 14px 28px; font: 700 15px/1 var(--ff-body); letter-spacing: 0.16em; text-transform: uppercase; }
   .compare .head .today { color: var(--vf-smoke); }
   .compare .head .vf { color: var(--vf-ember); }
   .compare .x { flex: 0 0 22px; height: 22px; color: #6b6b74; }
   .compare .ok { flex: 0 0 26px; height: 26px; color: var(--vf-flare); }
 
-  /* ════════════ 11. USEFULNESS ════════════ */
-  #s11 .h2 { margin-bottom: 34px; }
+  /* ════════════ 11. DUAL-USE: ONE SYSTEM, TWO DAYS ════════════ */
+  #s11 { padding-top: 50px; padding-bottom: 80px; }
+  #s11 .h2 { font-size: 58px; margin-bottom: 20px; }
+  .emo { font-style: normal; font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; }
+  /* Each row is its own 3-column grid: the fire night left, the shared rung in the middle, the hot Tuesday right.
+     The DOM order is rung, fire, heat (the rung is the row header); the grid places them visually. */
+  .duo-row { display: grid; grid-template-columns: 1fr 234px 1fr; }
+  .duo-row > .fire { grid-column: 1; grid-row: 1; }
+  .duo-row > .spine { grid-column: 2; grid-row: 1; }
+  .duo-row > .heat { grid-column: 3; grid-row: 1; }
+  .duo .side {
+    padding: 10px 22px; font: 400 17px/1.36 var(--ff-body); color: rgba(245,245,244,0.88);
+    border: 0 solid; border-left-width: 1px; border-right-width: 1px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+  }
+  .duo .side b { color: var(--vf-bone); font-weight: 600; }
+  .duo .fire { background: rgba(255,42,18,0.06); border-color: rgba(255,42,18,0.38); }
+  .duo .heat { background: rgba(251,191,36,0.045); border-color: rgba(251,191,36,0.36); }
+  .duo-head .side { border-top-width: 1px; border-radius: 16px 16px 0 0; box-shadow: none; padding: 14px 22px 12px; }
+  .duo-row:last-child .side { border-bottom-width: 1px; border-radius: 0 0 16px 16px; }
+  .duo .day { display: flex; align-items: center; gap: 12px; font: 600 27px/1.1 var(--ff-display); color: var(--vf-bone); letter-spacing: -0.01em; margin-bottom: 8px; }
+  .duo .day .emo { font-size: 25px; line-height: 1; }
+  .duo .day .tag { margin-left: auto; font: 700 12px/1 var(--ff-body); letter-spacing: 0.14em; text-transform: uppercase; padding: 6px 10px; border-radius: 999px; }
+  .duo .fire .day .tag { background: var(--vf-flare); color: #fff; }
+  .duo .heat .day .tag { background: var(--vf-amber); color: var(--vf-ink); }
+  .duo-head p { font: 400 16px/1.4 var(--ff-body); color: var(--vf-smoke); }
+  .duo-head p b { font: 700 12px/1 var(--ff-body); letter-spacing: 0.14em; text-transform: uppercase; margin-right: 6px; }
+  .duo-head .fire p b { color: var(--vf-ember); }
+  .duo-head .heat p b { color: var(--vf-amber); }
+  .duo .spine { position: relative; display: flex; align-items: center; justify-content: center; }
+  .duo .spine::before { content: ''; position: absolute; left: calc(50% - 1.5px); top: 0; bottom: 0; width: 3px; background: currentColor; opacity: 0.4; z-index: -1; }
+  .duo-head .spine::before { display: none; }
+  .duo-row:nth-child(2) .spine::before { top: 50%; }
+  .duo-row:last-child .spine::before { bottom: 50%; }
+  .duo .rg {
+    display: inline-flex; align-items: center; gap: 9px; padding: 7px 15px 7px 9px; border-radius: 999px;
+    border: 2px solid currentColor; background: var(--vf-ink); box-shadow: 0 0 22px -8px currentColor;
+    font: 600 21px/1 var(--ff-display); white-space: nowrap;
+  }
+  .duo .rg b { font: 600 14px/1 var(--ff-mono); opacity: 0.75; }
+  .duo .spine.r1 { color: #a3a3ad; } .duo .spine.r2 { color: #fbbf24; } .duo .spine.r3 { color: #ff8a3d; } .duo .spine.r4 { color: #ff2a12; } .duo .spine.r5 { color: #f5f5f4; }
+  .duo-head .spine { align-items: flex-end; padding: 0 10px 14px; text-align: center; font: 700 12px/1.35 var(--ff-body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--vf-smoke); }
+  .duo-foot { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr 318px; gap: 16px; }
+  .same, .more { border: 1px solid var(--line-2); border-radius: 14px; padding: 13px 20px 14px; background: var(--vf-coal); }
+  .same { border-color: rgba(255,42,18,0.5); background: rgba(255,42,18,0.08); }
+  .same .k, .more .k { font: 700 13px/1 var(--ff-body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--vf-ember); margin-bottom: 10px; }
+  .same li { position: relative; padding-left: 20px; font: 500 17px/1.35 var(--ff-body); color: var(--vf-bone); }
+  .same li + li { margin-top: 5px; }
+  .same li::before { content: ''; position: absolute; left: 0; top: 9px; width: 7px; height: 7px; border-radius: 2px; background: var(--vf-flare); transform: rotate(45deg); }
+  .more .k { color: var(--vf-smoke); }
+  .more li { display: grid; grid-template-columns: 26px 1fr; gap: 0 8px; font: 400 15px/1.38 var(--ff-body); color: var(--vf-smoke); }
+  .more li + li { margin-top: 6px; }
+  .more li b { color: var(--vf-bone); font-weight: 600; }
+  .more li .emo { font-size: 18px; line-height: 1.2; }
+  #s11 .shot .view img { position: absolute; inset: 0; }
+
+  /* ════════════ 12. USEFULNESS ════════════ */
+  #s12 .h2 { margin-bottom: 34px; }
   .use { display: grid; grid-template-columns: 1fr 470px; gap: 28px; }
   .cust { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   .cust li { background: var(--vf-coal); border: 1px solid var(--line); border-radius: 16px; padding: 22px 24px; }
@@ -455,24 +527,6 @@
   .fund { margin-top: 22px; display: flex; align-items: center; gap: 16px; font: 400 20px/1.4 var(--ff-body); color: var(--vf-smoke); }
   .fund b { color: var(--vf-bone); font-weight: 600; }
   .fund .tag { flex: none; font: 700 13px/1 var(--ff-body); letter-spacing: 0.14em; text-transform: uppercase; color: var(--vf-ink); background: var(--vf-bone); padding: 7px 11px; border-radius: 4px; }
-
-  /* ════════════ 12. ADAPT ════════════ */
-  #s12 .h2 { font-size: 62px; margin-bottom: 34px; }
-  #s12 .h2 .quiet { color: #7d7d87; }
-  .adapt { display: grid; grid-template-columns: 1fr 600px; gap: 44px; }
-  .pool-ladder { display: flex; flex-direction: column; gap: 14px; }
-  .pool-ladder li { display: grid; grid-template-columns: 228px 1fr; gap: 18px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--line); }
-  .pool-ladder .w { font: 600 28px/1 var(--ff-display); }
-  .pool-ladder p { font: 400 20px/1.4 var(--ff-body); color: rgba(245,245,244,0.88); }
-  .pool-ladder .r1 .w { color: #a3a3ad; } .pool-ladder .r2 .w { color: #fbbf24; } .pool-ladder .r5 .w { color: var(--vf-bone); }
-  .pool-ladder .human { border: 1px solid rgba(255,42,18,0.55); background: rgba(255,42,18,0.08); border-radius: 12px; padding: 16px 20px; display: block; }
-  .pool-ladder .human p { font: 600 25px/1.2 var(--ff-display); color: var(--vf-bone); }
-  .pool-note { margin-top: 18px; font: 400 18px/1.4 var(--ff-body); color: var(--vf-smoke); }
-  .pool-note b { color: var(--vf-bone); font-weight: 600; }
-  #s12 .shot { height: 372px; }
-  .adapters { margin-top: 18px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .adapters span.l { font: 400 18px/1 var(--ff-body); color: var(--vf-smoke); margin-right: 4px; }
-  .chip { font: 600 18px/1 var(--ff-body); color: var(--vf-bone); border: 1.5px solid var(--line-2); border-radius: 999px; padding: 10px 16px; background: rgba(255,255,255,0.03); }
 
   /* ════════════ 13. UNDER THE HOOD + CLOSE ════════════ */
   #s13 { padding-top: 56px; }
@@ -566,7 +620,7 @@
 <main id="stage" aria-roledescription="carousel" aria-label="VoiceFlare pitch deck">
 
   <!-- ═══════════════ 1. TITLE ═══════════════ -->
-  <section class="slide active" id="s1" data-title="VoiceFlare" data-time="10">
+  <section class="slide active" id="s1" data-title="VoiceFlare" data-time="15">
     <div class="glow glow-a"></div><div class="glow glow-b"></div>
     <div class="logo-hero animate-in">
       <svg class="arcs" viewBox="-100 -100 200 200" fill="none" aria-hidden="true" focusable="false">
@@ -578,6 +632,7 @@
     </div>
     <h1 class="animate-in">Before an alert wakes 10 million phones, ask 4 neighbors at the edge of the zone.</h1>
     <p class="lede animate-in">A supervisor&rsquo;s board for the gentlest alert that still works.</p>
+    <p class="days animate-in"><span class="l">One system, two days:</span><span class="d"><span class="emo" aria-hidden="true">🔥</span>the fire night</span><span class="d heat"><span class="emo" aria-hidden="true">🌡️</span>an ordinary hot Tuesday</span></p>
     <ul class="badges animate-in" aria-label="Event and track">
       <li>USC Viterbi &times; InnovateLA Dual-Use Hackathon</li>
       <li>Resilience Comms</li>
@@ -585,7 +640,7 @@
     </ul>
     <aside class="notes">
       <p>We&rsquo;re VoiceFlare. Before an alert wakes a whole county, we ask four neighbors at the edge of the zone.</p>
-      <p>We built it for one seat: the overnight supervisor of a call line during a wildfire.</p>
+      <p>One board, two days: the supervisor of a call line on a fire night, and a heat check-in line for older residents on an ordinary hot day.</p>
     </aside>
   </section>
 
@@ -629,7 +684,7 @@
   </section>
 
   <!-- ═══════════════ 3. WHY TOOLS FAIL ═══════════════ -->
-  <section class="slide" id="s3" data-title="Why today's tools fail" data-time="15">
+  <section class="slide" id="s3" data-title="Why today's tools fail" data-time="12">
     <div class="glow glow-b"></div>
     <p class="eyebrow animate-in">Why today&rsquo;s tools fail</p>
     <h2 class="h2 animate-in">Loud, late, one-way.</h2>
@@ -720,7 +775,7 @@
   </section>
 
   <!-- ═══════════════ 5. INTRODUCING VOICEFLARE ═══════════════ -->
-  <section class="slide" id="s5" data-title="Introducing VoiceFlare" data-time="15">
+  <section class="slide" id="s5" data-title="Introducing VoiceFlare" data-time="13">
     <div class="glow glow-a"></div>
     <div class="logo-row animate-in">
       <img class="mark" src="assets/voiceflare-mark.png" alt="" />
@@ -775,7 +830,7 @@
   </section>
 
   <!-- ═══════════════ 6. HOW IT WORKS ═══════════════ -->
-  <section class="slide" id="s6" data-title="How it works" data-time="15">
+  <section class="slide" id="s6" data-title="How it works" data-time="12">
     <div class="glow glow-d"></div>
     <p class="eyebrow animate-in">How it works</p>
     <h2 class="h2 animate-in">The ladder, on one board.</h2>
@@ -796,18 +851,18 @@
     <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">06</span></div>
     <aside class="notes">
       <p>This is the hackathon&rsquo;s ladder on one board: watch, ask, slow, hold, hand to a person.</p>
-      <p>The decider is the overnight supervisor; the moment is an Order about to wake a zone. A model may propose. Choosing a zone state, declaring anyone safe and giving ETAs are never automated.</p>
+      <p>A model may propose. Choosing a zone state, declaring anyone safe and giving ETAs are never automated.</p>
     </aside>
   </section>
 
   <!-- ═══════════════ 7. THE END-TO-END RUN ═══════════════ -->
-  <section class="slide" id="s7" data-title="The end-to-end demo" data-time="15">
+  <section class="slide" id="s7" data-title="The end-to-end demo" data-time="17">
     <div class="glow glow-a"></div>
     <span class="sim sim-corner animate-in"><b>SIMULATED</b>Synthetic residents and 6 volunteer phones</span>
     <p class="eyebrow animate-in">End-to-end demo &middot; a simulated fire</p>
     <h2 class="h2 animate-in">Westside Fire, in 3.5 minutes.</h2>
     <ol class="beats">
-      <li class="beat animate-in"><span class="t">0:15</span><span class="i">1</span><h3>Approve the Warning</h3><p>Culver City. A name, a reason, the exact words.</p></li>
+      <li class="beat animate-in"><span class="t">0:15</span><span class="i">1</span><h3>Approve the Warning</h3><p>Santa Monica&rsquo;s blocks leave in waves, not all at once. Next, Culver City: a name, a reason, the exact words.</p></li>
       <li class="beat animate-in"><span class="t">0:30</span><span class="i">2</span><h3>Edge-first calls</h3><p>Phone 1 answers in Spanish. Teach-back passes.</p></li>
       <li class="beat animate-in"><span class="t">0:55</span><span class="i">3</span><h3>&ldquo;Wheelchair, no car&rdquo;</h3><p>A registry row at the corner she named: <b>Venice and Sepulveda</b>.</p></li>
       <li class="beat key animate-in"><span class="t">1:35</span><span class="i">4</span><h3>The hold</h3><p class="big"><s>9.8 million</s> &rarr; 41,000</p><p>A sentinel says &ldquo;nothing here.&rdquo; The polygon is fixed.</p></li>
@@ -822,7 +877,7 @@
     </div>
     <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">07</span></div>
     <aside class="notes">
-      <p>Here is the end-to-end run on a simulated Westside Fire. Watch the hold: 9.8 million phones, down to 41,000 after one sentinel says &ldquo;nothing here.&rdquo;</p>
+      <p>Here is the end-to-end run on a simulated Westside Fire. Santa Monica&rsquo;s blocks move out in waves, not the whole city at once. Watch the hold: 9.8 million phones, down to 41,000 after one sentinel says &ldquo;nothing here.&rdquo;</p>
       <p>One click, /board?autoplay=1, runs it hands-free. Say out loud: every send is simulated.</p>
     </aside>
   </section>
@@ -835,7 +890,7 @@
         <figure class="shot" style="height:100%">
           <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span>/board?autoplay=1</span></div>
           <div class="view">
-            <img src="assets/shot-autoplay.png" data-fallback="assets/board.png" alt="The VoiceFlare board during the simulated Westside Fire run" onerror="vfImg(this)" />
+            <img src="assets/shot-autoplay.png" data-fallback="assets/shot-board.png|assets/board.png" alt="The VoiceFlare board during the simulated Westside Fire run" onerror="vfImg(this)" />
             <div class="ph"><div class="cap"><b>The board, mid-run</b><br />Live: /board?autoplay=1</div></div>
           </div>
         </figure>
@@ -904,8 +959,8 @@
     </div>
     <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">09</span></div>
     <aside class="notes">
-      <p>New today: when someone can&rsquo;t leave, the agent asks on the Retell call whether they will share their location. The answer is stored with the call.</p>
-      <p>A one-tap text link streams GPS to the database, and the response team sends a helper with directions to the exact spot. Sharing stops when help arrives, or after 4 hours.</p>
+      <p>New today: when someone can&rsquo;t leave, the agent asks on the call whether they will share their location.</p>
+      <p>A one-tap text link streams GPS, and the response team sends a helper to the exact spot. Sharing stops when help arrives, or after 4 hours.</p>
     </aside>
   </section>
 
@@ -914,6 +969,7 @@
     <div class="glow glow-b"></div>
     <p class="eyebrow animate-in">What is new</p>
     <h2 class="h2 animate-in">It asks before it alerts.</h2>
+    <div class="novel">
     <div class="compare" role="table" aria-label="Today versus VoiceFlare">
       <div class="row head animate-in" role="row"><div class="today" role="columnheader">Today</div><div class="vf" role="columnheader">VoiceFlare</div></div>
       <div class="row animate-in" role="row">
@@ -923,6 +979,10 @@
       <div class="row animate-in" role="row">
         <div class="today" role="cell"><svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>Sends blind</div>
         <div class="vf" role="cell"><svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Shows the dose before sending</div>
+      </div>
+      <div class="row new animate-in" role="row">
+        <div class="today" role="cell"><svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>Everyone told to go at once</div>
+        <div class="vf" role="cell"><svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Moves block by block, in waves<span class="tag">New</span></div>
       </div>
       <div class="row animate-in" role="row">
         <div class="today" role="cell"><svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>Hopes it arrived</div>
@@ -941,24 +1001,137 @@
         <div class="vf" role="cell"><svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Every decision has a name and a reason</div>
       </div>
     </div>
+    <div class="blocks-side">
+      <figure class="shot animate-in">
+        <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span>/board &middot; evacuation in waves</span></div>
+        <div class="view">
+          <img src="assets/shot-blocks.png" alt="The board moving a zone out block by block, in waves on assigned exit roads" onerror="vfImg(this)" />
+          <div class="ph">
+            <svg viewBox="0 0 420 240" aria-hidden="true">
+              <circle cx="0" cy="120" r="90" fill="#ff2a12" opacity="0.14"/>
+              <g stroke="#2a2a31" stroke-width="8" stroke-linecap="round"><path d="M0 60h420M0 120h420M0 180h420M70 0v240M140 0v240M210 0v240M280 0v240M350 0v240"/></g>
+              <g fill="#ff2a12" fill-opacity="0.55"><rect x="6" y="6" width="58" height="48" rx="5"/><rect x="76" y="6" width="58" height="48" rx="5"/><rect x="6" y="66" width="58" height="48" rx="5"/><rect x="76" y="66" width="58" height="48" rx="5"/><rect x="6" y="126" width="58" height="48" rx="5"/><rect x="76" y="126" width="58" height="48" rx="5"/><rect x="6" y="186" width="58" height="48" rx="5"/><rect x="76" y="186" width="58" height="48" rx="5"/></g>
+              <g fill="#ff8a3d" fill-opacity="0.4"><rect x="146" y="6" width="58" height="48" rx="5"/><rect x="216" y="6" width="58" height="48" rx="5"/><rect x="146" y="66" width="58" height="48" rx="5"/><rect x="216" y="66" width="58" height="48" rx="5"/><rect x="146" y="126" width="58" height="48" rx="5"/><rect x="216" y="126" width="58" height="48" rx="5"/><rect x="146" y="186" width="58" height="48" rx="5"/><rect x="216" y="186" width="58" height="48" rx="5"/></g>
+              <g fill="#fbbf24" fill-opacity="0.22"><rect x="286" y="6" width="58" height="48" rx="5"/><rect x="356" y="6" width="58" height="48" rx="5"/><rect x="286" y="66" width="58" height="48" rx="5"/><rect x="356" y="66" width="58" height="48" rx="5"/><rect x="286" y="126" width="58" height="48" rx="5"/><rect x="356" y="126" width="58" height="48" rx="5"/><rect x="286" y="186" width="58" height="48" rx="5"/><rect x="356" y="186" width="58" height="48" rx="5"/></g>
+              <g fill="none" stroke="#f5f5f4" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 10"><path d="M40 60H408"/><path d="M180 180H408"/></g>
+              <g fill="#f5f5f4"><path d="M404 52l14 8-14 8z"/><path d="M404 172l14 8-14 8z"/></g>
+              <g fill="#0b0b0e" stroke-width="2.5"><circle cx="70" cy="120" r="15" stroke="#ff2a12"/><circle cx="210" cy="120" r="15" stroke="#ff8a3d"/><circle cx="350" cy="120" r="15" stroke="#fbbf24"/></g>
+              <g font-family="Geist, 'Geist Local', sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#f5f5f4"><text x="70" y="126">1</text><text x="210" y="126">2</text><text x="350" y="126">3</text></g>
+            </svg>
+            <div class="cap"><b>Illustration.</b> Waves of blocks on assigned exit roads</div>
+          </div>
+        </div>
+      </figure>
+      <p class="blocks-cap animate-in"><b>Block by block.</b> Groups of about 10&ndash;12 city blocks leave in timed waves on assigned exit roads, sized to road capacity. &ldquo;Everyone go now&rdquo; is always one click.</p>
+    </div>
+    </div>
     <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">10</span></div>
     <aside class="notes">
-      <p>What is new: it asks before it alerts, shows the dose before sending, and confirms delivery with a canary.</p>
-      <p>Silence is a signal, never &ldquo;safe&rdquo;. It relays only approved words, and every decision has a name and a reason.</p>
+      <p>What is new: it asks before it alerts and shows the dose first. It moves people block by block, in waves on assigned exit roads, so roads don&rsquo;t jam; &ldquo;everyone go now&rdquo; is always one click.</p>
+      <p>A canary confirms delivery, and silence is never &ldquo;safe&rdquo;.</p>
     </aside>
   </section>
 
-  <!-- ═══════════════ 11. USEFULNESS ═══════════════ -->
-  <section class="slide" id="s11" data-title="Useful on an ordinary Tuesday" data-time="15">
+  <!-- ═══════════════ 11. DUAL-USE: ONE SYSTEM, TWO DAYS ═══════════════ -->
+  <section class="slide" id="s11" data-title="Dual-use: one system, two days" data-time="25">
+    <div class="glow glow-d"></div>
+    <h2 class="h2 animate-in"><span class="hot">Dual-use:</span> one system, two days.</h2>
+    <div class="duo" role="table" aria-label="The same five rungs on a fire night and on an ordinary hot Tuesday">
+      <div class="duo-row duo-head animate-in" role="row">
+        <div class="spine" role="columnheader">The same five rungs</div>
+        <div class="side fire" role="columnheader">
+          <div class="day"><span class="emo" aria-hidden="true">🔥</span>The fire night<span class="tag">Crisis</span></div>
+          <p><b>Decider</b>The overnight supervisor of an emergency call line.</p>
+          <p><b>Moment</b>An Order about to wake a zone.</p>
+        </div>
+        <div class="side heat" role="columnheader">
+          <div class="day"><span class="emo" aria-hidden="true">🌡️</span>An ordinary hot Tuesday<span class="tag">Everyday</span></div>
+          <p><b>Decider</b>The duty officer of a city or county heat check-in line for older residents.</p>
+          <p><b>Moment</b>A heat advisory for a neighborhood.</p>
+        </div>
+      </div>
+      <div class="duo-row animate-in" role="row">
+        <div class="spine r1" role="rowheader"><span class="rg"><b>1</b>Watch</span></div>
+        <div class="side fire" role="cell">Zones on the Cal OES ladder. A fire model proposes changes.</div>
+        <div class="side heat" role="cell">Live temperatures and National Weather Service heat alerts, per neighborhood.</div>
+      </div>
+      <div class="duo-row animate-in" role="row">
+        <div class="spine r2" role="rowheader"><span class="rg"><b>2</b>Ask</span></div>
+        <div class="side fire" role="cell">Sentinels at the zone&rsquo;s edge: &ldquo;Does this match what you see?&rdquo;</div>
+        <div class="side heat" role="cell">Calls to seniors who opted in, those alone or without air conditioning first: can you stay cool? Water, a ride to a cooling center, a visit?</div>
+      </div>
+      <div class="duo-row animate-in" role="row">
+        <div class="spine r3" role="rowheader"><span class="rg"><b>3</b>Slow</span></div>
+        <div class="side fire" role="cell">Edge-first calls. Groups of about 10&ndash;12 blocks leave in timed waves on assigned exit roads, so roads don&rsquo;t jam.</div>
+        <div class="side heat" role="cell">A priority order, not everyone at once.</div>
+      </div>
+      <div class="duo-row animate-in" role="row">
+        <div class="spine r4" role="rowheader"><span class="rg"><b>4</b>Hold</span></div>
+        <div class="side fire" role="cell"><b>90 s</b> before an Order, showing how many phones it will wake. It can delay an alert, never stop one.</div>
+        <div class="side heat" role="cell">Nothing goes out until <b>a named person</b> approves the heat message and the cooling-center list.</div>
+      </div>
+      <div class="duo-row animate-in" role="row">
+        <div class="spine r5" role="rowheader"><span class="rg"><b>5</b>Hand to a person</span></div>
+        <div class="side fire" role="cell">The help registry. With consent, live location to the response team and a helper at the exact spot. Pickup vans.</div>
+        <div class="side heat" role="cell">A ride to a cooling center, a wellness visit (the same helper flow), 911 for heat-stroke signs. No answer twice: the linked contact, then a door knock.</div>
+      </div>
+    </div>
+    <div class="duo-foot">
+      <div class="same animate-in">
+        <div class="k">Same on both days</div>
+        <ul>
+          <li>A named human decides; a model only proposes.</li>
+          <li>Only approved words. Never an ETA, never &ldquo;you are safe.&rdquo;</li>
+          <li>Silence is never treated as safe.</li>
+          <li>Every decision is in the ledger, with a name and a reason.</li>
+        </ul>
+      </div>
+      <div class="more animate-in">
+        <div class="k">Other second customers</div>
+        <ul>
+          <li><span class="emo" aria-hidden="true">🪖</span><span><b>Military installations.</b> Base mode: avoid, evacuate to the accountability point, lockdown, all clear.</span></li>
+          <li><span class="emo" aria-hidden="true">🖼️</span><span><b>Galleries and archives.</b> The collections line: only at Warning, always below people.</span></li>
+          <li><span class="emo" aria-hidden="true">🌏</span><span><b>Six jurisdictions.</b> The same rules in each.</span></li>
+        </ul>
+      </div>
+      <figure class="shot animate-in">
+        <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span>heat check-in line</span></div>
+        <div class="view">
+          <img src="assets/shot-heat.png" alt="The board running heat check-ins for older residents in one neighborhood" onerror="vfImg(this)" />
+          <div class="ph">
+            <svg viewBox="0 0 300 150" aria-hidden="true">
+              <g stroke="#2a2a31" stroke-width="6" stroke-linecap="round"><path d="M0 50h300M0 100h300M100 0v150M200 0v150"/></g>
+              <g fill="#ff2a12" fill-opacity="0.5"><rect x="4" y="4" width="92" height="42" rx="6"/><rect x="104" y="4" width="92" height="42" rx="6"/><rect x="4" y="54" width="92" height="42" rx="6"/></g>
+              <g fill="#ff8a3d" fill-opacity="0.35"><rect x="204" y="4" width="92" height="42" rx="6"/><rect x="104" y="54" width="92" height="42" rx="6"/><rect x="4" y="104" width="92" height="42" rx="6"/></g>
+              <g fill="#fbbf24" fill-opacity="0.18"><rect x="204" y="54" width="92" height="42" rx="6"/><rect x="104" y="104" width="92" height="42" rx="6"/></g>
+              <rect x="204" y="104" width="92" height="42" rx="6" fill="#123044" stroke="#4aa3d8" stroke-width="2"/>
+              <g stroke="#9fd4f2" stroke-width="2.5" stroke-linecap="round"><path d="M250 113v24M240 119l20 12M240 131l20-12"/></g>
+              <g fill="#f5f5f4"><circle cx="30" cy="22" r="4"/><circle cx="70" cy="32" r="4"/><circle cx="140" cy="20" r="4"/><circle cx="40" cy="78" r="4"/><circle cx="150" cy="80" r="4"/><circle cx="240" cy="28" r="4"/><circle cx="50" cy="124" r="4"/></g>
+              <g fill="none" stroke="#fbbf24" stroke-width="2.5"><circle cx="30" cy="22" r="10"/><circle cx="140" cy="20" r="10"/><circle cx="40" cy="78" r="10"/></g>
+            </svg>
+            <div class="cap"><b>Illustration.</b> Heat check-ins</div>
+          </div>
+        </div>
+      </figure>
+    </div>
+    <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">11</span></div>
+    <aside class="notes">
+      <p>One system, two days. On a fire night, the call-line supervisor runs the ladder you just saw.</p>
+      <p>On an ordinary hot Tuesday, a heat check-in line for older residents runs the same five rungs: watch the heat alerts, call the seniors who opted in, approve the words, and send a ride, a visit or 911. Both days, a named human decides.</p>
+    </aside>
+  </section>
+
+  <!-- ═══════════════ 12. USEFULNESS ═══════════════ -->
+  <section class="slide" id="s12" data-title="Useful, and measured" data-time="16">
     <div class="glow glow-a"></div>
-    <p class="eyebrow animate-in">Useful &middot; the second customer</p>
-    <h2 class="h2 animate-in">The same board, on an ordinary Tuesday.</h2>
+    <p class="eyebrow animate-in">Useful &middot; measured, not claimed</p>
+    <h2 class="h2 animate-in">Built for the people who can&rsquo;t leave alone.</h2>
     <div class="use">
       <ul class="cust">
-        <li class="animate-in"><div class="mode">Campus mode</div><h3>USC DPS</h3><p>Buildings are zones. RAs and officers on post are sentinels. A 20-second test call each month.</p></li>
-        <li class="animate-in"><div class="mode">Base mode</div><h3>Military installations</h3><p>Housing, gates and the flight line are zones. Gate posts are sentinels. Personnel accountability.</p></li>
-        <li class="animate-in"><div class="mode">Collections line</div><h3>Galleries and archives</h3><p>A grab list of what cannot be replaced, and help at Warning. Lives first, always.</p></li>
-        <li class="animate-in"><div class="mode">Any country</div><h3>Six jurisdictions</h3><p>Los Angeles, Chongqing, &#x14C;funato, Rhodes, Odisha, East Gippsland. Same rules, six adapters.</p></li>
+        <li class="animate-in"><div class="mode">Help registry</div><h3>Priority 1 is life safety</h3><p>&ldquo;I can&rsquo;t leave&rdquo; becomes a row at the spot the caller named, for the response team.</p></li>
+        <li class="animate-in"><div class="mode">Pickup runs</div><h3>Accessible vans first</h3><p>Priority 1 and 2 rows become van routes for mobility and medical needs.</p></li>
+        <li class="animate-in"><div class="mode">Live location</div><h3>Only with consent</h3><p>A helper goes to the exact spot. Sharing stops when help arrives, or after 4 hours.</p></li>
+        <li class="animate-in"><div class="mode">Privacy</div><h3>Response team only</h3><p>Phone, zone, needs and last location. Purged 72 hours after the incident closes.</p></li>
       </ul>
       <div class="nums animate-in">
         <div class="k">Measured in the repo</div>
@@ -968,54 +1141,11 @@
         <div class="src">Gold set: latest run Oct 17, shown on /evidence. Cost: the board&rsquo;s estimate.</div>
       </div>
     </div>
-    <p class="fund animate-in"><span class="tag">Funding path</span><span><b>NSF SBIR Phase I</b> (up to $305,000) pays to prove it in drills with USC DPS. <b>/evidence</b> measures the milestones live.</span></p>
-    <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">11</span></div>
-    <aside class="notes">
-      <p>The second customer uses it on an ordinary Tuesday: USC DPS, a base&rsquo;s lockdown desk, the collections line. The same rules work in six jurisdictions.</p>
-      <p>The classifier got 23 of 24 gold-set calls right and caught every needs-help-now call. NSF SBIR Phase I pays to prove it.</p>
-    </aside>
-  </section>
-
-  <!-- ═══════════════ 12. ADAPT: BACK FULL CIRCLE ═══════════════ -->
-  <section class="slide" id="s12" data-title="Adapt: back full circle" data-time="15">
-    <div class="glow glow-d"></div>
-    <p class="eyebrow animate-in">Adapt &middot; back full circle</p>
-    <h2 class="h2 animate-in">Fire is the loudest emergency.<br /><span class="quiet">Drowning is the quietest.</span></h2>
-    <div class="adapt">
-      <div>
-        <ol class="pool-ladder">
-          <li class="r1 animate-in"><span class="w">Watch</span><p>A swimmer is still under water.</p></li>
-          <li class="r2 animate-in"><span class="w">Ask</span><p>A poolside speaker and every phone in the house.</p></li>
-          <li class="r5 animate-in"><span class="w">Hand to a person</span><p>The neighbor, then the emergency number, with the address and gate code.</p></li>
-          <li class="human animate-in"><p>Only a person can stand it down.</p></li>
-        </ol>
-        <p class="pool-note animate-in"><b>The same ladder, from hours down to seconds.</b> A named person is still the last rung.</p>
-      </div>
-      <div>
-        <figure class="shot animate-in">
-          <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span>/adapt &middot; backyard pool</span></div>
-          <div class="view">
-            <img src="assets/shot-pool.png" alt="The backyard pool adapter running the ladder in seconds" onerror="vfImg(this)" />
-            <div class="ph">
-              <svg viewBox="0 0 520 260" aria-hidden="true">
-                <rect x="60" y="50" width="300" height="160" rx="26" fill="#0f2a3a" stroke="#2f6f8f" stroke-width="3"/>
-                <path d="M80 110c25-12 50 12 75 0s50 12 75 0 50 12 75 0 50 12 50 0M80 150c25-12 50 12 75 0s50 12 75 0 50 12 75 0 50 12 50 0" stroke="#2f6f8f" stroke-width="3" fill="none" opacity="0.7"/>
-                <circle cx="230" cy="135" r="34" fill="#ff2a12" opacity="0.16"/><circle cx="230" cy="135" r="11" fill="#ff2a12"/>
-                <rect x="392" y="60" width="58" height="80" rx="12" fill="#1c1c21" stroke="#3a3a43"/><circle cx="421" cy="90" r="14" fill="none" stroke="#fbbf24" stroke-width="3"/><circle cx="421" cy="90" r="4" fill="#fbbf24"/>
-                <path d="M462 78a26 26 0 0 1 0 26M474 70a40 40 0 0 1 0 42" stroke="#fbbf24" stroke-width="3" fill="none" stroke-linecap="round"/>
-                <rect x="398" y="160" width="26" height="46" rx="5" fill="#1c1c21" stroke="#ff6b3d" stroke-width="2"/><rect x="432" y="160" width="26" height="46" rx="5" fill="#1c1c21" stroke="#ff6b3d" stroke-width="2"/>
-              </svg>
-              <div class="cap"><b>Illustration.</b> Live at /adapt</div>
-            </div>
-          </div>
-        </figure>
-        <div class="adapters animate-in"><span class="l">Also adapters:</span><span class="chip">Flood</span><span class="chip">Heat</span><span class="chip">Earthquake</span></div>
-      </div>
-    </div>
+    <p class="fund animate-in"><span class="tag">Funding path</span><span><b>NSF SBIR Phase I</b> (up to $305,000) pays to prove it in drills, on a fire night and on a hot day. <b>/evidence</b> measures the milestones live.</span></p>
     <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">12</span></div>
     <aside class="notes">
-      <p>And back full circle: fire is the loudest emergency, drowning the quietest. The same ladder runs in seconds at a backyard pool: watch, ask the house, hand to the neighbor and the emergency number.</p>
-      <p>Only a person can stand it down. Flood, heat and earthquake are adapters too.</p>
+      <p>It is built for people who can&rsquo;t leave alone: &ldquo;I can&rsquo;t leave&rdquo; becomes a priority 1 row, and vans go to priorities 1 and 2.</p>
+      <p>The classifier got 23 of 24 gold-set calls right and caught every needs-help-now call. NSF SBIR Phase I pays to prove it in drills.</p>
     </aside>
   </section>
 
