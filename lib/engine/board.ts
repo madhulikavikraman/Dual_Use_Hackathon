@@ -96,7 +96,7 @@ export async function buildBoard(): Promise<BoardSnapshot> {
     calls_active: calls.filter((c) => c.state === "ringing" || c.state === "active").length,
     calls_queued: calls.filter((c) => c.state === "queued").length,
     refusals: ledger.filter((l) => !l.allowed || l.kind === "refusal").length,
-    human_decisions: ledger.filter((l) => l.kind === "decision" && !["system", "agent", "timer"].includes(l.actor)).length,
+    human_decisions: ledger.filter((l) => l.kind === "decision" && !["system", "agent", "timer"].includes(l.actor) && !l.actor.includes("(seed)")).length,
     // Estimated as if every connected minute ran on Retell (~$0.10/min all-in); real Retell minutes add to meta.
     ...(() => {
       const minutes = calls.reduce((m, c) => (c.answered_at ? m + (Date.parse(c.ended_at ?? nowIso()) - Date.parse(c.answered_at)) / 60_000 : m), 0);

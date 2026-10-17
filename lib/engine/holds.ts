@@ -7,7 +7,7 @@ import { HttpError } from "@/lib/http";
 import { COUNTYWIDE_POLYGON, COUNTYWIDE_POPULATION, zoneDefaults } from "@/lib/scenarios";
 import type { Call, Canary, Hold, HoldSentinel, HoldTally, Household, Zone, ZoneEvent } from "@/lib/types";
 import { buildVars, cancelQueued, newCall, startCampaign } from "./campaigns";
-import { feed, getMeta, ledger } from "./log";
+import { feed, getMeta, ledger, setMeta } from "./log";
 
 // The hold (PRD 8.1): before an Order is broadcast, ring sentinels at the polygon's edges for up to
 // 90 seconds and show the dose. The machine can delay an alert, never stop one: at 0:00 it sends.
@@ -70,6 +70,8 @@ export async function openHold(body: OpenHoldBody): Promise<Hold> {
   const meta = await getMeta();
   const county = body.polygon === "county" || (body.polygon === undefined && meta.wrong_polygon);
   const polygon = county ? COUNTYWIDE_POLYGON : zone.geom;
+  // The wrong-polygon demo switch is one-shot, so a rehearsal cannot leave it on by mistake.
+  if (meta.wrong_polygon) await setMeta({ wrong_polygon: false });
   const defaults = zoneDefaults(zone, body.proposed_state, meta.mode);
   const directive = body.directive_text ?? defaults.directive_text ?? directiveFor(body.proposed_state, meta.mode, zone.name);
   const move = body.move_text ?? defaults.move_text ?? "";
