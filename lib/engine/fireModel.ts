@@ -5,6 +5,7 @@ import { STATE_LABEL, STATE_RANK } from "@/lib/directives";
 import { pointInPolygon } from "@/lib/geo";
 import type { AlertItem, Proposal, Zone, ZoneState } from "@/lib/types";
 import { feed, getMeta, ledger } from "./log";
+import { plansNow, pullBlocksForward } from "./plans";
 
 // Toy fire-spread envelope (PRD 6.2, backlog item 65, D-17): a seeded perimeter in Santa Monica plus the NWS
 // hourly wind (live, with a seeded fallback) -> downwind ellipses at 1 h, 3 h and 6 h -> proposals for the
@@ -279,6 +280,23 @@ export async function runFireModel(opts: { advanceHours?: number; wind?: "live" 
     await ledger({ actor: MODEL_ACTOR, action: `propose zone: ${STATE_LABEL[hit.state]}`, kind: "system", target: zone.name, reason });
   }
 
+  // Block-by-block plans: any block the perimeter or the 1-hour envelope reaches goes now, and later waves reflow.
+  // The model may only move people sooner, never later; the ledger names it.
+  const pulled: string[] = [];
+  const oneHour = envs.find((e) => e.hours === 1)!.polygon;
+  for (const plan of await plansNow().catch(() => [])) {
+    const hit = plan.blocks.filter(
+      (b) => b.status !== "left" && b.status !== "go_now" && (polygonsIntersect(oneHour, b.geom) || polygonsIntersect(perimeter, b.geom)),
+    );
+    if (!hit.length) continue;
+    const r = await pullBlocksForward(plan.zone_id, hit.map((b) => b.id), MODEL_ACTOR,
+      `Toy model: the 1-hour envelope (${windText}) reaches ${hit.map((b) => b.id).join(", ")}`).catch((e) => {
+      console.error("[plan] pull forward", e);
+      return null;
+    });
+    if (r?.moved.length) pulled.push(...r.moved);
+  }
+
   const geo: GeoJSON.FeatureCollection = {
     type: "FeatureCollection",
     features: [
@@ -307,6 +325,7 @@ export async function runFireModel(opts: { advanceHours?: number; wind?: "live" 
         ? `New proposals: ${created.map((p) => `${zones.find((z) => z.id === p.zone_id)?.name ?? p.zone_id} to ${STATE_LABEL[p.proposed_state]}`).join("; ")}. Each needs a human.`
         : "No new proposals.") +
       (skipped.length ? ` Not proposed: ${skipped.map((c) => `${c.zone} (${c.hours} h, ${c.outcome})`).join("; ")}.` : "") +
+      (pulled.length ? ` Blocks pulled forward to go now: ${pulled.join(", ")}.` : "") +
       ` ${wind.detail} Toy model: rate and shape grow with wind speed only.`,
     geo,
   });

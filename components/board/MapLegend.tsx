@@ -3,7 +3,8 @@
 import { useState, type ReactNode } from "react";
 import { STATE_COLOR } from "@/lib/directives";
 import { HOLLOW_STATUS, PRIORITY_COLOR, stateShort, STATUS_COLOR, statusLabel } from "@/lib/client/labels";
-import { ZONE_STATES, type Mode, type Status } from "@/lib/types";
+import { BLOCK_STATUSES, ZONE_STATES, type Mode, type Status } from "@/lib/types";
+import { BLOCK_COLOR, BLOCK_EMOJI, BLOCK_FILL, BLOCK_HINT, BLOCK_LABEL } from "./blockLabels";
 
 const PEOPLE: Status[] = ["pending", "queued", "ringing", "leaving", "safe", "needs_help", "wont_leave", "no_answer", "unreachable"];
 
@@ -157,6 +158,38 @@ export function MapLegend({ mode }: { mode: Mode }) {
               Cluster (count)
             </Item>
           </ul>
+          <div className="col-span-3 border-t border-slate-200 pt-1.5">
+            <p className="mb-1 font-bold text-slate-600">
+              <span aria-hidden="true">🚦</span> Block by block (an Order zone moves out in waves)
+            </p>
+            <ul className="flex flex-wrap gap-x-3 gap-y-1">
+              {BLOCK_STATUSES.map((s) => (
+                <Item
+                  key={s}
+                  mark={
+                    <Swatch>
+                      <rect x="1" y="3" width="14" height="10" rx="1.5" fill={BLOCK_COLOR[s]} fillOpacity={Math.min(0.85, BLOCK_FILL[s] + 0.25)} stroke="#fff" strokeWidth="1" />
+                    </Swatch>
+                  }
+                >
+                  <span title={BLOCK_HINT[s]}>
+                    <span aria-hidden="true">{BLOCK_EMOJI[s]} </span>
+                    {BLOCK_LABEL[s]}
+                  </span>
+                </Item>
+              ))}
+              <Item
+                mark={
+                  <Swatch>
+                    <path d="M1 12 L15 4" stroke="#fff" strokeWidth="5" />
+                    <path d="M1 12 L15 4" stroke="#0f766e" strokeWidth="3" />
+                  </Swatch>
+                }
+              >
+                <span aria-hidden="true">🛣️ </span>Exit road, % of its cars per wave (amber over 80%, red over 100%)
+              </Item>
+            </ul>
+          </div>
         </div>
       ) : null}
     </div>

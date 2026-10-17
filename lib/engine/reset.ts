@@ -8,6 +8,7 @@ import { NORTE_SNAPSHOT, liveCalFire, liveNwsAlerts, ptTime } from "./live";
 import { buildScenario, modeFor, SCENARIOS } from "@/lib/scenarios";
 import type { Scenario, TwistEntry, ZoneEvent } from "@/lib/types";
 import { defaultMeta, feed, ledger, setMeta } from "./log";
+import { seedPlans } from "./plans";
 
 /** Twist 1 is part of the record; reset never deletes the twist log. */
 export const TWIST_ONE: Omit<TwistEntry, "id" | "created_at"> = {
@@ -54,7 +55,12 @@ export async function resetScenario(scenario: Scenario) {
     .map((p) => p ?? null);
   const build = buildScenario(scenario, at, phones);
 
-  for (const t of TABLES) if (t !== "twist_log") await db().clear(t);
+  for (const t of TABLES) {
+    if (t === "twist_log") continue;
+    // evac_plans is new (migration 005): a Supabase database without it must still reset.
+    if (t === "evac_plans") await db().clear(t).catch((e) => console.error("[reset] evac_plans (run migration 005)", e));
+    else await db().clear(t);
+  }
 
   await db().insert("zones", build.zones);
   await db().insert("households", build.households);
@@ -74,6 +80,8 @@ export async function resetScenario(scenario: Scenario) {
   }
   const label = SCENARIOS.find((s) => s.id === scenario)?.label ?? scenario;
   await feed({ kind: "info", title: `Scenario loaded: ${label}`, detail: "All residents are synthetic except the six volunteer phones. Every send is simulated." });
+  // Block-by-block plans seeded for the zones already under an Order or a Warning (lib/engine/plans.ts).
+  await seedPlans(scenario, at).catch((e) => console.error("[reset] block plans", e));
   if (scenario === "norte") await liveNorteFeed();
   for (const p of build.proposals) {
     const zone = build.zones.find((z) => z.id === p.zone_id)!;

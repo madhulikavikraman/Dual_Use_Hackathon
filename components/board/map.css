@@ -302,3 +302,60 @@ path.sk-pulse {
     animation: none;
   }
 }
+
+/* Block-by-block evacuation: the plan line under a zone's name, block ids, and exit-road load labels */
+.sk-zone-plan {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #0f172a;
+  background: rgb(255 255 255 / 0.92);
+  border-radius: 999px;
+  padding: 0 7px;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.18);
+}
+.sk-block-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.4;
+  color: #0f172a;
+  background: rgb(255 255 255 / 0.9);
+  border: 1.5px solid var(--c);
+  border-radius: 4px;
+  padding: 0 4px;
+  pointer-events: none;
+}
+.sk-block-label.sk-b-go_now {
+  background: var(--c);
+  color: #fff;
+}
+.sk-block-label.sk-b-left {
+  color: #475569;
+  opacity: 0.85;
+}
+/* Far out, only the blocks going now keep their label, so the map stays calm. */
+.sk-map[data-zoom="far"] .sk-block-label:not(.sk-b-go_now) {
+  display: none;
+}
+.sk-route-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #0f172a;
+  background: #fff;
+  border: 2px solid var(--c);
+  border-radius: 999px;
+  padding: 0 6px;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.2);
+  pointer-events: none;
+}
+.sk-route-label b {
+  color: var(--c);
+  font-weight: 900;
+}

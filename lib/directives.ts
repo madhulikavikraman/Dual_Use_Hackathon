@@ -89,3 +89,31 @@ export const STATE_RUNG: Record<ZoneState, string> = {
   shelter_in_place: "hold",
   lifted: "hand to a person",
 };
+
+// ---------- Block-by-block evacuation: message templates (a named human approves them with the plan) ----------
+// The agent reads the filled text verbatim as the route line. {block}, {wave}, {time}, {route}, {to_evac} and {zone}
+// come from the approved plan. Every "wait for your wave" message carries LEAVE_IF_UNSAFE: a plan never holds anyone back.
+
+export const LEAVE_IF_UNSAFE = "If you see fire or smoke, or feel unsafe, leave right away. Do not wait for your wave.";
+
+export const BLOCK_TEMPLATES = {
+  go_now: "Your block, {block}, is in wave {wave}: leave now by {route}{to_evac}.",
+  get_ready: `Your block, {block}, is in wave {wave}, planned for about {time}, by {route}{to_evac}. Get ready now. We will call you again when your wave starts. ${LEAVE_IF_UNSAFE}`,
+  all_go: "Everyone in {zone} leaves now. Your block, {block}: leave now by {route}{to_evac}.",
+} as const;
+
+export function fillBlockTemplate(
+  template: string,
+  v: { block: string; wave: number | string; time: string; route: string; evac_point: string | null; zone: string },
+): string {
+  const to = v.evac_point ? ` to ${v.evac_point.replace(/\.$/, "")}` : "";
+  return template
+    .replaceAll("{block}", v.block)
+    .replaceAll("{wave}", String(v.wave))
+    .replaceAll("{time}", v.time)
+    .replaceAll("{route}", v.route)
+    .replaceAll("{to_evac}", to)
+    .replaceAll("{zone}", v.zone)
+    .replace(/\s+/g, " ")
+    .trim();
+}

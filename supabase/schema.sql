@@ -176,3 +176,33 @@ alter table location_shares enable row level security;
 alter table dispatches enable row level security;
 drop policy if exists "anon read" on location_shares;
 drop policy if exists "anon read" on dispatches;
+
+-- supabase/migrations/005_evac_blocks.sql: block-by-block evacuation plans (the same table, so a fresh database built
+-- from this file has it; 005 re-runs safely on top). Blocks, exit roads and waves are JSON; a named human approves.
+create table if not exists evac_plans (
+  id uuid primary key,
+  zone_id text not null,
+  status text not null default 'proposed' check (status in ('proposed', 'standby', 'active', 'all_go', 'rejected', 'closed')),
+  wave_minutes int not null default 10,
+  current_wave int not null default 0,
+  wave_started_at timestamptz,
+  held boolean not null default false,
+  held_by text,
+  held_reason text,
+  routes jsonb not null default '[]',
+  blocks jsonb not null default '[]',
+  waves jsonb not null default '[]',
+  templates jsonb not null default '{}',
+  assumptions text,
+  proposed_by text not null,
+  approved_by text,
+  approved_at timestamptz,
+  reason text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists evac_plans_zone_idx on evac_plans (zone_id);
+create index if not exists evac_plans_status_idx on evac_plans (status);
+alter table evac_plans enable row level security;
+drop policy if exists "anon read" on evac_plans;
+create policy "anon read" on evac_plans for select using (true);
