@@ -198,4 +198,5 @@ create index if not exists evac_plans_zone_idx on evac_plans (zone_id);
 create index if not exists evac_plans_status_idx on evac_plans (status);
 alter table evac_plans enable row level security;
 drop policy if exists "anon read" on evac_plans;
-create policy "anon read" on evac_plans for select using (true);
+revoke all on table public.evac_plans from anon, authenticated;
+grant select, insert, update, delete on table public.evac_plans to service_role;

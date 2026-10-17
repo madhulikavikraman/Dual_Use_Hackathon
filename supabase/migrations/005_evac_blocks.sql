@@ -28,7 +28,10 @@ create table if not exists evac_plans (
 create index if not exists evac_plans_zone_idx on evac_plans (zone_id);
 create index if not exists evac_plans_status_idx on evac_plans (status);
 
--- Same policy as the other board tables: browsers (anon key) may read; all writes go through server routes.
+-- Same rule as every other table (see the end of 002): RLS on and no anon policy; only the server's service-role
+-- key reads or writes. The explicit grant is needed on projects created since 2026-05-30, which no longer expose new
+-- public tables to the Data API by default (without it the server gets 42501 permission denied).
 alter table evac_plans enable row level security;
 drop policy if exists "anon read" on evac_plans;
-create policy "anon read" on evac_plans for select using (true);
+revoke all on table public.evac_plans from anon, authenticated;
+grant select, insert, update, delete on table public.evac_plans to service_role;
