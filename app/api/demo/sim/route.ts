@@ -49,8 +49,9 @@ export async function POST(req: Request) {
         break;
       case "fire_spreading": {
         await setMeta({ sim_preset: "fire_spreading" });
-        const proposals = await runFireModel({ advanceHours: 1 });
-        detail = `fire envelope advanced 1 h; ${proposals.length} proposal(s)`;
+        // The story wind (WNW, 20 mph): live wind tonight may be calm and propose nothing (D-17).
+        const proposals = await runFireModel({ advanceHours: 1, wind: "seeded" });
+        detail = `fire envelope advanced 1 h (story wind); ${proposals.length} proposal(s)`;
         break;
       }
       case "mass_no_answer":

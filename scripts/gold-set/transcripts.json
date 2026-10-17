@@ -1,0 +1,321 @@
+{
+  "version": 1,
+  "about": "Gold set for the post-call classifier (PRD 10 'Evaluation'; PRD 17.1 milestone 2). 24 short scripted calls in English, Spanish, Korean, Hindi and French, each with the expected primary intent and access-and-functional needs. Synthetic, written for the Westside Fire demo; no real people. Scoring: the primary intent must match and every expected need must be present (an extra 'other' is tolerated).",
+  "items": [
+    {
+      "id": "EN-01",
+      "language": "English",
+      "lang_code": "en-US",
+      "purpose": "resident",
+      "note": "Life safety: oxygen concentrator down in a power cut. Label corrected after the first run: a home oxygen concentrator is also a powered medical device (that is why it stopped), so both needs are expected.",
+      "transcript": "Agent: This is the Los Angeles emergency information line, verification phrase blue heron. This is a simulated call for a hackathon demonstration. Culver City and Palms is under an Evacuation Warning: potential threat to life and property. Are you planning to leave, stay, or have you already left? Does anyone at your address need help to leave?\nCaller: The power just went out and my mom's oxygen machine stopped. She's gasping, she can't catch her breath. Please, I need someone here now.\nAgent: Hang up and call 911 now. I am flagging this for a person right away.\nCaller: Okay, okay, I'm calling.",
+      "expected": {
+        "primary_intent": "needs_help_now",
+        "needs": [
+          "oxygen",
+          "powered_medical_device"
+        ]
+      }
+    },
+    {
+      "id": "EN-02",
+      "language": "English",
+      "lang_code": "en-US",
+      "purpose": "resident",
+      "note": "The demo beat at 0:55: wheelchair, no car, two people.",
+      "transcript": "Agent: This is the Los Angeles emergency information line, verification phrase blue heron. This is a simulated call. Culver City and Palms is under an Evacuation Warning. Are you planning to leave, stay, or have you already left? Does anyone at your address need help to leave?\nCaller: We want to go, but my husband uses a power wheelchair and we haven't had a car since August. It's just the two of us, we're at Venice and Sepulveda.\nAgent: I heard you need help leaving because your husband uses a wheelchair and you have no car, two people, at Venice and Sepulveda. Is that right?\nCaller: Yes, that's right. Can someone come and get us?",
+      "expected": {
+        "primary_intent": "needs_help_leaving",
+        "needs": [
+          "wheelchair",
+          "no_car"
+        ]
+      }
+    },
+    {
+      "id": "EN-03",
+      "language": "English",
+      "lang_code": "en-US",
+      "purpose": "resident",
+      "note": "Leaving with pets; pets are animals, not a need.",
+      "transcript": "Agent: This is the Los Angeles emergency information line, verification phrase blue heron. This is a simulated call. Culver City and Palms is under an Evacuation Warning. Are you planning to leave, stay, or have you already left?\nCaller: Yeah, we're loading the car right now. Me, my wife and our two dogs. We're heading to the Westchester Rec Center, we'll be out in ten minutes.\nAgent: Where will you go, and by when?\nCaller: Westchester Recreation Center, by four thirty.",
+      "expected": {
+        "primary_intent": "leaving",
+        "needs": []
+      }
+    },
+    {
+      "id": "EN-04",
+      "language": "English",
+      "lang_code": "en-US",
+      "purpose": "resident",
+      "tricky": "eta",
+      "note": "Asks for an ETA the agent may not give; answers nothing else.",
+      "transcript": "Agent: This is the Los Angeles emergency information line, verification phrase blue heron. This is a simulated call. Culver City and Palms is under an Evacuation Warning. Are you planning to leave, stay, or have you already left?\nCaller: Before I answer anything, how long until the fire gets to Overland? Do I have an hour? Two?\nAgent: I can't answer that. A person will call you back. Are you planning to leave, stay, or have you already left?\nCaller: I need to know that first. Just have somebody call me back with a time.",
+      "expected": {
+        "primary_intent": "info_request",
+        "needs": []
+      }
+    },
+    {
+      "id": "EN-05",
+      "language": "English",
+      "lang_code": "en-US",
+      "purpose": "resident",
+      "tricky": "sarcasm",
+      "note": "Sarcastic opening, then a clear refusal to leave.",
+      "transcript": "Agent: This is the Los Angeles emergency information line, verification phrase blue heron. This is a simulated call. Culver City and Palms is under an Evacuation Warning. Are you planning to leave, stay, or have you already left?\nCaller: Oh sure, let me just grab my marshmallows and enjoy the show. No. I'm not going anywhere. I've lived in this house forty years and I'm not leaving it now.\nAgent: I heard that you plan to stay. Is that right?\nCaller: That's right. I'm staying.",
+      "expected": {
+        "primary_intent": "staying",
+        "needs": []
+      }
+    },
+    {
+      "id": "EN-06",
+      "language": "English",
+      "lang_code": "en-US",
+      "purpose": "resident",
+      "tricky": "wrong_number",
+      "note": "Not the person, not the place.",
+      "transcript": "Agent: This is the Los Angeles emergency information line, verification phrase blue heron. This is a simulated call. Am I speaking with Walter Hale on Motor Avenue?\nCaller: Who? No, there's no Walter here. This is a dental office in Pasadena. You have the wrong number.\nAgent: Thank you. I'll correct our list. Goodbye.",
+      "expected": {
+        "primary_intent": "wrong_number",
+        "needs": []
+      }
+    },
+    {
+      "id": "ES-01",
+      "language": "Spanish",
+      "lang_code": "es-US",
+      "purpose": "resident",
+      "note": "Life safety: fire at the house, smoke inside, husband cannot breathe.",
+      "transcript": "Agent: Esta es la línea de información de emergencias de Los Ángeles, frase de verificación blue heron. Esta es una llamada simulada. Culver City y Palms están bajo una Advertencia de Evacuación. ¿Piensa irse, quedarse o ya se fue? ¿Alguien en su casa necesita ayuda para irse?\nCaller: ¡Ayuda, por favor! Hay fuego en el garaje, el humo está entrando a la casa y mi esposo no puede respirar.\nAgent: Cuelgue y llame al 911 ahora. Voy a avisar a una persona de inmediato.\nCaller: Sí, sí, ya llamo.",
+      "expected": {
+        "primary_intent": "needs_help_now",
+        "needs": []
+      }
+    },
+    {
+      "id": "ES-02",
+      "language": "Spanish",
+      "lang_code": "es-US",
+      "purpose": "resident",
+      "note": "The demo beat at 0:30: leaving with the kids to Westchester (the parent is with them).",
+      "transcript": "Agent: Esta es la línea de información de emergencias de Los Ángeles, frase de verificación blue heron. Esta es una llamada simulada. Culver City y Palms están bajo una Advertencia de Evacuación. ¿Piensa irse, quedarse o ya se fue?\nCaller: Sí, ya nos vamos con los niños al centro de recreación de Westchester. Tenemos carro, salimos en cinco minutos.\nAgent: ¿A dónde van a ir y para qué hora?\nCaller: Al centro de Westchester, antes de las cuatro y media.",
+      "expected": {
+        "primary_intent": "leaving",
+        "needs": []
+      }
+    },
+    {
+      "id": "ES-03",
+      "language": "Spanish",
+      "lang_code": "es-US",
+      "purpose": "resident",
+      "note": "Walker and no car.",
+      "transcript": "Agent: Esta es la línea de información de emergencias de Los Ángeles, frase de verificación blue heron. Esta es una llamada simulada. Culver City y Palms están bajo una Advertencia de Evacuación. ¿Alguien en su casa necesita ayuda para irse?\nCaller: Mi mamá usa andador y no tenemos carro. Queremos salir pero no podemos solas. Estamos en la calle Motor, número 3640.\nAgent: Entendí que necesitan ayuda para salir porque su mamá usa andador y no tienen carro, en la calle Motor 3640. ¿Es correcto?\nCaller: Sí, correcto. Somos dos.",
+      "expected": {
+        "primary_intent": "needs_help_leaving",
+        "needs": [
+          "walker",
+          "no_car"
+        ]
+      }
+    },
+    {
+      "id": "ES-04",
+      "language": "Spanish",
+      "lang_code": "es-US",
+      "purpose": "resident",
+      "note": "Already out of the zone.",
+      "transcript": "Agent: Esta es la línea de información de emergencias de Los Ángeles, frase de verificación blue heron. Esta es una llamada simulada. Culver City y Palms están bajo una Advertencia de Evacuación. ¿Piensa irse, quedarse o ya se fue?\nCaller: Ya nos fuimos hace una hora. Estamos con mi hermana en Inglewood, todos bien.\nAgent: Entendí que ya salieron y están en Inglewood. ¿Es correcto?\nCaller: Sí, así es.",
+      "expected": {
+        "primary_intent": "already_left",
+        "needs": []
+      }
+    },
+    {
+      "id": "ES-05",
+      "language": "Spanish",
+      "lang_code": "es-US",
+      "purpose": "resident",
+      "tricky": "downplayed",
+      "note": "Downplays chest pain and trouble breathing: still life safety.",
+      "transcript": "Agent: Esta es la línea de información de emergencias de Los Ángeles, frase de verificación blue heron. Esta es una llamada simulada. Culver City y Palms están bajo una Advertencia de Evacuación. ¿Piensa irse, quedarse o ya se fue?\nCaller: No se preocupe, estoy bien... bueno, me duele mucho el pecho y casi no puedo respirar con tanto humo, pero no es nada, ya se me pasará.\nAgent: Por lo que me dice, cuelgue y llame al 911 ahora. Voy a avisar a una persona.\nCaller: Ay, no quiero molestar a nadie.",
+      "expected": {
+        "primary_intent": "needs_help_now",
+        "needs": []
+      }
+    },
+    {
+      "id": "KO-01",
+      "language": "Korean",
+      "lang_code": "ko-KR",
+      "purpose": "resident",
+      "note": "Life safety: bedbound father, smoke inside.",
+      "transcript": "Agent: 로스앤젤레스 비상 정보 전화입니다. 확인 문구는 blue heron입니다. 이것은 모의 통화입니다. 컬버시티와 팜스 지역에 대피 경고가 내려졌습니다. 대피하실 계획이신가요, 머무르실 건가요, 아니면 이미 떠나셨나요? 댁에 대피하는 데 도움이 필요한 분이 계신가요?\nCaller: 아버지가 침대에서 거동을 못 하시는데 집 안에 연기가 가득 찼어요. 숨을 잘 못 쉬세요! 빨리 와 주세요!\nAgent: 지금 전화를 끊고 911에 전화하세요. 바로 담당자에게 알리겠습니다.",
+      "expected": {
+        "primary_intent": "needs_help_now",
+        "needs": [
+          "bedbound"
+        ]
+      }
+    },
+    {
+      "id": "KO-02",
+      "language": "Korean",
+      "lang_code": "ko-KR",
+      "purpose": "resident",
+      "note": "Leaving by car to the evacuation point.",
+      "transcript": "Agent: 로스앤젤레스 비상 정보 전화입니다. 확인 문구는 blue heron입니다. 이것은 모의 통화입니다. 컬버시티와 팜스 지역에 대피 경고가 내려졌습니다. 대피하실 계획이신가요, 머무르실 건가요, 아니면 이미 떠나셨나요?\nCaller: 네, 지금 차로 웨스트체스터 레크리에이션 센터로 가고 있어요. 가족 세 명이에요.\nAgent: 어디로, 언제까지 가실 건가요?\nCaller: 웨스트체스터 레크리에이션 센터요. 30분 안에 도착해요.",
+      "expected": {
+        "primary_intent": "leaving",
+        "needs": []
+      }
+    },
+    {
+      "id": "KO-03",
+      "language": "Korean",
+      "lang_code": "ko-KR",
+      "purpose": "resident",
+      "note": "Children home alone; the parent is at work downtown.",
+      "transcript": "Agent: 로스앤젤레스 비상 정보 전화입니다. 확인 문구는 blue heron입니다. 이것은 모의 통화입니다. 컬버시티와 팜스 지역에 대피 경고가 내려졌습니다. 댁에 대피하는 데 도움이 필요한 분이 계신가요?\nCaller: 저는 지금 다운타운 직장에 있는데, 집에는 열 살, 여덟 살 아이 둘만 있어요. 제가 바로 갈 수가 없어요. 아이들을 데리러 가 줄 수 있나요?\nAgent: 아이 두 명이 집에 단둘이 있어서 대피에 도움이 필요하다는 말씀이시죠?\nCaller: 네, 맞아요.",
+      "expected": {
+        "primary_intent": "needs_help_leaving",
+        "needs": [
+          "children_alone"
+        ]
+      }
+    },
+    {
+      "id": "KO-04",
+      "language": "Korean",
+      "lang_code": "ko-KR",
+      "purpose": "sentinel",
+      "note": "A sentinel during a hold: yes, smoke to the west.",
+      "transcript": "Agent: 로스앤젤레스 비상 정보 전화입니다. 확인 문구는 blue heron입니다. 이것은 모의 통화입니다. 컬버시티와 팜스 지역에 대피 명령 발령이 검토 중입니다. 생명에 즉각적인 위협이 있습니다. 지금 보시는 상황과 일치하나요? 예, 아니요, 잘 모르겠음으로 답해 주세요. 무엇이 보이고, 어느 방향인가요?\nCaller: 네, 일치해요. 서쪽 하늘에 연기가 꽤 짙게 보여요. 1.5킬로미터쯤 떨어진 것 같아요. 불길은 안 보이고요.",
+      "expected": {
+        "primary_intent": "hazard_report",
+        "needs": []
+      }
+    },
+    {
+      "id": "HI-01",
+      "language": "Hindi",
+      "lang_code": "hi-IN",
+      "purpose": "resident",
+      "note": "Life safety: ventilator on its last 20 minutes of battery.",
+      "transcript": "Agent: यह लॉस एंजिलिस की आपातकालीन सूचना लाइन है, सत्यापन वाक्यांश blue heron। यह एक सिम्युलेटेड कॉल है। कल्वर सिटी और पाम्स में निकासी की चेतावनी जारी है। क्या आप जाने की योजना बना रहे हैं, रुक रहे हैं, या पहले ही जा चुके हैं? क्या आपके घर में किसी को जाने के लिए मदद चाहिए?\nCaller: मेरे पिताजी का वेंटिलेटर बैटरी पर चल रहा है, बिजली चली गई है और बैटरी बस बीस मिनट की बची है। उनकी सांस फूल रही है, कृपया जल्दी किसी को भेजिए।\nAgent: अभी फ़ोन रखिए और 911 पर कॉल कीजिए। मैं तुरंत किसी व्यक्ति को सूचित कर रहा हूँ।",
+      "expected": {
+        "primary_intent": "needs_help_now",
+        "needs": [
+          "powered_medical_device"
+        ]
+      }
+    },
+    {
+      "id": "HI-02",
+      "language": "Hindi",
+      "lang_code": "hi-IN",
+      "purpose": "resident",
+      "note": "Leaving by car.",
+      "transcript": "Agent: यह लॉस एंजिलिस की आपातकालीन सूचना लाइन है, सत्यापन वाक्यांश blue heron। यह एक सिम्युलेटेड कॉल है। कल्वर सिटी और पाम्स में निकासी की चेतावनी जारी है। क्या आप जाने की योजना बना रहे हैं, रुक रहे हैं, या पहले ही जा चुके हैं?\nCaller: हाँ, हम अभी अपनी गाड़ी से निकल रहे हैं। वेस्टचेस्टर रिक्रिएशन सेंटर जा रहे हैं, आधे घंटे में पहुँच जाएँगे।\nAgent: आप कहाँ जाएँगे, और कब तक?\nCaller: वेस्टचेस्टर रिक्रिएशन सेंटर, साढ़े चार बजे तक।",
+      "expected": {
+        "primary_intent": "leaving",
+        "needs": []
+      }
+    },
+    {
+      "id": "HI-03",
+      "language": "Hindi",
+      "lang_code": "hi-IN",
+      "purpose": "resident",
+      "note": "Dialysis and no car.",
+      "transcript": "Agent: यह लॉस एंजिलिस की आपातकालीन सूचना लाइन है, सत्यापन वाक्यांश blue heron। यह एक सिम्युलेटेड कॉल है। कल्वर सिटी और पाम्स में निकासी की चेतावनी जारी है। क्या आपके घर में किसी को जाने के लिए मदद चाहिए?\nCaller: मेरी माँ डायलिसिस पर हैं, कल उनका सेशन है, और हमारे पास गाड़ी नहीं है। हम जाना चाहते हैं पर हमें मदद चाहिए।\nAgent: मैंने सुना कि आपको जाने में मदद चाहिए क्योंकि आपकी माँ डायलिसिस पर हैं और आपके पास गाड़ी नहीं है। क्या यह सही है?\nCaller: जी हाँ, सही है।",
+      "expected": {
+        "primary_intent": "needs_help_leaving",
+        "needs": [
+          "dialysis",
+          "no_car"
+        ]
+      }
+    },
+    {
+      "id": "HI-04",
+      "language": "Hindi",
+      "lang_code": "hi-IN",
+      "purpose": "resident",
+      "note": "Left last night for Pasadena.",
+      "transcript": "Agent: यह लॉस एंजिलिस की आपातकालीन सूचना लाइन है, सत्यापन वाक्यांश blue heron। यह एक सिम्युलेटेड कॉल है। कल्वर सिटी और पाम्स में निकासी की चेतावनी जारी है। क्या आप जाने की योजना बना रहे हैं, रुक रहे हैं, या पहले ही जा चुके हैं?\nCaller: हम कल रात ही अपने भाई के घर पासाडेना चले गए थे। घर पर कोई नहीं है।\nAgent: मैंने सुना कि आप पहले ही जा चुके हैं और पासाडेना में हैं। क्या यह सही है?\nCaller: जी हाँ।",
+      "expected": {
+        "primary_intent": "already_left",
+        "needs": []
+      }
+    },
+    {
+      "id": "HI-05",
+      "language": "Hindi",
+      "lang_code": "hi-IN",
+      "purpose": "resident",
+      "note": "Blind and alone: needs help to leave.",
+      "transcript": "Agent: यह लॉस एंजिलिस की आपातकालीन सूचना लाइन है, सत्यापन वाक्यांश blue heron। यह एक सिम्युलेटेड कॉल है। कल्वर सिटी और पाम्स में निकासी की चेतावनी जारी है। क्या आपके घर में किसी को जाने के लिए मदद चाहिए?\nCaller: मैं देख नहीं सकती और मैं अकेली रहती हूँ। मैं खुद रास्ता नहीं ढूँढ पाऊँगी, मुझे जाने के लिए किसी की मदद चाहिए।\nAgent: मैंने सुना कि आप देख नहीं सकतीं और आपको जाने के लिए मदद चाहिए। क्या यह सही है?\nCaller: हाँ, सही है।",
+      "expected": {
+        "primary_intent": "needs_help_leaving",
+        "needs": [
+          "vision"
+        ]
+      }
+    },
+    {
+      "id": "FR-01",
+      "language": "French",
+      "lang_code": "fr-FR",
+      "purpose": "resident",
+      "note": "Life safety: fire reaching the house, a burn injury.",
+      "transcript": "Agent: Ici la ligne d'information d'urgence de Los Angeles, phrase de vérification blue heron. Ceci est un appel simulé. Culver City et Palms sont sous avertissement d'évacuation. Comptez-vous partir, rester, ou êtes-vous déjà parti ? Quelqu'un chez vous a-t-il besoin d'aide pour partir ?\nCaller: Au secours ! Le feu est dans le jardin, il touche déjà la maison, et mon fils s'est brûlé la main !\nAgent: Raccrochez et appelez le 911 maintenant. Je préviens une personne tout de suite.",
+      "expected": {
+        "primary_intent": "needs_help_now",
+        "needs": []
+      }
+    },
+    {
+      "id": "FR-02",
+      "language": "French",
+      "lang_code": "fr-FR",
+      "purpose": "resident",
+      "tricky": "sarcasm",
+      "note": "Sarcastic question, then a clear 'I am staying'.",
+      "transcript": "Agent: Ici la ligne d'information d'urgence de Los Angeles, phrase de vérification blue heron. Ceci est un appel simulé. Culver City et Palms sont sous avertissement d'évacuation. Comptez-vous partir, rester, ou êtes-vous déjà parti ?\nCaller: Partir ? Mais bien sûr, et laisser mes trois chats se débrouiller tout seuls ? Non merci. Je reste ici.\nAgent: J'ai compris que vous restez. C'est bien ça ?\nCaller: Oui, je reste.",
+      "expected": {
+        "primary_intent": "staying",
+        "needs": []
+      }
+    },
+    {
+      "id": "FR-03",
+      "language": "French",
+      "lang_code": "fr-FR",
+      "purpose": "inbound",
+      "note": "A relative calls in: deaf father living alone needs help to leave.",
+      "transcript": "Agent: Ici la ligne d'information d'urgence de Los Angeles, phrase de vérification blue heron. Ceci est un appel simulé. Comment puis-je vous aider ?\nCaller: Je vous appelle pour mon père. Il est sourd, il vit seul au 4200 Sepulveda et il n'entendra pas les alertes. Il faut l'aider à partir.\nAgent: J'ai compris que votre père, qui est sourd et vit seul, a besoin d'aide pour partir. C'est bien ça ?\nCaller: Oui, exactement.",
+      "expected": {
+        "primary_intent": "needs_help_leaving",
+        "needs": [
+          "hearing"
+        ]
+      }
+    },
+    {
+      "id": "FR-04",
+      "language": "French",
+      "lang_code": "fr-FR",
+      "purpose": "inbound",
+      "note": "A question answerable from the zone fact sheet.",
+      "transcript": "Agent: Ici la ligne d'information d'urgence de Los Angeles, phrase de vérification blue heron. Ceci est un appel simulé. Comment puis-je vous aider ?\nCaller: Est-ce que le centre de Westchester accepte les chiens ? J'ai un gros chien.\nAgent: Le centre de Westchester accepte les petits animaux en cage ; pour les grands animaux, une personne vous rappellera.\nCaller: D'accord, merci, j'attends l'appel.",
+      "expected": {
+        "primary_intent": "info_request",
+        "needs": []
+      }
+    }
+  ]
+}
