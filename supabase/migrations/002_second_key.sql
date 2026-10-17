@@ -149,16 +149,23 @@ create table if not exists meta (
   autopilot_devices boolean default false, wrong_polygon boolean default false, updated_at timestamptz default now()
 );
 
--- ---------- RLS: anon may read, server routes write with the service-role key ----------
+-- ---------- RLS on, no anon policy: only server routes (service-role key) read or write ----------
+-- The help registry and locations are real people at real places; the anon key is public. Re-running this also
+-- removes the "anon read" policies an earlier version of this file created, including on the schema.sql tables.
+-- Grants: projects created since 2026-05-30 no longer expose new public tables to the Data API by default, so the
+-- server's service_role needs an explicit grant (without it every query fails with 42501 permission denied).
+-- anon and authenticated get nothing, on old projects (which auto-granted them) and new ones alike.
 do $$
 declare t text;
 begin
   foreach t in array array['zones','zone_events','proposals','intents','help_requests','locations','pickup_runs',
-                           'holds','canaries','reports','clusters','ledger','meta']
+                           'holds','canaries','reports','clusters','ledger','meta',
+                           'households','campaigns','calls','household_status','alerts_feed','twist_log','sim_runs']
   loop
     execute format('alter table %I enable row level security', t);
     execute format('drop policy if exists "anon read" on %I', t);
-    execute format('create policy "anon read" on %I for select using (true)', t);
+    execute format('revoke all on table public.%I from anon, authenticated', t);
+    execute format('grant select, insert, update, delete on table public.%I to service_role', t);
   end loop;
 end $$;
 
