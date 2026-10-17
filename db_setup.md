@@ -82,9 +82,11 @@ In the Supabase dashboard, open **SQL Editor** → **New query**, then paste and
 | 1 | `supabase/schema.sql` | Base tables: households, campaigns, calls, household status, alerts feed, twist log, sim runs. It also includes the live-location tables |
 | 2 | `supabase/migrations/002_second_key.sql` | Zones, zone events, proposals, intents, help registry, locations, pickup runs, holds, canaries, reports, clusters, ledger, meta |
 | 3 | `supabase/migrations/003_live_location.sql` | `location_shares` (consent and live GPS links) and `dispatches` (helpers sent to a person's exact spot) |
+| 4 | `supabase/migrations/004_heat_mode.sql` | The heat check-in line: `heat` campaign mode, `zones.weather` (live reading and NWS alerts), `households.heat_profile` |
+| 5 | `supabase/migrations/005_evac_blocks.sql` | `evac_plans` (block-by-block evacuation: blocks, exit roads, waves), with the service_role grant |
 
 - `schema.sql` **drops and recreates** its tables. Re-run it only when you want a clean wipe.
-- `002` and `003` are additive and safe to re-run.
+- `002`, `003`, `004` and `005` are additive and safe to re-run. If you ever re-run `002`, run `004` again after it (`002` resets the campaign mode check and would drop `heat`).
 - Every table has row-level security on and **no anonymous policy**. The anon key ships to every browser, and these
   tables hold names, phones, transcripts and locations, so only the server (service role) reads or writes them. No
   page reads Supabase directly; the board and phones go through the API routes.
