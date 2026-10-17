@@ -87,7 +87,13 @@ export const MODEL_LABEL: Record<ProposalModel, string> = {
   heat_threshold: "Heat thresholds (demo setting)",
 };
 
-export function campaignLabel(c: Pick<Campaign, "kind" | "wave">): string {
+export function campaignLabel(c: Pick<Campaign, "kind" | "wave"> & Partial<Pick<Campaign, "mode">>): string {
+  if (c.mode === "heat") {
+    // The heat check-in line names its calls after the heat products, not the fire stages.
+    if (c.kind === "warning") return c.wave === 2 ? "Heat Advisory · call again" : "Heat Advisory calls";
+    if (c.kind === "order") return "Extreme Heat Warning calls";
+    if (c.kind === "checkin") return "Heat watch check-ins";
+  }
   switch (c.kind) {
     case "warning":
       return c.wave === 2 ? "Stage 2 · Check" : "Stage 1 · Warning";

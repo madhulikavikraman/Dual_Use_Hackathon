@@ -44,11 +44,11 @@ export function HoldWaveDose({ zoneId, className = "" }: { zoneId: string; class
   if (!plan) return null;
   const w = firstWave(plan);
   return (
-    <span className={`inline-flex items-center gap-1 text-sm font-semibold text-red-800 ${className}`}>
-      <span aria-hidden="true">🏃</span>
+    <p className={`text-sm font-semibold leading-snug text-red-800 ${className}`}>
+      <span aria-hidden="true">🏃 </span>
       Wave {w.wave} now: about {fmtN(w.people)} people in {w.blocks} block{w.blocks === 1 ? "" : "s"}
       {plan.status === "proposed" ? <span className="font-normal text-slate-600"> (plan proposed)</span> : null}
-    </span>
+    </p>
   );
 }
 

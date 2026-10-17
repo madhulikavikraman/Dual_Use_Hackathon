@@ -4,7 +4,7 @@
 // board shows (components/board/*); the targets are the data-tour attributes on those components.
 import { PRIORITY_LABEL, stateShort, WORDING } from "@/lib/client/labels";
 import type { Mode } from "@/lib/types";
-import { captureView, getSelectedZoneId, revealSidebar, selectZone, setBoardView, type BoardView } from "@/lib/ui/boardView";
+import { captureView, getSelectedZoneId, revealSidebar, scrollIntoColumn, selectZone, setBoardView, type BoardView } from "@/lib/ui/boardView";
 import type { TourStep } from "./types";
 
 export const BOARD_TOUR = "board";
@@ -87,7 +87,10 @@ function pickPlanZone(zoneId: string | null) {
     const before = getSelectedZoneId();
     selectZone(zoneId);
     requestAnimationFrame(() =>
-      requestAnimationFrame(() => document.querySelector('[data-tour="block-plan"]')?.scrollIntoView({ block: "nearest" })),
+      requestAnimationFrame(() => {
+        const el = document.querySelector('[data-tour="block-plan"]');
+        if (el) scrollIntoColumn(el, "start");
+      }),
     );
     return () => selectZone(before);
   };

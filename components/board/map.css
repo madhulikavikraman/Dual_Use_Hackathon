@@ -336,8 +336,14 @@ path.sk-pulse {
   color: #475569;
   opacity: 0.85;
 }
-/* Far out, only the blocks going now keep their label, so the map stays calm. */
-.sk-map[data-zoom="far"] .sk-block-label:not(.sk-b-go_now) {
+/* Far out, only the blocks going now keep their label, so the map stays calm. Road loads and the plan line come
+   back once zoomed in; the plan panel always has them. */
+.sk-map[data-zoom="far"] .sk-block-label:not(.sk-b-go_now),
+.sk-map[data-zoom="far"] .sk-route-label,
+.sk-map[data-zoom="far"] .sk-zone-plan,
+.sk-map[data-zoom="far"] .sk-proposal-reason,
+.sk-map:not([data-close="1"]) .sk-block-label.sk-b-ready,
+.sk-map:not([data-close="1"]) .sk-block-label.sk-b-left {
   display: none;
 }
 .sk-route-label {

@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local demo data store
 /.data/
+
+# Claude Code agent worktrees
+/.claude/worktrees/

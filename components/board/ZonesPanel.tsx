@@ -5,7 +5,8 @@ import type { HouseholdView } from "@/lib/contracts";
 import { fmtArea, fmtTime } from "@/lib/client/format";
 import { campaignLabel, displayStatus, stateLabel, STATE_TEXT, STATUS_COLOR, statusLabel } from "@/lib/client/labels";
 import { STATE_COLOR, STATE_RUNG } from "@/lib/directives";
-import type { Hold, Mode, Status, Zone, ZoneState } from "@/lib/types";
+import { deg, localClock } from "@/lib/scenarios/heatLadder";
+import type { Hold, Mode, Status, Zone, ZoneState, ZoneWeather } from "@/lib/types";
 import { Emoji, People } from "@/lib/ui/Emoji";
 import { ICON, STATE_ICON } from "@/lib/ui/icons";
 import { selectZone, useBoardView } from "@/lib/ui/boardView";
@@ -105,6 +106,13 @@ function ZoneRow({ zone, selected, hold }: { zone: Zone; selected: boolean; hold
                 <People n={zone.population_est} />
               </>
             ) : null}
+            {zone.weather ? (
+              <>
+                {" · "}
+                <Emoji e="🌡️" /> feels {deg(zone.weather.feels_like_high_f)}
+                {zone.weather.basis === "simulated" ? " (sim)" : ""}
+              </>
+            ) : null}
           </span>
         </span>
         {hold ? (
@@ -117,6 +125,30 @@ function ZoneRow({ zone, selected, hold }: { zone: Zone; selected: boolean; hold
         </span>
       </button>
     </li>
+  );
+}
+
+/** Heat mode: the reading the threshold table used, labeled live or SIMULATED, with the live reading and NWS beside it. */
+function ZoneWeatherLine({ w }: { w: ZoneWeather }) {
+  const sim = w.basis === "simulated";
+  return (
+    <div className="mt-1.5 rounded-md bg-orange-50 px-2.5 py-1.5 text-xs text-slate-700 ring-1 ring-inset ring-orange-200">
+      <p className="flex flex-wrap items-center gap-1.5 text-sm text-slate-900">
+        <Emoji e="🌡️" /> Feels like <b>{deg(w.feels_like_high_f)}</b> today
+        <span
+          className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${sim ? "bg-amber-200 text-amber-950" : "bg-emerald-100 text-emerald-900"}`}
+        >
+          {sim ? "SIMULATED heat wave" : "LIVE forecast"}
+        </span>
+      </p>
+      <p className="mt-0.5">
+        Live now:{" "}
+        {w.live
+          ? `feels like ${deg(w.live.feels_like_f)} (${deg(w.live.temp_f)} air) at ${localClock(w.live.observed_local)} PT, Open-Meteo`
+          : "unavailable"}
+        {" · "}NWS: {!w.nws_checked ? "not reached" : w.nws.length ? w.nws.map((a) => a.event).join(", ") : "no active alerts"}
+      </p>
+    </div>
   );
 }
 
@@ -166,6 +198,7 @@ function ZoneDetail({ zone, onAction }: { zone: Zone; onAction: (p: Pending) => 
           <Emoji e={ICON.human} /> Approved by {zone.approved_by} at {fmtTime(zone.approved_at)}
         </p>
       ) : null}
+      {zone.weather ? <ZoneWeatherLine w={zone.weather} /> : null}
       <ZoneProgress residents={residents} mode={mode} />
       <div className="mt-2.5 flex flex-wrap gap-1.5">
         <Button size="sm" variant="primary" onClick={() => onAction({ kind: "approve", zone })}>
@@ -174,11 +207,11 @@ function ZoneDetail({ zone, onAction }: { zone: Zone; onAction: (p: Pending) => 
         {zone.state === "warning" ? (
           <>
             <Button size="sm" onClick={() => onAction({ kind: "campaign", zone, action: "stage2" })}>
-              Stage 2 check
+              {mode === "heat" ? "Call again: no answer or unsure" : "Stage 2 check"}
             </Button>
             {holdOpen ? null : (
               <Button size="sm" data-tour="compose-order" onClick={() => onAction({ kind: "compose", zone })}>
-                <Emoji e={STATE_ICON.order} /> Compose Order (opens hold)
+                <Emoji e={STATE_ICON.order} /> Compose {mode === "heat" ? "Extreme Heat Warning" : "Order"} (opens hold)
               </Button>
             )}
           </>

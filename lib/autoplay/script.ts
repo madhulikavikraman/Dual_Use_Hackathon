@@ -284,7 +284,7 @@ export const BEATS: Beat[] = [
     title: "The model proposes",
     caption:
       "The fire model's envelope reaches the edge of Culver City and Palms, so it proposes a Warning. A model may only propose: nothing rings until a named person approves.",
-    focus: { tab: "zones", target: '[data-tour="side-panel"]' },
+    focus: { tab: "zones", target: '[data-tour="side-panel"]', zone: ZONE },
     dwellMs: 8000,
     until: (snap) => snap.proposals.some((p) => p.zone_id === ZONE && p.status === "open"),
     outcome: () => "No calls yet. The dashed outline on the map is the proposal.",
@@ -297,7 +297,7 @@ export const BEATS: Beat[] = [
     title: "A named person approves",
     caption:
       "The supervisor approves the Warning with a name and a reason. The approved words are the only instruction the agent may read to anyone.",
-    focus: { tab: "zones", target: '[data-tour="side-panel"]' },
+    focus: { tab: "zones", target: '[data-tour="side-panel"]', zone: ZONE },
     dwellMs: 9000,
     async act({ env, snap, signal }) {
       const reason = "Model envelope reaches the north-west edge; Stage 1 calls, edge-first";

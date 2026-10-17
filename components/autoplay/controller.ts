@@ -11,7 +11,7 @@ import {
 import { runScript, type BeatLine, type BeatResult } from "@/lib/autoplay/runner";
 import { BOARD_TOUR } from "@/components/tour/boardSteps";
 import { stopTour } from "@/components/tour/store";
-import { captureView, isDrawerWidth, selectZone, setBoardView, viewForTab, viewForTarget, type BoardView } from "@/lib/ui/boardView";
+import { captureView, isDrawerWidth, scrollIntoColumn, selectZone, setBoardView, viewForTab, viewForTarget, type BoardView } from "@/lib/ui/boardView";
 
 export type AutoplayStatus = "closed" | "intro" | "running" | "end";
 
@@ -134,9 +134,12 @@ function showFocus(focus: Beat["focus"]) {
         const r = el.getBoundingClientRect();
         if (r.width < 2 || r.height < 2) continue;
         if (r.top < 0 || r.bottom > window.innerHeight) {
-          const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-          el.scrollIntoView({ block: nearest ? "nearest" : "start", behavior: smooth ? "smooth" : "auto" });
-        }
+          if (nearest) scrollIntoColumn(el);
+          else {
+            const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            el.scrollIntoView({ block: "start", behavior: smooth ? "smooth" : "auto" });
+          }
+        } else if (nearest) scrollIntoColumn(el);
         return;
       }
     }),

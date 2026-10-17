@@ -79,6 +79,8 @@ function ZoomBand() {
     const container = map.getContainer();
     const update = () => {
       container.dataset.zoom = map.getZoom() >= 13 ? "near" : "far";
+      // Closer still, every block's label shows (map.css); at "near" only the blocks going now and next.
+      container.dataset.close = map.getZoom() >= 14 ? "1" : "0";
     };
     update();
     map.on("zoomend", update);

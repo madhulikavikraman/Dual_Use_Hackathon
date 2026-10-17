@@ -141,6 +141,32 @@ const TARGET_VIEW: [string, BoardView][] = [
   ['[data-tour="ledger"]', "ledger"],
 ];
 
+/**
+ * Scrolls `el` into its own scrolling column (the view column beside the map, or the page at phone width) without
+ * moving anything else. scrollIntoView also scrolls overflow-hidden ancestors, which shifts the whole board.
+ */
+export function scrollIntoColumn(el: Element, align: "start" | "nearest" = "nearest") {
+  let box: HTMLElement | null = el.parentElement;
+  while (box && box !== document.body) {
+    const oy = getComputedStyle(box).overflowY;
+    if ((oy === "auto" || oy === "scroll") && box.scrollHeight > box.clientHeight) break;
+    box = box.parentElement;
+  }
+  const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const r = el.getBoundingClientRect();
+  if (!box || box === document.body) {
+    // The page itself scrolls (phone width).
+    const top = align === "start" || r.top < 0 ? r.top - 8 : r.bottom > window.innerHeight ? r.bottom - window.innerHeight + 8 : 0;
+    if (top) window.scrollBy({ top, behavior: smooth ? "smooth" : "auto" });
+    return;
+  }
+  const b = box.getBoundingClientRect();
+  let delta = 0;
+  if (align === "start" || r.top < b.top || r.height > b.height) delta = r.top - b.top - 8;
+  else if (r.bottom > b.bottom) delta = r.bottom - b.bottom + 8;
+  if (delta) box.scrollBy({ top: delta, behavior: smooth ? "smooth" : "auto" });
+}
+
 /** The view a spotlight target lives in, or null when it is on screen in every view (the map, the sidebar). */
 export function viewForTarget(selector: string): BoardView | null {
   return TARGET_VIEW.find(([s]) => selector.includes(s))?.[1] ?? null;
