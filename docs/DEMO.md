@@ -29,6 +29,14 @@ The 3.5-minute demo (PRD section 18), how to set it up, and what to do when some
 6. **Rehearsal without volunteers:** on `/demo`, turn on **Autopilot**: the simulator answers for all six phones.
    Turn it off before the real run.
 
+
+## Opening at the booth (60 seconds, before the run)
+
+1. The landing page (`/`) is the first screen a judge sees: the live Norte Fire strip (CAL FIRE status), the headline, the hold replay, and the three fires with sources. Let it sit while people walk up.
+2. **Start the guided tour** (`/board?tour=1`, or the Tour button on the board header) walks through each part of the board in about a minute: header, metrics, map, legend, feed, calls, the hold, the side panel, Ask the board. Use it for newcomers; skip it for the timed run.
+3. Live option: on `/demo`, reset **Norte Fire, San Clemente (live)**. The feed shows the live CAL FIRE status and NWS alerts for the real fire. Then approve a Warning for Talega: calls ring out edge-first with the Cal OES warning and 911. Say out loud that zone states and residents are simulated, and that real orders come from OCFA.
+4. Twist 2 on a second screen: `/global` (the six adapters), then **Load the Chongqing scenario**.
+
 ## The run (supervisor at `/board`, narrator beside the screen)
 
 | Time | Action on /board | What the room sees |
