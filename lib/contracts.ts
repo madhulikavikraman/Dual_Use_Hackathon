@@ -1,7 +1,8 @@
 // API contracts shared by route handlers and client pages. Client-safe (types only, no server imports).
 import type {
-  AlertItem, Call, CallPurpose, CallState, Campaign, CampaignKind, Canary, Cluster, HelpRequest, HelpStatus, Hold,
-  Household, LedgerEntry, Meta, Need, PickupRun, Proposal, Report, SimPreset, Status, Transport, Zone, ZoneState,
+  AlertItem, Call, CallPurpose, CallState, Campaign, CampaignKind, Canary, Cluster, DispatchStatus, HelpRequest, HelpStatus, Helper, Hold,
+  Household, LedgerEntry, LocationSource, Meta, Need, PickupRun, Proposal, Report, ShareConsentSource, ShareStatus, ShareVia, SimPreset,
+  Status, Transport, Zone, ZoneState,
 } from "@/lib/types";
 
 // ---------- GET /api/board (polled every ~1 s by the board; each poll also advances the tick) ----------
@@ -177,6 +178,8 @@ export interface PhoneState {
   }) | null;
   retell: boolean;
   simulated: boolean;
+  /** A live-location link this person agreed to on a call (sent or live). The demo devices get it here, on screen. */
+  location_share?: { token: string; status: ShareStatus; expires_at: string } | null;
 }
 
 /** POST /api/phone/[id] body. */
@@ -191,6 +194,127 @@ export interface PhoneTurnResult {
   reply: string; // agent's spoken line ("" when nothing to say)
   ended: boolean; // agent ended the call
   lang_code: string;
+}
+
+// ---------- Live location (/l/[token], open: the token is the key) ----------
+
+/** GET /api/locate/[token]: what the resident's page shows. No name, no phone, no ETA. */
+export interface ShareView {
+  status: ShareStatus;
+  consent_quote: string;
+  consented_at: string;
+  expires_at: string;
+  last_fix_at: string | null;
+  last_accuracy_m: number | null;
+  ping_count: number;
+  /** A responder has their location (a helper was sent). Never an arrival time. */
+  helper_assigned: boolean;
+  reached: boolean;
+  emergency_number: string;
+  synthetic: boolean;
+  now: string;
+}
+
+/** POST /api/locate/[token]. Without `action` it is a GPS fix. */
+export type LocateBody =
+  | { action?: "fix"; lat: number; lng: number; accuracy_m: number; heading?: number | null; speed?: number | null; captured_at?: string }
+  | { action: "stop" }
+  | { action: "stated"; text: string };
+
+export interface LocateResult extends ShareView {
+  stated?: { found: boolean; label: string | null };
+}
+
+// ---------- Live registry for the board and QRT (GET /api/registry/live, desk only) ----------
+
+export interface ShareSummary {
+  id: string;
+  help_request_id: string | null;
+  household_id: string | null;
+  status: ShareStatus;
+  consent_source: ShareConsentSource;
+  consent_quote: string;
+  consented_at: string;
+  expires_at: string;
+  last_fix_at: string | null;
+  last_accuracy_m: number | null;
+  ping_count: number;
+  sent_via: ShareVia | null;
+  synthetic: boolean;
+}
+
+export interface DispatchSummary {
+  id: string;
+  help_request_id: string;
+  helper_label: string;
+  status: DispatchStatus;
+  dispatched_by: string;
+  reason: string;
+  note: string | null;
+  sent_via: string | null;
+  created_at: string;
+  updated_at: string;
+  /** The helper's page (/helper/[token]). Shown to the dispatcher, who is the one sending it. */
+  link: string;
+}
+
+export interface LiveRegistry {
+  now: string;
+  shares: ShareSummary[]; // newest first
+  dispatches: DispatchSummary[]; // newest first
+  roster: Helper[];
+  sms: "retell" | "twilio" | "simulated";
+}
+
+/** POST /api/registry/[id]/dispatch: send a helper to the row's latest location (a named human and a reason). */
+export interface SendHelperBody {
+  helper_id?: string;
+  helper_label?: string;
+  helper_phone?: string | null;
+  actor: string;
+  reason: string;
+}
+
+// ---------- Helper page (/helper/[token], open: the token is the key) ----------
+
+export interface HelperView {
+  now: string;
+  status: DispatchStatus;
+  helper_label: string;
+  dispatched_by: string;
+  reason: string;
+  created_at: string;
+  note: string | null;
+  person: {
+    name: string | null;
+    phone: string | null;
+    language: string | null;
+    people: number | null;
+    needs: Need[];
+    priority: 1 | 2 | 3 | 4;
+    reason: string | null;
+    animals: string | null;
+    device_battery_hours: number | null;
+    zone_id: string | null;
+    zone_name: string | null;
+    help_status: HelpStatus;
+    synthetic: boolean;
+  };
+  location: {
+    lat: number;
+    lng: number;
+    accuracy_m: number | null;
+    source: LocationSource;
+    observed_at: string;
+    stated_text: string | null;
+  } | null;
+  share_status: ShareStatus | null;
+  emergency_number: string;
+}
+
+export interface HelperUpdateBody {
+  status: Extract<DispatchStatus, "en_route" | "arrived" | "reached" | "cannot_reach">;
+  note?: string;
 }
 
 // ---------- Twists ----------

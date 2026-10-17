@@ -1,4 +1,4 @@
-// What scripts/retell-setup.ts creates in Retell: one Retell LLM (the shared prompt template and the seven
+// What scripts/retell-setup.ts creates in Retell: one Retell LLM (the shared prompt template and the eight
 // tools as custom functions) and one voice agent per language. Pure module: relative imports only and
 // no server-only code, so `npx tsx scripts/retell-setup.ts` can load it.
 // Field names and enums follow the Retell API reference (spec revision 2026-10-16):
@@ -85,6 +85,8 @@ export function defaultDynamicVariables(opts: { verificationPhrase: string; call
 
 function customTool(t: ToolDef, baseUrl: string) {
   const isLookup = t.name === "lookup_zone";
+  // share_live_location writes the consent and sends a text (a provider round trip): allow a little longer.
+  const isShare = t.name === "share_live_location";
   return {
     type: "custom" as const,
     name: t.name,
@@ -103,7 +105,7 @@ function customTool(t: ToolDef, baseUrl: string) {
       : {}),
     // Every tool, end_call included, gives the model another turn: after end_call it calls hang_up.
     speak_after_execution: true,
-    timeout_ms: isLookup ? 20_000 : 10_000,
+    timeout_ms: isLookup ? 20_000 : isShare ? 15_000 : 10_000,
     max_retry: 0, // tools write rows; a retry could write twice
   };
 }
@@ -169,6 +171,20 @@ export const POST_CALL_ANALYSIS = [
     type: "string" as const,
     name: "location_text",
     description: "Where the person said they are right now, in their words (address, intersection or landmark). Empty if not said.",
+    required: false,
+  },
+  {
+    type: "boolean" as const,
+    name: "live_location_consent",
+    description:
+      "True only if the agent asked whether it may text a link that shares the person's live location with the response team " +
+      "and the person clearly said yes. False if they said no or were never asked clearly. A maybe is false.",
+    required: false,
+  },
+  {
+    type: "string" as const,
+    name: "live_location_quote",
+    description: "If live_location_consent is true: the person's own words saying yes, verbatim. Empty otherwise.",
     required: false,
   },
 ];

@@ -1,13 +1,15 @@
-// The agent's tool allowlist (PRD section 9). Seven tools, the same on both transports: Claude uses them
+// The agent's tool allowlist (PRD section 9). Eight tools, the same on both transports: Claude uses them
 // on the browser phone; Retell exposes them as custom functions on the phone network. The allowlist IS
 // the interface: there is no tool to change a zone, send an alert, or extend a hold.
 import type { CallPurpose } from "@/lib/types";
 
 export type ToolName =
-  | "record_status" | "report_hazard" | "request_human" | "end_call" | "lookup_zone" | "read_observation" | "received_alert";
+  | "record_status" | "report_hazard" | "request_human" | "end_call" | "lookup_zone" | "read_observation" | "received_alert"
+  | "share_live_location";
 
 export const TOOL_NAMES: ToolName[] = [
   "record_status", "report_hazard", "request_human", "end_call", "lookup_zone", "read_observation", "received_alert",
+  "share_live_location",
 ];
 
 type Schema = Record<string, unknown>;
@@ -98,17 +100,26 @@ export const TOOL_DEFS: ToolDef[] = [
   def("received_alert", "Canary and test calls only: did they receive the alert (canary) or can they hear this call (test)?", {
     received: { type: "string", enum: ["yes", "no"], description: "Their answer." },
   }),
+  def(
+    "share_live_location",
+    "Text the person a link that shares their phone's live location with the response team until help reaches them. Call it ONLY after you asked \"Can I text you a link that shares your phone's live location with the response team? It stays on only until help reaches you.\" and the person clearly said yes. Never on a no, a maybe, silence, or a yes to something else. Call it at most once per call.",
+    {
+      consent_quote: { type: "string", description: "The person's own words saying yes, verbatim (e.g. 'Yes, send it')." },
+    },
+  ),
 ];
 
 /** Which tools each kind of call may use. */
 export function toolsForPurpose(p: CallPurpose): ToolName[] {
   switch (p) {
     case "resident":
-      return ["record_status", "report_hazard", "request_human", "lookup_zone", "end_call"];
+      return ["record_status", "report_hazard", "request_human", "lookup_zone", "share_live_location", "end_call"];
     case "inbound":
-      return ["lookup_zone", "record_status", "report_hazard", "request_human", "end_call"];
-    case "linked_contact":
+      return ["lookup_zone", "record_status", "report_hazard", "request_human", "share_live_location", "end_call"];
     case "qrt_callback":
+      return ["record_status", "request_human", "share_live_location", "end_call"];
+    case "linked_contact":
+      // The link would go to the contact's phone, not to the person who needs help: never offered here.
       return ["record_status", "request_human", "end_call"];
     case "sentinel":
       return ["read_observation", "request_human", "end_call"];

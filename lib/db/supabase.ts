@@ -3,7 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { COMPOSITE_KEYS, type Match, type Row, type Store, type TableName } from "./tables";
 
 // Supabase adapter: same Store interface over supabase-js with the service-role key.
-// Requires supabase/schema.sql and supabase/migrations/002_second_key.sql to be applied.
+// Requires supabase/schema.sql, migrations/002_second_key.sql and migrations/003_live_location.sql to be applied.
 
 function check<T>(res: { data: T; error: { message: string } | null }, what: string): T {
   if (res.error) throw new Error(`${what}: ${res.error.message}`);

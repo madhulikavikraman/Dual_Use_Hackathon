@@ -1,4 +1,4 @@
-// Create (or update) the Retell side of VoiceFlare: one Retell LLM with the shared prompt and the seven
+// Create (or update) the Retell side of VoiceFlare: one Retell LLM with the shared prompt and the eight
 // tools as custom functions, one voice agent per language (EN, ES, KO, ZH, HI, FR), and the public
 // number's agent binding and inbound webhook. Prints the RETELL_AGENT_ID_* lines to paste into .env.local.
 //
@@ -103,7 +103,7 @@ async function main() {
   console.log(`  languages: ${langs.map((l) => `${l.suffix} ${l.retellLanguage}`).join(", ")}`);
   if (!apiKey) console.log("  RETELL_API_KEY is not set, so this is a dry run.");
 
-  // 1. The Retell LLM: shared prompt template + the seven tools as custom functions.
+  // 1. The Retell LLM: shared prompt template + the eight tools as custom functions.
   const llmPayload = buildLlmPayload({ baseUrl, model, verificationPhrase, callbackNumber });
   const existingLlm = update ? env("RETELL_LLM_ID") : undefined;
   let llmId = existingLlm ?? "llm_DRY_RUN";

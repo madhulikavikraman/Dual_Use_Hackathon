@@ -30,6 +30,15 @@ const serverSchema = z.object({
   RETELL_AGENT_ID_ZH: optionalString,
   RETELL_AGENT_ID_HI: optionalString,
   RETELL_AGENT_ID_FR: optionalString,
+  // Text messages (the live-location link and the helper link). All optional: without them a send is
+  // simulated and labeled (feed + ledger), and the six demo devices get the link on their browser phone.
+  TWILIO_ACCOUNT_SID: optionalString,
+  TWILIO_AUTH_TOKEN: optionalString,
+  TWILIO_FROM_NUMBER: optionalString,
+  /** "1" tries Retell's outbound SMS first (POST /create-sms-chat) with RETELL_SMS_AGENT_ID; see lib/sms.ts. */
+  RETELL_SMS: optionalString,
+  RETELL_SMS_AGENT_ID: optionalString,
+  RETELL_SMS_FROM_NUMBER: optionalString,
   // Volunteer phone numbers for the six demo devices (E.164). Optional.
   DEVICE_PHONE_1: optionalString,
   DEVICE_PHONE_2: optionalString,
@@ -84,6 +93,14 @@ export function storageBackend(): "supabase" | "local" {
 export function retellEnabled(): boolean {
   const env = serverEnv();
   return Boolean(env.RETELL_API_KEY && env.RETELL_FROM_NUMBER && env.RETELL_AGENT_ID_EN);
+}
+
+/** Which text-message provider sendSms() uses first (lib/sms.ts). */
+export function smsProvider(): "retell" | "twilio" | "simulated" {
+  const env = serverEnv();
+  if (env.RETELL_SMS === "1" && env.RETELL_API_KEY && env.RETELL_SMS_AGENT_ID && (env.RETELL_SMS_FROM_NUMBER ?? env.RETELL_FROM_NUMBER)) return "retell";
+  if (env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_FROM_NUMBER) return "twilio";
+  return "simulated";
 }
 
 // Public env, inlined at build time. Next only inlines direct `process.env.NEXT_PUBLIC_*` reads.

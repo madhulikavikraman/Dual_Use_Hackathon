@@ -334,6 +334,76 @@ export interface LocationFix {
   observed_at: string;
 }
 
+// ---------- Live location (consent on the call, a link by text) and helpers sent to the spot ----------
+
+/** Where the yes was heard: on a Retell phone call, a browser-phone call, the public line, or in Retell's post-call analysis. */
+export type ShareConsentSource = "retell_call" | "browser_call" | "public_line" | "post_call";
+export type ShareStatus = "sent" | "live" | "stopped" | "expired" | "closed";
+export const SHARE_ACTIVE: ShareStatus[] = ["sent", "live"];
+/** How the link reached the person: a text message, the browser phone's screen (demo devices), or a labeled simulated send. */
+export type ShareVia = "twilio" | "retell" | "browser_phone" | "simulated";
+
+export interface LocationShare {
+  id: string;
+  /** Unguessable (192 bits, base64url): the person's only key to /l/[token]. Never shown on the board or in feeds. */
+  token: string;
+  household_id: string | null;
+  help_request_id: string | null;
+  call_id: string | null;
+  phone: string | null; // response team only
+  consent_quote: string; // the person's own words
+  consent_source: ShareConsentSource;
+  consented_at: string;
+  status: ShareStatus;
+  expires_at: string; // 4 hours after consent
+  last_lat: number | null;
+  last_lng: number | null;
+  last_accuracy_m: number | null;
+  last_heading: number | null;
+  last_speed: number | null;
+  last_fix_at: string | null;
+  ping_count: number;
+  sent_via: ShareVia | null;
+  stop_reason: string | null;
+  synthetic: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type DispatchStatus = "assigned" | "en_route" | "arrived" | "reached" | "cannot_reach" | "cancelled";
+export const DISPATCH_ACTIVE: DispatchStatus[] = ["assigned", "en_route", "arrived"];
+
+/** One helper (a CERT volunteer, a QRT unit) sent to one registry row by a named human. */
+export interface Dispatch {
+  id: string;
+  help_request_id: string;
+  helper_id: string | null; // roster id, when picked from the roster
+  helper_label: string;
+  helper_phone: string | null; // E.164; null means the helper link is a simulated send
+  /** Unguessable key to /helper/[token] (sent to the helper only). */
+  token: string;
+  status: DispatchStatus;
+  dispatched_by: string; // a named human
+  reason: string;
+  target_lat: number | null; // where the person was when the helper was sent
+  target_lng: number | null;
+  target_accuracy_m: number | null;
+  target_source: LocationSource | null;
+  note: string | null; // the helper's last note ("gate locked")
+  synthetic: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** A helper on the per-scenario roster (lib/scenarios/helpers.ts). Simulated people; no real numbers. */
+export interface Helper {
+  id: string;
+  label: string; // "CERT volunteers, Palms (2)"
+  kind: "cert" | "qrt";
+  vehicle: "accessible_van" | "car" | "on_foot";
+  note: string;
+}
+
 export interface PickupRun {
   id: string;
   label: string; // "Accessible van A"

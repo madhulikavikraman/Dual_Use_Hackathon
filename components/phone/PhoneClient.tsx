@@ -21,6 +21,7 @@ import {
 } from "react";
 import type { PhoneActionBody, PhoneState, PhoneTurnResult } from "@/lib/contracts";
 import { languageByCode } from "@/lib/languages";
+import { InCallShareCard } from "@/components/locate/InCallShareCard";
 import {
   cancelAllSpeech,
   confirmSound,
@@ -616,6 +617,8 @@ export default function PhoneClient() {
           {notice}
         </p>
       )}
+      {/* The live-location link this person agreed to on a call: on the demo devices the text arrives here. */}
+      {phone?.location_share ? <InCallShareCard key={phone.location_share.token} token={phone.location_share.token} /> : null}
 
       <section className="flex min-h-0 flex-1 flex-col px-4">
         {phase === "loading" && (

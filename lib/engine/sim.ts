@@ -2,7 +2,9 @@ import "server-only";
 import { db, nowIso } from "@/lib/db";
 import { metersBetween, pointInPolygon } from "@/lib/geo";
 import type { Call, Household, Meta, SimPlan, SimProfile } from "@/lib/types";
+import { toolsForPurpose } from "@/lib/agent/tools";
 import { answerCall, appendTranscript, endCall, executeTool, failCall } from "./calls";
+import { activeShareFor } from "./locate";
 
 // The simulator plays synthetic people (and, in rehearsal, the six devices) through the same tool path as
 // real calls, so the board, the registry and the evidence page see exactly what a real run produces.
@@ -120,6 +122,7 @@ async function applyOutcome(call: Call, h: Household, plan: SimPlan, meta: Meta)
         await executeTool(call.id, "record_status", { ...base, status: "staying", refusal_reason: "wants to stay with the house" });
       } else if (p === "needs_help_leaving") {
         await executeTool(call.id, "record_status", { ...base, status: "needs_help_leaving", needs, can_leave: false, people: 2 });
+        await simLinkConsent(call, h);
         if (asksEta) {
           await appendTranscript(call.id, [
             { role: "person", text: "How long until the fire gets here?" },
@@ -131,6 +134,7 @@ async function applyOutcome(call: Call, h: Household, plan: SimPlan, meta: Meta)
         await executeTool(call.id, "record_status", { ...base, status: "needs_help_now", needs, can_leave: false, people: 2 });
         await executeTool(call.id, "request_human", { reason: "medical_emergency", urgency: "now", note: cantLeave ? "cannot leave: wheelchair, no car" : "trouble breathing" });
         await appendTranscript(call.id, [{ role: "agent", text: `Hang up and call ${v.emergency_number || "911"} now. A person from the response team is flagged.` }]);
+        await simLinkConsent(call, h);
       } else {
         await executeTool(call.id, "record_status", { ...base, status: "unclear", can_leave: null, location_consent: null });
       }
@@ -146,6 +150,34 @@ async function applyOutcome(call: Call, h: Household, plan: SimPlan, meta: Meta)
     }
   }
   await endCall(call.id, "completed");
+}
+
+const LINK_ASK = "Can I text you a link that shares your phone's live location with the response team? It stays on only until help reaches you.";
+
+/** What a synthetic person says to the live-location question: a yes (their words become the consent quote) or a no. */
+const LINK_ANSWER: Record<string, { yes: string; no: string }> = {
+  "en-US": { yes: "Yes, send it.", no: "No, I'd rather not." },
+  "es-US": { yes: "Sí, mándelo.", no: "No, prefiero que no." },
+  "ko-KR": { yes: "네, 보내 주세요.", no: "아니요, 괜찮아요." },
+  "zh-CN": { yes: "好的，发给我吧。", no: "不用了，谢谢。" },
+  "hi-IN": { yes: "हाँ, भेज दीजिए।", no: "नहीं, रहने दीजिए।" },
+  "fr-FR": { yes: "Oui, envoyez-le.", no: "Non, je préfère pas." },
+  "hy-AM": { yes: "Այո, ուղարկեք:", no: "Ոչ, պետք չէ:" },
+  "fil-PH": { yes: "Oo, ipadala mo.", no: "Huwag na po." },
+};
+
+/**
+ * The live-location question, played through the same tool as a real call. Devices on autopilot that need help
+ * (Phone 2: wheelchair, no car) say yes, so the demo shows a live pin; synthetic people say yes about 60% of the time.
+ * Their pings are simulated by lib/engine/locate.ts (labeled synthetic).
+ */
+async function simLinkConsent(call: Call, h: Household) {
+  if (!toolsForPurpose(call.purpose).includes("share_live_location")) return;
+  if (await activeShareFor(h.id)) return; // asked once: a link is already on
+  const yes = h.has_device ? true : hash(h.id + "gps") < 0.6;
+  const words = LINK_ANSWER[h.lang_code] ?? LINK_ANSWER["en-US"];
+  await appendTranscript(call.id, [{ role: "agent", text: LINK_ASK }, { role: "person", text: yes ? words.yes : words.no }]);
+  if (yes) await executeTool(call.id, "share_live_location", { consent_quote: words.yes });
 }
 
 /** Collections line: what a synthetic collector says when asked about their grab list (Warning only). */

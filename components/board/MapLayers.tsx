@@ -2,7 +2,7 @@
 
 import type { PathOptions } from "leaflet";
 import { Fragment } from "react";
-import { CircleMarker, Marker, Polygon, Tooltip } from "react-leaflet";
+import { Circle, CircleMarker, Marker, Polygon, Tooltip } from "react-leaflet";
 import type { HouseholdView } from "@/lib/contracts";
 import { STATE_COLOR, STATE_RANK } from "@/lib/directives";
 import { hexPolygon } from "@/lib/geo";
@@ -34,6 +34,7 @@ import {
   holdLabelHtml,
   icon,
   latLngs,
+  liveHelpPinHtml,
   pathStyle,
   triangleHtml,
   zoneLabelHtml,
@@ -313,7 +314,12 @@ export function EvacPoints({ zones }: { zones: Zone[] }) {
   ));
 }
 
-/** Help registry rows at their last known location: color by priority, solid ring fresh, dashed stale. */
+const LIVE_CIRCLE = pathStyle({ color: "#2563eb", weight: 1.5, opacity: 0.8, fillColor: "#3b82f6", fillOpacity: 0.12 });
+
+/**
+ * Help registry rows at their last known location: color by priority, solid ring fresh, dashed stale. A live GPS fix
+ * from the person's link (response team only) gets a pulsing blue ring, a GPS tag and its accuracy circle.
+ */
 export function HelpPins({
   rows,
   now,
@@ -329,33 +335,48 @@ export function HelpPins({
     if (r.last_lat === null || r.last_lng === null) return null;
     const fresh = isFresh(r.last_observed_at, now);
     const done = r.status === "reached" || r.status === "closed";
-    const html = helpPinHtml(r.priority, PRIORITY_COLOR[r.priority], fresh, done, r.id === selectedId);
+    const live = r.last_source === "gps_link";
+    const html = live
+      ? liveHelpPinHtml(r.priority, PRIORITY_COLOR[r.priority], fresh, done, r.id === selectedId)
+      : helpPinHtml(r.priority, PRIORITY_COLOR[r.priority], fresh, done, r.id === selectedId);
     return (
-      <Marker
-        key={r.id}
-        position={[r.last_lat, r.last_lng]}
-        icon={icon(html)}
-        zIndexOffset={1000 + (4 - r.priority) * 100}
-        keyboard={false}
-        eventHandlers={onSelect ? { click: () => onSelect(r.id) } : undefined}
-      >
-        <Tooltip className="sk-tip" direction="top" offset={[0, -16]}>
-          <b>
-            P{r.priority} · {r.name ?? "Name not given"}
-          </b>{" "}
-          · {HELP_STATUS_LABEL[r.status]}
-          <br />
-          {r.needs.length ? needsText(r.needs) : (r.reason ?? "").replaceAll("_", " ")}
-          {r.people ? ` · ${r.people} people` : ""}
-          <br />
-          Last seen: {LOCATION_SOURCE_LABEL[r.last_source]} · {fmtAgo(r.last_observed_at, now)} · {fresh ? "fresh" : "stale"}
-          {r.last_stated_text ? (
-            <>
-              <br />“{r.last_stated_text}”
-            </>
-          ) : null}
-        </Tooltip>
-      </Marker>
+      <Fragment key={r.id}>
+        {live && r.last_accuracy_m && !done ? (
+          <Circle
+            center={[r.last_lat, r.last_lng]}
+            radius={Math.max(5, r.last_accuracy_m)}
+            pane="sk-pins"
+            interactive={false}
+            {...LIVE_CIRCLE}
+            pathOptions={LIVE_CIRCLE}
+          />
+        ) : null}
+        <Marker
+          position={[r.last_lat, r.last_lng]}
+          icon={icon(html)}
+          zIndexOffset={1000 + (4 - r.priority) * 100 + (live ? 50 : 0)}
+          keyboard={false}
+          eventHandlers={onSelect ? { click: () => onSelect(r.id) } : undefined}
+        >
+          <Tooltip className="sk-tip" direction="top" offset={[0, -16]}>
+            <b>
+              P{r.priority} · {r.name ?? "Name not given"}
+            </b>{" "}
+            · {HELP_STATUS_LABEL[r.status]}
+            <br />
+            {r.needs.length ? needsText(r.needs) : (r.reason ?? "").replaceAll("_", " ")}
+            {r.people ? ` · ${r.people} people` : ""}
+            <br />
+            Last seen: {live ? "Live GPS" : LOCATION_SOURCE_LABEL[r.last_source]}
+            {live && r.last_accuracy_m ? ` · ${Math.round(r.last_accuracy_m)} m` : ""} · {fmtAgo(r.last_observed_at, now)} · {fresh ? "fresh" : "stale"}
+            {r.last_stated_text ? (
+              <>
+                <br />“{r.last_stated_text}”
+              </>
+            ) : null}
+          </Tooltip>
+        </Marker>
+      </Fragment>
     );
   });
 }

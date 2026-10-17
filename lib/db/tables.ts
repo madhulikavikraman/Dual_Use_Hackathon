@@ -1,6 +1,6 @@
 import type {
-  AlertItem, Call, Campaign, Canary, Cluster, HelpRequest, Hold, Household, HouseholdStatus, Intent,
-  LedgerEntry, LocationFix, Meta, PickupRun, Proposal, Report, SimRun, TwistEntry, Zone, ZoneEvent,
+  AlertItem, Call, Campaign, Canary, Cluster, Dispatch, HelpRequest, Hold, Household, HouseholdStatus, Intent,
+  LedgerEntry, LocationFix, LocationShare, Meta, PickupRun, Proposal, Report, SimRun, TwistEntry, Zone, ZoneEvent,
 } from "@/lib/types";
 
 /** Every table and its row type. The Supabase migrations create the same tables. */
@@ -18,6 +18,8 @@ export interface Tables {
   intents: Intent;
   help_requests: HelpRequest;
   locations: LocationFix;
+  location_shares: LocationShare;
+  dispatches: Dispatch;
   pickup_runs: PickupRun;
   holds: Hold;
   canaries: Canary;
@@ -31,7 +33,7 @@ export type TableName = keyof Tables;
 
 export const TABLES: TableName[] = [
   "households", "campaigns", "calls", "household_status", "alerts_feed", "twist_log", "sim_runs",
-  "zones", "zone_events", "proposals", "intents", "help_requests", "locations", "pickup_runs",
+  "zones", "zone_events", "proposals", "intents", "help_requests", "locations", "location_shares", "dispatches", "pickup_runs",
   "holds", "canaries", "reports", "clusters", "ledger", "meta",
 ];
 

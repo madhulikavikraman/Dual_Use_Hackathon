@@ -103,8 +103,88 @@ async function main() {
   check(n >= 8, `tower down silenced ${n} households`);
   check(silence.length > 0, `silence cluster detected (${silence.map((c) => c.count).join(",") || "none"})`);
 
+  // 6. Live location with consent. On autopilot Phone 2 (wheelchair, no car) said yes to the link in Stage 1.
+  const { pingShare, stopShare, viewByToken } = await import("../lib/engine/locate");
+  const { helperUpdate, helperView, sendHelper } = await import("../lib/engine/responders");
+  const { refreshLocation } = await import("../lib/engine/registry");
+  const { onRetellCallAnalyzed } = await import("../lib/engine/retellEvents");
+  const { HttpError } = await import("../lib/http");
+  const statusOfErr = async (p: Promise<unknown>) => {
+    try {
+      await p;
+      return 200;
+    } catch (e) {
+      return e instanceof HttpError ? e.status : -1;
+    }
+  };
+  const shares2 = await db().where("location_shares", { household_id: hid(2) });
+  const share = shares2[0];
+  check(Boolean(share?.consent_quote && share.call_id && /^[A-Za-z0-9_-]{32}$/.test(share.token)),
+    `consent -> share row: quote "${share?.consent_quote}", call ${share?.call_id?.slice(0, 8)}, ${share?.consent_source}, 192-bit token`);
+  check(shares2.length === 1, `asked once: one share for Phone 2 across Stage 1 and Stage 3 (${shares2.length})`);
+  await tickFor(20_000, async () => ((await db().get("location_shares", share.id))?.ping_count ?? 0) >= 2);
+  const gpsFixes = (await db().where("locations", { household_id: hid(2) })).filter((f) => f.source === "gps_link");
+  const row2 = (await db().where("help_requests", { household_id: hid(2) })).find((r) => (r.kind ?? "people") === "people")!;
+  check(gpsFixes.length >= 2 && gpsFixes.every((f) => f.consent && f.help_request_id === row2.id), `pings -> ${gpsFixes.length} locations rows, source gps_link, consent true`);
+  check(row2.last_source === "gps_link" && row2.last_consent && (row2.last_accuracy_m ?? 99) <= 20,
+    `registry row now live GPS (${row2.last_source}, ${row2.last_accuracy_m} m)`);
+  await refreshLocation(hid(2), { lat: 34.03, lng: -118.41, accuracy_m: 50, source: "stated", stated_text: "Venice and Sepulveda", consent: true });
+  const afterStated = (await db().get("help_requests", row2.id))!;
+  check(afterStated.last_source === "gps_link" && afterStated.last_lat === row2.last_lat, `a later stated fix does not override a fresh GPS fix (${afterStated.last_source})`);
+  await sleep(2100);
+  const fixNow = () => ({ lat: row2.last_lat! + 0.0001, lng: row2.last_lng!, accuracy_m: 7, heading: null, speed: 0, captured_at: new Date().toISOString() });
+  const real = await pingShare(share.token, fixNow());
+  check(real.status === "live", `a phone's fix on the link is accepted (status ${real.status}, ${real.ping_count} fixes)`);
+  check((await statusOfErr(pingShare(share.token, fixNow()))) === 429, "a second fix within 2 s is rate-limited (429)");
+  check((await statusOfErr(pingShare(share.token, { ...fixNow(), lat: 123 }))) === 422, "an impossible coordinate is rejected (422)");
+
+  const sentHelper = await sendHelper(row2.id, { helper_id: "qrt-1", actor: "E2E Dispatcher", reason: "Wheelchair, no car: needs the van" });
+  const disp = (await db().where("dispatches", { help_request_id: row2.id }))[0];
+  const assigned = await db().get("help_requests", row2.id);
+  check(assigned?.status === "assigned" && disp?.status === "assigned" && /^[A-Za-z0-9_-]{32}$/.test(disp.token) && sentHelper.dispatch.link.includes(`/helper/${disp.token}`),
+    `Send helper -> dispatch "${disp?.helper_label}" assigned, registry row ${assigned?.status}, helper token`);
+  const hv = await helperView(disp.token);
+  check(hv.location?.source === "gps_link" && (await viewByToken(share.token)).helper_assigned, "helper page sees the live GPS fix; the person's page says a responder has it");
+  await helperUpdate(disp.token, { status: "en_route" });
+  await helperUpdate(disp.token, { status: "reached", note: "with the family at the door" });
+  const shareDone = await db().get("location_shares", share.id);
+  const rowDone = await db().get("help_requests", row2.id);
+  check(shareDone?.status === "closed" && rowDone?.status === "reached", `helper "Person reached" -> row ${rowDone?.status}, live location stopped (${shareDone?.status})`);
+  check((await statusOfErr(pingShare(share.token, fixNow()))) === 410, "a fix to the stopped link is rejected (410)");
+
+  // Retell post-call analysis heard a yes the agent never acted on: one share, never two.
+  const c1 = (await db().where("calls", { household_id: hid(1) })).find((c) => c.purpose === "resident" && c.answered_at)!;
+  const analyzed = { transcript: null, call_analysis: { custom_analysis_data: { primary_intent: "leaving", live_location_consent: true, live_location_quote: "Sí, mándelo." } } };
+  await onRetellCallAnalyzed(c1.id, analyzed);
+  await onRetellCallAnalyzed(c1.id, analyzed);
+  const s1 = await db().where("location_shares", { household_id: hid(1) });
+  check(s1.length === 1 && s1[0].consent_source === "post_call" && s1[0].call_id === c1.id && s1[0].consent_quote === "Sí, mándelo.",
+    `post-call consent -> one share (${s1.length}, ${s1[0]?.consent_source})`);
+  await stopShare(s1[0].token);
+  check((await db().get("location_shares", s1[0].id))?.status === "stopped" && (await statusOfErr(pingShare(s1[0].token, fixNow()))) === 410,
+    "Stop sharing on the link -> stopped; later fixes rejected (410)");
+
+  // No exact GPS for a person in the public feed or the CSV export; no name in the live-location feed cards.
+  const { helpFeed } = await import("../lib/feeds");
+  const { registryCsv } = await import("../lib/csvExport");
+  const gpsRows = (await db().all("help_requests")).filter((r) => r.last_source === "gps_link");
+  const gpsFeats = helpFeed(await db().all("help_requests"), Date.now()).filter((f) => gpsRows.some((r) => r.id === f.properties.help_id));
+  const leaks = gpsFeats.filter((f) => {
+    const [lng, lat] = (f.geometry as GeoJSON.Point).coordinates;
+    return gpsRows.some((r) => r.id === f.properties.help_id && Math.abs(lng - r.last_lng!) < 1e-6 && Math.abs(lat - r.last_lat!) < 1e-6);
+  });
+  check(gpsFeats.length > 0 && leaks.length === 0 && gpsFeats.every((f) => String(f.properties.precision).includes("response team only")),
+    `public help feed: ${gpsFeats.length} live-GPS rows, all at the hex cell (${leaks.length} exact)`);
+  const csv = await registryCsv();
+  check(gpsRows.every((r) => !csv.includes(String(r.last_lat))), "registry CSV carries no exact live-GPS point");
+  const liveCards = (await db().all("alerts_feed")).filter((f) => /live location|helper/i.test(f.title));
+  const names = (await db().all("households")).map((h) => h.name);
+  check(liveCards.length > 0 && liveCards.every((f) => !names.some((n) => `${f.title} ${f.detail ?? ""}`.includes(n))), `live-location feed cards carry no names (${liveCards.length})`);
+
   const board = await buildBoard();
   check(board.ledger.some((l) => l.action.startsWith("send")), "ledger has the send");
+  check(board.ledger.some((l) => l.action.startsWith("live location: consent recorded")) && board.ledger.some((l) => l.action.startsWith("send helper")),
+    "ledger has the consent and the helper sent (with a name)");
   console.log("\nLedger (newest first):");
   for (const l of board.ledger.slice(0, 18)) console.log(`  ${l.created_at.slice(11, 19)}  ${l.actor} | ${l.action} | ${l.target ?? ""} | ${l.reason ?? ""}`);
   console.log(`\nMetrics: ${JSON.stringify(board.metrics)}`);

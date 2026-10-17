@@ -110,6 +110,48 @@ unknown tool -> `404`; unknown webhook events -> `200 {"ignored": ...}`.
   -> Keyboard -> Enable Dictation. If voice input is refused the button switches to tap mode, then to text mode.
 - iPhone ringer switch on silent mutes the ring tone.
 
+## Live location with consent (send a helper to the exact spot)
+
+What happens on a call:
+
+1. When a person needs help (`needs_help_now` or `needs_help_leaving`), is staying inside an Order zone, or calls the
+   public line and needs help, the agent asks once: "Can I text you a link that shares your phone's live location with
+   the response team? It stays on only until help reaches you." The rule is in `lib/agent/prompt.ts` (one template
+   for both transports) and the `record_status` tool result reminds the agent at the right moment.
+2. Only on a clear yes it calls the eighth tool, `share_live_location {consent_quote}` (a Retell custom function at
+   `/api/retell/tools/share_live_location`, signature-checked like the others; the same executor on the browser phone).
+   On a no it records `location_consent: false` and asks where they are, in their words (the existing stated path).
+3. The server writes a `location_shares` row (192-bit base64url token, the quote, the call id, `consent_source`
+   `retell_call` | `browser_call` | `public_line` | `post_call`, 4-hour expiry) and texts `APP_BASE_URL/l/<token>`
+   (`lib/sms.ts`: Retell SMS if `RETELL_SMS=1`, else Twilio, else a labeled simulated send). The six demo devices get
+   the link as an in-call card on `/phone/[id]`, which runs the same share on that phone.
+4. Retell's post-call analysis carries `live_location_consent` and `live_location_quote`. If it heard a yes but no
+   share exists (a dropped tool call, a hang-up mid-turn), `lib/engine/retellEvents.ts` creates the share and sends the
+   link after the call. It never makes a second share for the same call or while a link is still on.
+
+On the person's phone, `/l/<token>` says what they agreed to, what is shared, with whom and when it stops (help
+reaches them, 4 hours, or Stop sharing). **Share my live location** starts `watchPosition` (high accuracy) and posts a
+fix at most every 5 s (sooner after 25 m of movement) to `POST /api/locate/<token>`. Each fix lands in `locations`
+(source `gps_link`, consent true) and refreshes the registry row (a stated place never overrides GPS younger than
+15 minutes). No GPS or permission denied: a "Tell us where you are" box (geocoded) and a call link to the local
+emergency number. Geolocation needs HTTPS (localhost is fine), so use the tunnel URL on phones.
+
+Sending a helper: on the board's registry tab or `/qrt`, each row shows its location badge ("Live GPS · 6 m · 12 s
+ago", "Stated: ...", "Enrolled address", "Zone centre (low precision)") and the link state. **Send helper** (a named
+human and a reason) picks from the scenario's roster (`lib/scenarios/helpers.ts`), writes a `dispatches` row, sets the
+row to assigned and texts the helper `/helper/<token>` (simulated unless a number and a provider are set). The helper
+page polls every 5 s: location, accuracy, age, a small map, needs, Navigate, Call, and En route / Arrived / Person
+reached / Cannot reach. Person reached stops the share.
+
+Privacy: GPS from the link is for the response team only. The public GeoJSON feeds keep the hex cell for it and the
+CSV export writes its hex-cell centre. `/l/`, `/api/locate/`, `/helper/` and `/api/helper/` are open in `proxy.ts`
+(the token is the key); `/api/registry/live` and the dispatch route stay behind `DESK_PASSWORD`. In Supabase, run
+`supabase/migrations/003_live_location.sql`; both new tables keep RLS on with no anon policy, since they hold tokens.
+
+Retell SMS (optional, untested): set `RETELL_SMS=1`, `RETELL_SMS_AGENT_ID` (a Retell chat agent whose opening message
+is exactly `{{sms_body}}`) and `RETELL_SMS_FROM_NUMBER` (or it uses `RETELL_FROM_NUMBER`; the number needs SMS enabled,
+which in the US means A2P registration). On any error it falls through to Twilio, then to a simulated send.
+
 ## Retell API facts used (docs.retellai.com, spec revision 2026-10-16)
 
 - Base `https://api.retellai.com`, `Authorization: Bearer <key>`. Errors are `{"status":"error","message":...}`
@@ -134,7 +176,14 @@ unknown tool -> `404`; unknown webhook events -> `200 {"ignored": ...}`.
   call_successful, custom_analysis_data}`. Calls that never connect get `call_ended` and `call_analyzed` but no
   `call_started`.
 - Post-call analysis fields we define (`custom_analysis_data`): `primary_intent` (enum of `PRIMARY_INTENTS`), `needs`
-  (comma-separated need words), `people` (number), `can_leave` (boolean), `location_text` (string).
+  (comma-separated need words), `people` (number), `can_leave` (boolean), `location_text` (string),
+  `live_location_consent` (boolean), `live_location_quote` (string).
+- Outbound SMS: `POST /create-sms-chat` `{from_number, to_number, override_agent_id, retell_llm_dynamic_variables,
+  metadata}` sends from a Retell number with SMS enabled; there is no body field ("The initial SMS message will be
+  automatically generated and sent based on the agent's configuration"; the agent must be a chat agent)
+  (https://docs.retellai.com/api-references/create-sms-chat, https://docs.retellai.com/deploy/enable-sms). Voice agents
+  also have an in-call `send_sms` tool (`sms_content: {type: "predefined", text}` or `{type: "inferred", prompt}`), but
+  our link token is made at the moment of consent, so we do not use it.
 - Inbound webhook (per number, `inbound_webhook_url`): POST `{event: "call_inbound", call_inbound: {call_id, agent_id,
   from_number, to_number}}`; reply within 10 s with `{call_inbound: {override_agent_id?, dynamic_variables, metadata}}`
   (or `{call_inbound: {reject: true}}`). If every attempt fails, Retell connects the number's inbound agent.

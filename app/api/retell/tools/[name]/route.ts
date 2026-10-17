@@ -6,7 +6,7 @@ import { stopRetellCall } from "@/lib/retell/client";
 import { readVerifiedRetellBody, resolveCallId, textResponse } from "@/lib/retell/guard";
 import { isToolName, normalizeToolArgs, parseFunctionCall } from "@/lib/retell/payload";
 
-// POST /api/retell/tools/[name] — the seven tools as Retell custom functions (same allowlist and the
+// POST /api/retell/tools/[name] — the eight tools as Retell custom functions (same allowlist and the
 // same executor as the browser transport). Retell posts {name, call, args} with X-Retell-Signature and
 // hands whatever we return (2xx) to its LLM as a string, so results are plain text.
 

@@ -7,11 +7,14 @@ import { STATE_LABEL } from "@/lib/directives";
 import { geocode } from "@/lib/geocode";
 import { centroidOf, zoneForPoint } from "@/lib/geo";
 import { languageByCode } from "@/lib/languages";
+import { isE164, requestOrigin } from "@/lib/sms";
 import type {
-  Call, CallVars, HelpSource, Household, HouseholdStatus, Intent, IntentFlag, Need, PrimaryIntent, Report, ReportType, Status, Zone,
+  Call, CallVars, HelpSource, Household, HouseholdStatus, Intent, IntentFlag, Need, PrimaryIntent, Report, ReportType,
+  ShareConsentSource, Status, Zone,
 } from "@/lib/types";
 import { NEEDS } from "@/lib/types";
 import { blankStatus, buildVars, inboundCampaign, newCall } from "./campaigns";
+import { activeShareFor, createShare } from "./locate";
 import { feed, getMeta, ledger } from "./log";
 import { enrolledFix, refreshLocation, upsertHelp, type Fix } from "./registry";
 
@@ -98,6 +101,7 @@ const EndCall = z.object({ outcome: z.enum(["completed", "wrong_person", "voicem
 const LookupZone = z.object({ location_text: z.string().min(1) });
 const ReadObservation = z.object({ sees: z.enum(["yes", "no", "unsure"]).catch("unsure"), what: text, direction: text });
 const ReceivedAlert = z.object({ received: z.enum(["yes", "no"]) });
+const ShareLive = z.object({ consent_quote: z.preprocess((v) => (typeof v === "string" ? v : ""), z.string()) });
 
 const STATUS_MAP: Record<z.infer<typeof RecordStatus>["status"], Status> = {
   leaving: "leaving", staying: "wont_leave", already_left: "safe", needs_help_leaving: "needs_help",
@@ -122,9 +126,9 @@ async function stateFix(text: string | null | undefined, consent: boolean | null
   return { lat: hit.lat, lng: hit.lng, accuracy_m: hit.accuracy_m, source: "stated", stated_text: text, consent: consent ?? false };
 }
 
-// ---------- the seven tools ----------
+// ---------- the eight tools ----------
 
-/** Run one of the seven tools for a call. Validates input, writes rows, logs refusals. */
+/** Run one of the eight tools for a call. Validates input, writes rows, logs refusals. */
 export async function executeTool(callId: string, name: ToolName, args: Record<string, unknown>): Promise<ToolResult> {
   const ctx = await loadCtx(callId);
   // The allowlist is enforced here, for every transport: a sentinel call cannot record a resident's status, etc.
@@ -144,7 +148,45 @@ export async function executeTool(callId: string, name: ToolName, args: Record<s
     case "lookup_zone": return lookupZone(ctx, LookupZone.parse(args));
     case "read_observation": return readObservation(ctx, ReadObservation.parse(args));
     case "received_alert": return receivedAlert(ctx, ReceivedAlert.parse(args));
+    case "share_live_location": return shareLiveLocation(ctx, ShareLive.parse(args));
   }
+}
+
+/** Can this call offer the live-location link now? (Allowed here, a phone that can get it, no link already on.) */
+async function canOfferLink(ctx: Ctx): Promise<boolean> {
+  const h = ctx.household;
+  if (!h || !toolsForPurpose(ctx.call.purpose).includes("share_live_location")) return false;
+  if (!isE164(h.phone_e164) && !h.has_device) return false;
+  if ((await db().where("location_shares", { call_id: ctx.call.id })).length) return false;
+  return !(await activeShareFor(h.id));
+}
+
+const LINK_ASK =
+  "ask once: \"Can I text you a link that shares your phone's live location with the response team? It stays on only until help reaches you.\" Call share_live_location only on a clear yes; on a no, record location_consent false and ask where they are right now.";
+
+/**
+ * Live location with consent: a clear yes on the call sends the person a link (/l/[token]). The link goes to the phone
+ * on this call, never to someone else's. The location is for the response team only.
+ */
+async function shareLiveLocation(ctx: Ctx, a: z.infer<typeof ShareLive>): Promise<ToolResult> {
+  const { call, household } = ctx;
+  if (!household) return { result: "No person is attached to this call; nothing was sent. Ask where they are right now, in their words." };
+  const quote = a.consent_quote.trim();
+  if (quote.length < 2) {
+    return { result: "Not sent: consent_quote must be the person's yes in their own words. If they did not clearly say yes, do not send it; ask where they are right now." };
+  }
+  if (!isE164(household.phone_e164) && !household.has_device) {
+    return { result: "There is no number to text on this call. Ask where they are right now in their words and record it with record_status (location_text, location_consent true)." };
+  }
+  const source: ShareConsentSource = call.purpose === "inbound" ? "public_line" : call.transport === "retell" ? "retell_call" : "browser_call";
+  const r = await createShare({ household, call, consent_quote: quote, consent_source: source, synthetic: call.transport === "sim", origin: await requestOrigin() });
+  if (!r.created) {
+    return { result: "A link is already on for this person; nothing new was sent. Say they can use the link they already have. Never say when anyone will arrive." };
+  }
+  const where = r.via === "browser_phone" ? "It is on their screen now." : r.via === "simulated" ? "The text is simulated in this demonstration." : "It was sent by text message.";
+  return {
+    result: `Link sent. ${where} Say: tap the link and press Share; it stays on only until help reaches them, and they can stop it at any time. Never say when anyone will arrive. Then continue the call.`,
+  };
 }
 
 async function recordStatus(ctx: Ctx, a: z.infer<typeof RecordStatus>): Promise<ToolResult> {
@@ -199,8 +241,16 @@ async function recordStatus(ctx: Ctx, a: z.infer<typeof RecordStatus>): Promise<
     await refreshLocation(subject.id, fix);
   }
 
-  if (a.status === "needs_help_now") return { result: `Recorded as life safety (registry priority 1). If you have not yet, say: hang up and call ${call.vars.emergency_number || "911"} now. Then end the call.` };
-  if (a.status === "needs_help_leaving") return { result: "Recorded: needs help leaving (registry priority 2). Tell them a person from the response team will call them back, then end the call." };
+  // Live location: offered once to someone who needs help, or who stays inside an Order zone (never pressed).
+  const offer = a.location_consent !== false && (a.status === "needs_help_now" || a.status === "needs_help_leaving" ||
+    (a.status === "staying" && call.vars.zone_state === "order")) && (await canOfferLink(ctx));
+  if (a.status === "needs_help_now") {
+    return { result: `Recorded as life safety (registry priority 1). If you have not yet, say: hang up and call ${call.vars.emergency_number || "911"} now.${offer ? ` In the same turn you may ${LINK_ASK} If they do not say yes at once, end the call.` : ""} Then end the call.` };
+  }
+  if (a.status === "needs_help_leaving") {
+    return { result: `Recorded: needs help leaving (registry priority 2).${offer ? ` Now ${LINK_ASK}` : ""} Tell them a person from the response team will call them back, then end the call.` };
+  }
+  if (a.status === "staying" && offer) return { result: `Recorded. The zone is under an order: ${LINK_ASK} Never pressure them.` };
   if (a.status === "leaving" || a.status === "already_left") {
     if (a.understood === true) return { result: "Recorded, teach-back passed. Say goodbye and end the call." };
     if (a.understood === false) return { result: "Recorded. Repeat the approved route and evacuation point once, then end the call." };

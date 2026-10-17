@@ -142,6 +142,56 @@
   box-shadow: 0 0 0 2.5px #fff, 0 0 0 5px var(--c), 0 0 0 8px #fff, 0 0 0 11px #2563eb;
 }
 
+/* Live GPS from the person's link (response team only): the help pin inside a blue ring that pulses while fresh,
+   a "GPS" tag, and an accuracy circle drawn under it (MapLayers). */
+.sk-anchor > .sk-live {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid #2563eb;
+  background: rgb(37 99 235 / 0.12);
+  display: grid;
+  place-items: center;
+}
+.sk-live .sk-help {
+  position: static;
+  transform: none;
+  box-shadow: 0 0 0 2px #fff;
+}
+.sk-live.sk-selected {
+  box-shadow: 0 0 0 3px #fff, 0 0 0 6px #2563eb;
+}
+.sk-live-tag {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translate(-50%, 3px);
+  background: #1d4ed8;
+  color: #fff;
+  font: 800 9px/1 system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  padding: 2px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.sk-live-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 1.5px #1e3a8a;
+}
+.sk-live.sk-live-on::after,
+.sk-live-dot.sk-live-on::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 3px solid #2563eb;
+  animation: sk-ring 1.4s ease-out infinite;
+}
+
 /* Evacuation points */
 .sk-ep {
   background: #15803d;
@@ -246,7 +296,9 @@ path.sk-pulse {
 }
 @media (prefers-reduced-motion: reduce) {
   path.sk-pulse,
-  .sk-ring::after {
+  .sk-ring::after,
+  .sk-live.sk-live-on::after,
+  .sk-live-dot.sk-live-on::after {
     animation: none;
   }
 }

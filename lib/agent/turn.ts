@@ -38,7 +38,7 @@ const NARRATION = [
   /\bper (my |the |your )?(instructions|rules|prompt)\b/i,
   /\b(greeting|opening|call) must (include|start|begin)\b/i,
   /\bexactly as approved\b/i,
-  /\b(record_status|report_hazard|request_human|end_call|lookup_zone|read_observation|received_alert)\b/i,
+  /\b(record_status|report_hazard|request_human|end_call|lookup_zone|read_observation|received_alert|share_live_location|consent_quote)\b/i,
   /^(now )?(read|reading) (the )?(directive|route|evacuation point|approved)/i,
   /^(respond|speak|reply) (only )?in [\p{L} ()]+ only\.?$/iu,
 ];

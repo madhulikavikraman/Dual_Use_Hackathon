@@ -12,7 +12,8 @@ import { BoardMap } from "@/components/board/BoardMap";
 import { BoardWaiting, OfflineBanner } from "@/components/board/BoardScreen";
 import { SupervisorInput } from "@/components/board/HeaderControls";
 import { PickupRuns } from "@/components/board/PickupRuns";
-import { RegistryCard } from "@/components/board/RegistryPanel";
+import { LiveRegistryCard } from "@/components/locate/LiveRegistry";
+import { LiveRegistryProvider } from "@/components/locate/LiveRegistryContext";
 import { Button } from "@/components/ui/Button";
 import { ToastProvider } from "@/components/ui/Toast";
 import { DoorKnockSheet, doorKnockRows, silenceClusters } from "./DoorKnockSheet";
@@ -115,7 +116,7 @@ function QrtLayout({ error, receivedAt }: { error: string | null; receivedAt: nu
           <div className="min-h-0 space-y-3 overflow-y-auto pr-1">
             {rows.length ? (
               rows.map((r) => (
-                <RegistryCard key={r.id} row={r} now={snap.now} selected={r.id === selectedId} onLocate={setSelectedId} />
+                <LiveRegistryCard key={r.id} row={r} now={snap.now} selected={r.id === selectedId} onLocate={setSelectedId} showCall />
               ))
             ) : (
               <p className="rounded-lg border border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500">
@@ -142,7 +143,9 @@ export function QrtScreen() {
     <OperatorContext value="qrt">
       <ToastProvider>
         <BoardProvider snap={data} refresh={refresh} clockOffset={clockOffset}>
-          <QrtLayout error={error} receivedAt={receivedAt} />
+          <LiveRegistryProvider>
+            <QrtLayout error={error} receivedAt={receivedAt} />
+          </LiveRegistryProvider>
         </BoardProvider>
       </ToastProvider>
     </OperatorContext>

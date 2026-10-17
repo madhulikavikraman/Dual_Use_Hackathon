@@ -138,18 +138,27 @@ async function announce(row: HelpRequest) {
   });
 }
 
-/** Refresh the last-seen location of a person's open registry row, if any. */
-export async function refreshLocation(householdId: string, fix: Fix) {
-  const row = (await db().where("help_requests", { household_id: householdId })).find((r) => r.status !== "closed");
+/**
+ * Refresh the last-seen location of a person's open registry row, if any. A person's row wins over a salvage row;
+ * `helpId` names the row when the caller knows it (a live-location share). A fix never replaces a better one:
+ * a stated place does not override a GPS fix younger than 15 minutes.
+ */
+export async function refreshLocation(householdId: string, fix: Fix, helpId?: string | null): Promise<HelpRequest | null> {
+  const open = (await db().where("help_requests", { household_id: householdId })).filter((r) => r.status !== "closed");
+  const row =
+    (helpId ? open.find((r) => r.id === helpId) : undefined) ??
+    open.find((r) => (r.kind ?? "people") === "people") ??
+    open[0];
   if (!row || !better(row, fix)) {
     await recordFix(householdId, row?.id ?? null, fix);
-    return;
+    return row ?? null;
   }
   await db().update("help_requests", row.id, {
     last_lat: fix.lat, last_lng: fix.lng, last_accuracy_m: fix.accuracy_m, last_source: fix.source,
     last_stated_text: fix.stated_text, last_consent: fix.consent, last_observed_at: nowIso(), updated_at: nowIso(),
   });
   await recordFix(householdId, row.id, fix);
+  return db().get("help_requests", row.id);
 }
 
 export async function patchHelp(id: string, body: { status?: HelpRequest["status"]; assigned_to?: string | null; actor: string; reason?: string }) {
@@ -168,6 +177,11 @@ export async function patchHelp(id: string, body: { status?: HelpRequest["status
     target: row.name ?? row.id.slice(0, 8),
     reason: body.reason ?? null,
   });
+  // Reached or closed: the live-location link stops and any helper still out is told the row is done.
+  if (body.status === "reached" || body.status === "closed") {
+    const { onHelpFinal } = await import("./locate");
+    await onHelpFinal(id, body.status, body.actor);
+  }
   return next;
 }
 

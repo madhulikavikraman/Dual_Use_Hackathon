@@ -3,7 +3,9 @@ import { NextResponse, type NextRequest } from "next/server";
 // Desk access control. When DESK_PASSWORD is set (e.g. behind a public tunnel), the supervisor's pages and APIs —
 // the board, the help registry with phone numbers, approvals, resets, exports — need HTTP Basic auth (any user
 // name, that password). Left open: volunteers' phone pages and their API, the public line, Retell (signed
-// requests), the GeoJSON feeds (FEED_TOKEN) and the health check. With DESK_PASSWORD unset nothing changes.
+// requests), the GeoJSON feeds (FEED_TOKEN), the health check, and the two links sent by text message: the
+// resident's live-location page (/l/, /api/locate/) and the helper's page (/helper/, /api/helper/). Those open from
+// a text, so the unguessable token in the path is the key. With DESK_PASSWORD unset nothing changes.
 
 function sameSecret(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
@@ -32,5 +34,5 @@ export function proxy(req: NextRequest) {
 
 export const config = {
   // Everything except Next's own assets and the open paths listed above.
-  matcher: ["/((?!_next/|favicon\\.ico|phone/|api/phone/|call|api/call|api/retell/|api/feeds/|api/health).*)"],
+  matcher: ["/((?!_next/|favicon\\.ico|phone/|api/phone/|call|api/call|api/retell/|api/feeds/|api/health|l/|api/locate/|helper/|api/helper/).*)"],
 };

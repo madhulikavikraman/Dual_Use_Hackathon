@@ -103,6 +103,13 @@ export const triangleHtml = (color: string, pulse: boolean) =>
 export const helpPinHtml = (priority: 1 | 2 | 3 | 4, color: string, fresh: boolean, done: boolean, selected: boolean) =>
   `<div class="sk-help${fresh ? "" : " sk-stale"}${done ? " sk-done" : ""}${selected ? " sk-selected" : ""}" style="--c:${color};--t:${priority === 3 ? "#111827" : "#fff"}">${priority}</div>`;
 
+/** A registry row whose last fix is live GPS from the person's link: the same numbered pin in a pulsing blue ring. */
+export const liveHelpPinHtml = (priority: 1 | 2 | 3 | 4, color: string, fresh: boolean, done: boolean, selected: boolean) =>
+  `<div class="sk-live${fresh && !done ? " sk-live-on" : ""}${selected ? " sk-selected" : ""}"><div class="sk-help${fresh ? "" : " sk-stale"}${done ? " sk-done" : ""}" style="--c:${color};--t:${priority === 3 ? "#111827" : "#fff"}">${priority}</div><span class="sk-live-tag">GPS</span></div>`;
+
+/** The plain live-GPS dot (helper page): blue, pulsing while fresh. */
+export const liveDotHtml = (fresh: boolean) => `<div class="sk-live-dot${fresh ? " sk-live-on" : ""}"></div>`;
+
 export const countHtml = (color: string, text: string) => `<div class="sk-hex-count" style="--c:${color}">${esc(text)}</div>`;
 
 export const epHtml = () => `<div class="sk-ep">EP</div>`;

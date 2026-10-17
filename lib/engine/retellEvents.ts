@@ -2,7 +2,9 @@ import "server-only";
 import { db, nowIso, uid } from "@/lib/db";
 import type { Intent, Need, PrimaryIntent } from "@/lib/types";
 import { NEEDS, PRIMARY_INTENTS } from "@/lib/types";
+import { requestOrigin } from "@/lib/sms";
 import { answerCall, endCall, failCall } from "./calls";
+import { createShare } from "./locate";
 import { getMeta, setMeta } from "./log";
 import { upsertHelp } from "./registry";
 
@@ -86,7 +88,29 @@ export async function onRetellCallAnalyzed(callId: string, info: RetellAnalyzedI
         people: row.people, reason: "Retell post-call analysis: possible life safety", source: "stage1" });
     }
   }
+  await postCallShare(callId, custom);
   // The Claude post-call pass runs when the call ends (endCall); nothing else to do here.
+}
+
+const LINK_PURPOSES = new Set(["resident", "inbound", "qrt_callback"]);
+
+/**
+ * Live location, kept in step with the call: if the analysis heard a clear yes to the link but the agent never called
+ * share_live_location (a dropped tool call, a hang-up mid-turn), create the share and text the link now. createShare
+ * never makes a second one for the same call or while the person still has a link on.
+ */
+async function postCallShare(callId: string, custom: Record<string, unknown>) {
+  const v = custom.live_location_consent;
+  if (!(v === true || v === "true")) return;
+  const call = await db().get("calls", callId);
+  if (!call?.household_id || !LINK_PURPOSES.has(call.purpose)) return;
+  const h = await db().get("households", call.household_id);
+  if (!h) return;
+  const quote = typeof custom.live_location_quote === "string" && custom.live_location_quote.trim() ? custom.live_location_quote.trim() : "(a clear yes, from the post-call analysis)";
+  await createShare({
+    household: h, call, consent_quote: quote, consent_source: "post_call", synthetic: call.transport === "sim", actor: "system",
+    origin: await requestOrigin(),
+  });
 }
 
 /** Find our call id from a Retell call id (fallback when metadata is missing). */

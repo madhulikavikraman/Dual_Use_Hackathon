@@ -341,7 +341,7 @@ export default function DeviceSheet() {
           <div>
             <h2 className="font-semibold">Public line in the browser</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Anyone can call the line: pick a language and the agent answers. Same agent, same seven tools.
+              Anyone can call the line: pick a language and the agent answers. Same agent, same eight tools.
             </p>
             <p className="mt-1 break-all text-xs text-slate-500">{base}/call</p>
           </div>

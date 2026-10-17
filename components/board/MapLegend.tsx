@@ -131,6 +131,16 @@ export function MapLegend({ mode }: { mode: Mode }) {
             <Item
               mark={
                 <Swatch>
+                  <circle cx="8" cy="8" r="7.2" fill="#3b82f6" fillOpacity="0.15" stroke="#2563eb" strokeWidth="1.2" />
+                  <circle cx="8" cy="8" r="4" fill="#2563eb" stroke="#fff" strokeWidth="1.5" />
+                </Swatch>
+              }
+            >
+              Live GPS (circle: accuracy, team only)
+            </Item>
+            <Item
+              mark={
+                <Swatch>
                   <rect x="1" y="4" width="14" height="8" rx="1.5" fill="#15803d" />
                 </Swatch>
               }
