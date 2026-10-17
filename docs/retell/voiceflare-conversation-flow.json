@@ -1,0 +1,1793 @@
+{
+  "start_speaker": "agent",
+  "model_choice": {
+    "type": "cascading",
+    "model": "claude-5.5-haiku"
+  },
+  "model_temperature": 0.2,
+  "global_prompt": "You are the voice agent of an emergency information line run by the city's alert desk. You are on a live phone call.\n\n# Call\n- Purpose: {{purpose}} (stage {{stage}})\n- Speak only {{language}}. If the person speaks another language, answer in their language.\n- Person: {{person_name}}. Zone: {{zone_name}} ({{zone_state}}).\n- Approved directive for this zone, read exactly: \"{{directive_text}}\"\n- Approved route text, read exactly: \"{{move_text}}\"\n- Approved evacuation point: \"{{evac_point}}\"\n- Alert text (sentinel and canary calls): \"{{alert_text}}\"\n- Verification phrase: \"{{verification_phrase}}\". Official callback number: {{callback_number}}. Emergency number here: {{emergency_number}}.\n- Memory from earlier calls: {{memory_note}}\n- Collection on file (collections line): {{collection_note}}\n- Person we are asking about (linked-contact calls): {{subject_name}}\n- Simulated demonstration call: {{simulated}}\n\n# How to talk\n- Everything you write is spoken aloud to the person, word for word, by a voice. Write only the words they should hear. Never write notes to yourself, reminders of these rules, plans, or descriptions of what you are about to do (never \"Read the directive now\", \"Hindi only, per instructions\", \"Calling record_status\"). Never say a tool's name.\n- This is a phone call: one or two short sentences per turn, under 35 words. No lists, no markdown, no emojis.\n- Start every call with: the line's name, that this is an automated AI voice, the verification phrase, and, if simulated is \"true\", that this is a simulated call for a hackathon demonstration.\n- Before you record anything, confirm it back in one sentence (\"I heard you are leaving with two children for Westchester, is that right?\").\n- If the person sounds distressed, slow down: one instruction at a time, and offer a person (request_human with reason distress).\n\n# What you may say (the only instructions you can give)\n- You may tell the person to leave, prepare to leave, stay indoors, or move toward the evacuation point ONLY by reading the approved directive, route text and evacuation point above, exactly. If an approved text is in a different language from the call, translate it faithfully: add nothing, remove nothing, soften nothing.\n- If the person says they are somewhere else, call lookup_zone with that place and read what it returns, exactly. If it returns no zone, say you have no instructions for their location and a person will call them back (request_human, reason cannot_answer).\n- If a text above is empty, you have no instruction to give for it. Do not invent one.\n\n# What you must never do\n- Never say anything a human did not approve for the zone: no routes of your own, no ETAs, no description of the hazard beyond the approved text, no \"you are probably fine\", and no advice of your own (not even \"get ready\" or \"stay calm and pack\"). To close a call, thank them and say goodbye; repeat an approved text only if they ask.\n- Never say a zone is clear or that anyone is safe. Those are human words.\n- Never ask anyone to move toward a hazard or to go and look at it.\n- Never tell anyone in danger to wait. For a medical emergency, someone trapped, or fire at the house, say \"Hang up and call {{emergency_number}} now\", then call request_human with reason medical_emergency and urgency now.\n- Never tell a caller where another person is, or anything about another person.\n- Never ask for personal, financial or payment information.\n- Never pressure someone who refuses to leave; offer a person instead.\n- Never tell anyone to stay, wait, or go back to save belongings, art, books or records. Lives first.\n- If you are asked something you cannot answer from the approved text, or for something you may not give (an ETA, whether it is safe to stay, where a neighbor went), say \"I can't answer that; a person will call you back\" and call request_human with reason asked_unapproved and a short note of what was asked.\n- If the person doubts the call is real, repeat the verification phrase and the callback number, and call request_human with reason doubts_call.\n\n# Live location (so the response team can send a person to the exact spot)\n- Ask once, only when: the person needs help (you recorded needs_help_now or needs_help_leaving), or they are staying while the zone state is order, or a public-line caller needs help. Ask exactly: \"Can I text you a link that shares your phone's live location with the response team? It stays on only until help reaches you.\"\n- Call share_live_location only on a clear yes, with their own words as consent_quote. Then say the link is on its way, that they tap it and press Share, and that they can stop it at any time.\n- On a no, or anything that is not a clear yes: call record_status again with location_consent false, then ask where they are right now in their words and record it as location_text. Never ask about the link again on this call.\n- Never pressure anyone to share. Never tell someone who can leave to wait for a helper: the approved directive comes first. Never say when anyone will arrive, and never say a helper is coming; say only that the response team will have their location.\n- In a life-safety emergency, \"Hang up and call {{emergency_number}} now\" comes first. You may then ask the link question once, in the same turn; if they do not say yes at once, end the call.\n\n# This call runs as a flow\n- The call moves through steps. Each step's instruction says what to do now: do only that step, then stop and listen.\n- Every rule above applies in every step. Tools run at fixed steps; never say a tool's name.",
+  "tools": [
+    {
+      "type": "custom",
+      "name": "record_status",
+      "description": "Record what the person told you, after you have confirmed it back to them. Call once per person, and again only if an answer changes. Use null for anything not asked or not answered.",
+      "url": "{{APP_BASE_URL}}/api/retell/tools/record_status",
+      "method": "POST",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "leaving",
+              "staying",
+              "already_left",
+              "needs_help_leaving",
+              "needs_help_now",
+              "unclear",
+              "wrong_number",
+              "not_in_zone"
+            ],
+            "description": "needs_help_now = life safety (medical, trapped, fire at the house). needs_help_leaving = can leave only with help (wheelchair, oxygen, no car, children alone, pets)."
+          },
+          "understood": {
+            "type": "boolean",
+            "description": "Teach-back passed: the person repeated where they will go and by when (or the instruction) correctly."
+          },
+          "destination": {
+            "type": "string",
+            "description": "Where they will go, as they said it (e.g. 'Westchester Recreation Center')."
+          },
+          "people": {
+            "type": "integer",
+            "description": "People at the address including the speaker."
+          },
+          "needs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "wheelchair",
+                "walker",
+                "no_car",
+                "oxygen",
+                "powered_medical_device",
+                "dialysis",
+                "bedbound",
+                "children_alone",
+                "hearing",
+                "vision",
+                "cognitive",
+                "other"
+              ]
+            },
+            "description": "Access and functional needs mentioned. Empty array if none."
+          },
+          "device_battery_hours": {
+            "type": "number",
+            "description": "Hours of battery left on a powered medical device, if mentioned."
+          },
+          "animals": {
+            "type": "string",
+            "description": "Pets or animals mentioned, short (e.g. 'small dog')."
+          },
+          "location_text": {
+            "type": "string",
+            "description": "Where the person is right now, in their words (address, intersection, landmark)."
+          },
+          "location_consent": {
+            "type": "boolean",
+            "description": "The person agreed their location may be shared with the response team."
+          },
+          "can_leave": {
+            "type": "boolean",
+            "description": "Whether they can leave on their own."
+          },
+          "refusal_reason": {
+            "type": "string",
+            "description": "If staying, the reason they gave, short."
+          },
+          "memory_note": {
+            "type": "string",
+            "description": "One short fact worth remembering for the next call (e.g. 'oxygen concentrator is charged'). No diagnoses."
+          }
+        },
+        "required": [
+          "status",
+          "needs"
+        ]
+      },
+      "speak_during_execution": false,
+      "speak_after_execution": true,
+      "timeout_ms": 10000,
+      "max_retry": 0,
+      "tool_id": "tool_record_status"
+    },
+    {
+      "type": "custom",
+      "name": "report_hazard",
+      "description": "Record what a resident sees, only if they are safe or already leaving. Never ask anyone to go and look.",
+      "url": "{{APP_BASE_URL}}/api/retell/tools/report_hazard",
+      "method": "POST",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "seen": {
+            "type": "boolean",
+            "description": "They see a hazard."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "smoke",
+              "fire",
+              "shaking",
+              "damage",
+              "injury",
+              "flood",
+              "power",
+              "other"
+            ],
+            "description": "What they see."
+          },
+          "direction": {
+            "type": "string",
+            "description": "Direction from them, e.g. 'west'."
+          },
+          "distance": {
+            "type": "string",
+            "description": "Rough distance, e.g. 'two blocks'."
+          },
+          "location_text": {
+            "type": "string",
+            "description": "Where they are, if different from their address."
+          }
+        },
+        "required": [
+          "seen",
+          "type"
+        ]
+      },
+      "speak_during_execution": false,
+      "speak_after_execution": true,
+      "timeout_ms": 10000,
+      "max_retry": 0,
+      "tool_id": "tool_report_hazard"
+    },
+    {
+      "type": "custom",
+      "name": "request_human",
+      "description": "Hand the person to a human. Use for a medical emergency (after telling them to hang up and call the emergency number), for anything you cannot answer from the approved text, and whenever the person is confused, distressed, refuses, or doubts the call. Also use it when the person asks for something you are not allowed to give (an ETA, whether it is safe to stay, where another person is): describe the request in note. Someone who needs help to leave is recorded with record_status, not here. Collections line only: reason salvage logs a request for help moving the items on their grab list; it always ranks below every person.",
+      "url": "{{APP_BASE_URL}}/api/retell/tools/request_human",
+      "method": "POST",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "medical_emergency",
+              "cannot_answer",
+              "confusion",
+              "distress",
+              "refusal",
+              "doubts_call",
+              "asked_unapproved",
+              "salvage"
+            ],
+            "description": "Why a person is needed."
+          },
+          "urgency": {
+            "type": "string",
+            "enum": [
+              "now",
+              "soon",
+              "later"
+            ],
+            "description": "now = life safety."
+          },
+          "note": {
+            "type": "string",
+            "description": "Short: what they asked or need, e.g. 'asked for an ETA', 'asked if it is safe to stay'."
+          }
+        },
+        "required": [
+          "reason",
+          "urgency"
+        ]
+      },
+      "speak_during_execution": false,
+      "speak_after_execution": true,
+      "timeout_ms": 10000,
+      "max_retry": 0,
+      "tool_id": "tool_request_human"
+    },
+    {
+      "type": "custom",
+      "name": "end_call",
+      "description": "End the call after saying goodbye.",
+      "url": "{{APP_BASE_URL}}/api/retell/tools/end_call",
+      "method": "POST",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "wrong_person",
+              "voicemail",
+              "caller_hung_up",
+              "no_response"
+            ],
+            "description": "How the call ended."
+          }
+        },
+        "required": [
+          "outcome"
+        ]
+      },
+      "speak_during_execution": false,
+      "speak_after_execution": true,
+      "timeout_ms": 10000,
+      "max_retry": 0,
+      "tool_id": "tool_end_call"
+    },
+    {
+      "type": "custom",
+      "name": "lookup_zone",
+      "description": "When the person says they are somewhere other than their enrolled address, look up the zone for that place. Returns the zone and the directive a human approved for it, which you then read verbatim. If no zone is found, you have no instruction for them.",
+      "url": "{{APP_BASE_URL}}/api/retell/tools/lookup_zone",
+      "method": "POST",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "location_text": {
+            "type": "string",
+            "description": "The place in their words: address, intersection or landmark."
+          }
+        },
+        "required": [
+          "location_text"
+        ]
+      },
+      "speak_during_execution": true,
+      "execution_message_type": "prompt",
+      "execution_message_description": "One short sentence in the language of the call saying you are checking the instructions for that place.",
+      "speak_after_execution": true,
+      "timeout_ms": 20000,
+      "max_retry": 0,
+      "tool_id": "tool_lookup_zone"
+    },
+    {
+      "type": "custom",
+      "name": "read_observation",
+      "description": "Sentinel calls only: record whether what the person sees matches the alert you read.",
+      "url": "{{APP_BASE_URL}}/api/retell/tools/read_observation",
+      "method": "POST",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "sees": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no",
+              "unsure"
+            ],
+            "description": "Does the alert match what they see?"
+          },
+          "what": {
+            "type": "string",
+            "description": "What they see, short (e.g. 'smoke to the west')."
+          },
+          "direction": {
+            "type": "string",
+            "description": "Direction, if given."
+          }
+        },
+        "required": [
+          "sees"
+        ]
+      },
+      "speak_during_execution": false,
+      "speak_after_execution": true,
+      "timeout_ms": 10000,
+      "max_retry": 0,
+      "tool_id": "tool_read_observation"
+    },
+    {
+      "type": "custom",
+      "name": "received_alert",
+      "description": "Canary and test calls only: did they receive the alert (canary) or can they hear this call (test)?",
+      "url": "{{APP_BASE_URL}}/api/retell/tools/received_alert",
+      "method": "POST",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "received": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "description": "Their answer."
+          }
+        },
+        "required": [
+          "received"
+        ]
+      },
+      "speak_during_execution": false,
+      "speak_after_execution": true,
+      "timeout_ms": 10000,
+      "max_retry": 0,
+      "tool_id": "tool_received_alert"
+    },
+    {
+      "type": "custom",
+      "name": "share_live_location",
+      "description": "Text the person a link that shares their phone's live location with the response team until help reaches them. Call it ONLY after you asked \"Can I text you a link that shares your phone's live location with the response team? It stays on only until help reaches you.\" and the person clearly said yes. Never on a no, a maybe, silence, or a yes to something else. Call it at most once per call.",
+      "url": "{{APP_BASE_URL}}/api/retell/tools/share_live_location",
+      "method": "POST",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "consent_quote": {
+            "type": "string",
+            "description": "The person's own words saying yes, verbatim (e.g. 'Yes, send it')."
+          }
+        },
+        "required": [
+          "consent_quote"
+        ]
+      },
+      "speak_during_execution": false,
+      "speak_after_execution": true,
+      "timeout_ms": 15000,
+      "max_retry": 0,
+      "tool_id": "tool_share_live_location"
+    },
+    {
+      "type": "custom",
+      "name": "request_human_medical",
+      "description": "Hand the person to a human now: a medical emergency, someone trapped, fire at the house, or someone who cannot leave under an order. Call only after saying \"Hang up and call the emergency number now\". Reason and urgency are fixed; put what happened in note.",
+      "url": "{{APP_BASE_URL}}/api/retell/tools/request_human",
+      "method": "POST",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "const": "medical_emergency",
+            "description": "Always \"medical_emergency\"."
+          },
+          "urgency": {
+            "type": "string",
+            "const": "now",
+            "description": "Always \"now\"."
+          },
+          "note": {
+            "type": "string",
+            "description": "Short: what they asked or need, e.g. 'asked for an ETA', 'asked if it is safe to stay'."
+          }
+        },
+        "required": [
+          "reason",
+          "urgency"
+        ]
+      },
+      "speak_during_execution": false,
+      "speak_after_execution": true,
+      "timeout_ms": 10000,
+      "max_retry": 0,
+      "tool_id": "tool_request_human_medical"
+    },
+    {
+      "type": "custom",
+      "name": "request_human_cannot_answer",
+      "description": "Hand the person to a human because there is no approved instruction for where they are. The reason is fixed; put the place they named in note.",
+      "url": "{{APP_BASE_URL}}/api/retell/tools/request_human",
+      "method": "POST",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "const": "cannot_answer",
+            "description": "Always \"cannot_answer\"."
+          },
+          "urgency": {
+            "type": "string",
+            "enum": [
+              "now",
+              "soon",
+              "later"
+            ],
+            "description": "now = life safety."
+          },
+          "note": {
+            "type": "string",
+            "description": "Short: what they asked or need, e.g. 'asked for an ETA', 'asked if it is safe to stay'."
+          }
+        },
+        "required": [
+          "reason",
+          "urgency"
+        ]
+      },
+      "speak_during_execution": false,
+      "speak_after_execution": true,
+      "timeout_ms": 10000,
+      "max_retry": 0,
+      "tool_id": "tool_request_human_cannot_answer"
+    },
+    {
+      "type": "custom",
+      "name": "request_human_salvage",
+      "description": "Collections line only: log a request for help moving the items on their grab list. It always ranks below every person. The reason is fixed; put what and where in note.",
+      "url": "{{APP_BASE_URL}}/api/retell/tools/request_human",
+      "method": "POST",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "const": "salvage",
+            "description": "Always \"salvage\"."
+          },
+          "urgency": {
+            "type": "string",
+            "enum": [
+              "now",
+              "soon",
+              "later"
+            ],
+            "description": "now = life safety."
+          },
+          "note": {
+            "type": "string",
+            "description": "Short: what they asked or need, e.g. 'asked for an ETA', 'asked if it is safe to stay'."
+          }
+        },
+        "required": [
+          "reason",
+          "urgency"
+        ]
+      },
+      "speak_during_execution": false,
+      "speak_after_execution": true,
+      "timeout_ms": 10000,
+      "max_retry": 0,
+      "tool_id": "tool_request_human_salvage"
+    }
+  ],
+  "start_node_id": "greeting",
+  "default_dynamic_variables": {
+    "purpose": "inbound",
+    "stage": "inbound",
+    "language": "the caller's language",
+    "person_name": "(none)",
+    "zone_name": "(none)",
+    "zone_state": "(none)",
+    "directive_text": "(none)",
+    "move_text": "(none)",
+    "evac_point": "(none)",
+    "alert_text": "(none)",
+    "verification_phrase": "blue heron",
+    "callback_number": "(213) 555-0142",
+    "emergency_number": "(none)",
+    "memory_note": "(none)",
+    "collection_note": "(none)",
+    "subject_name": "(none)",
+    "simulated": "true"
+  },
+  "begin_tag_display_position": {
+    "x": 1420,
+    "y": 0
+  },
+  "notes": [
+    {
+      "id": "note_about",
+      "content": "VoiceFlare (simulated hackathon demo). The agent reads only words a named human approved for the zone: no ETAs, never \"you are safe\". Generated by scripts/retell-export.ts from lib/agent/prompt.ts, lib/agent/tools.ts and lib/retell/config.ts. Change the code, then re-run the export.",
+      "display_position": {
+        "x": 4200,
+        "y": 0
+      },
+      "size": {
+        "width": 380,
+        "height": 200
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "greeting",
+      "name": "👋 Greeting: verification phrase and callback number",
+      "type": "conversation",
+      "display_position": {
+        "x": 1680,
+        "y": 0
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Open the call in {{language}}, in two short sentences at most. Say: this is the emergency information line; you are an automated AI voice; the verification phrase is \"{{verification_phrase}}\"; the official callback number is {{callback_number}}. If simulated is \"true\" (it is \"{{simulated}}\"), also say this is a simulated call for a hackathon demonstration. Do not read any directive yet and do not ask a question yet."
+      },
+      "skip_response_edge": {
+        "id": "edge_1",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Skip response"
+        },
+        "destination_node_id": "route_purpose"
+      }
+    },
+    {
+      "id": "route_purpose",
+      "name": "🔀 Call purpose",
+      "type": "branch",
+      "display_position": {
+        "x": 1680,
+        "y": 240
+      },
+      "edges": [
+        {
+          "id": "edge_2",
+          "transition_condition": {
+            "type": "equation",
+            "equations": [
+              {
+                "left": "{{purpose}}",
+                "operator": "==",
+                "right": "resident"
+              },
+              {
+                "left": "{{stage}}",
+                "operator": "==",
+                "right": "2"
+              }
+            ],
+            "operator": "&&"
+          },
+          "destination_node_id": "ask_status"
+        },
+        {
+          "id": "edge_3",
+          "transition_condition": {
+            "type": "equation",
+            "equations": [
+              {
+                "left": "{{purpose}}",
+                "operator": "==",
+                "right": "resident"
+              }
+            ],
+            "operator": "||"
+          },
+          "destination_node_id": "resident_directive"
+        },
+        {
+          "id": "edge_4",
+          "transition_condition": {
+            "type": "equation",
+            "equations": [
+              {
+                "left": "{{purpose}}",
+                "operator": "==",
+                "right": "inbound"
+              }
+            ],
+            "operator": "||"
+          },
+          "destination_node_id": "inbound_where"
+        },
+        {
+          "id": "edge_5",
+          "transition_condition": {
+            "type": "equation",
+            "equations": [
+              {
+                "left": "{{purpose}}",
+                "operator": "==",
+                "right": "qrt_callback"
+              }
+            ],
+            "operator": "||"
+          },
+          "destination_node_id": "qrt_callback"
+        },
+        {
+          "id": "edge_6",
+          "transition_condition": {
+            "type": "equation",
+            "equations": [
+              {
+                "left": "{{purpose}}",
+                "operator": "==",
+                "right": "linked_contact"
+              }
+            ],
+            "operator": "||"
+          },
+          "destination_node_id": "linked_contact"
+        },
+        {
+          "id": "edge_7",
+          "transition_condition": {
+            "type": "equation",
+            "equations": [
+              {
+                "left": "{{purpose}}",
+                "operator": "==",
+                "right": "sentinel"
+              }
+            ],
+            "operator": "||"
+          },
+          "destination_node_id": "sentinel"
+        },
+        {
+          "id": "edge_8",
+          "transition_condition": {
+            "type": "equation",
+            "equations": [
+              {
+                "left": "{{purpose}}",
+                "operator": "==",
+                "right": "canary"
+              }
+            ],
+            "operator": "||"
+          },
+          "destination_node_id": "canary"
+        },
+        {
+          "id": "edge_9",
+          "transition_condition": {
+            "type": "equation",
+            "equations": [
+              {
+                "left": "{{purpose}}",
+                "operator": "==",
+                "right": "test"
+              }
+            ],
+            "operator": "||"
+          },
+          "destination_node_id": "test_call"
+        }
+      ],
+      "else_edge": {
+        "id": "edge_10",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "script_fallback"
+      }
+    },
+    {
+      "id": "resident_directive",
+      "name": "📢 Read the approved directive, word for word",
+      "type": "conversation",
+      "display_position": {
+        "x": 840,
+        "y": 480
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Read the approved texts for this zone now, exactly as written, in this order: the directive \"{{directive_text}}\", the route text \"{{move_text}}\", the evacuation point \"{{evac_point}}\". Skip any that is (none). If the call's language differs from a text, translate it faithfully: add nothing, remove nothing, soften nothing. Say nothing else: no advice, no time estimate, nothing about the hazard beyond the text. Do not ask a question yet.\n\nThe script for this call type (same as the single-prompt agent):\n- resident, stage 1 (warning): in your first turn, right after the greeting, read all three approved texts in this order: the directive, the route text, the evacuation point. Then ask three things, one at a time: are they leaving, staying, or already gone; does anyone at the address need help to leave; where are they right now, and may their location be shared with the response team. Use the memory note to ask one caring question if it is relevant. Confirm, call record_status, then the teach-back: \"Where will you go, and by when?\" Set understood true only if they repeat it correctly (call record_status again with understood). If they are safe or leaving, you may ask if they see smoke or fire nearby and call report_hazard. If a collection is on file, ask once, last: \"Do you need help moving the items on your list while there is still time?\" If yes, call request_human with reason salvage and a short note of what and where; say leaving on time comes first, and never promise anyone will come. Then say goodbye and call end_call.\n- resident, stage 2 (check): \"Have you left? Do you need help leaving? Is anyone with you?\" Confirm, record_status, end_call.\n- resident, stage 3 (order): read the directive (it is an order), the route text and the evacuation point. Ask if they are leaving now. If they cannot leave, say \"Hang up and call {{emergency_number}} now\", record status needs_help_now with can_leave false, and call request_human (medical_emergency or refusal as fits, urgency now). Never offer help with a collection under an order; if they ask about it, say leaving now comes first and a team may contact them after the fire (request_human with reason salvage logs that). End the call.\n- resident, shelter: read the directive. Ask if anyone is hurt or trapped and where they are. Record, end.\n- resident, watch: read the directive (an advisory). Ask if anyone at the address would need help to leave if that changes. Record, end."
+      },
+      "skip_response_edge": {
+        "id": "edge_11",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Skip response"
+        },
+        "destination_node_id": "ask_status"
+      }
+    },
+    {
+      "id": "ask_status",
+      "name": "❓ Status question",
+      "type": "conversation",
+      "display_position": {
+        "x": 840,
+        "y": 720
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Ask one short question for this call's stage, then listen. The stage is {{stage}}.\n- Warning (stage 1) or a public-line caller: \"Are you leaving, staying, or already gone?\"\n- Check-in (stage 2): \"Have you left?\"\n- Order (stage 3): \"Are you leaving now?\"\n- Shelter: \"Is anyone hurt or trapped?\"\n- Watch: \"Would anyone at the address need help to leave if that changes?\"\nIf they ask something, answer only from the approved texts, then ask again."
+      },
+      "edges": [
+        {
+          "id": "edge_12",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person says they are somewhere other than their home address (they name an address, intersection or landmark)"
+          },
+          "destination_node_id": "lookup_zone_fn"
+        },
+        {
+          "id": "edge_13",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person answered the question"
+          },
+          "destination_node_id": "ask_needs"
+        }
+      ]
+    },
+    {
+      "id": "ask_needs",
+      "name": "♿ Needs and people",
+      "type": "conversation",
+      "display_position": {
+        "x": 840,
+        "y": 960
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Ask what is still missing, one question at a time:\n- unless the stage is shelter or watch: does anyone at the address need help to leave (for example a wheelchair, oxygen, no car, children alone, pets), and how many people are there;\n- unless the stage is watch: where they are right now, in their words.\nUse the memory note ({{memory_note}}) for one caring question if it is relevant. Then confirm everything back in one sentence, for example \"I heard you are leaving with two children for Westchester, is that right?\""
+      },
+      "edges": [
+        {
+          "id": "edge_14",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person confirmed the summary is right"
+          },
+          "destination_node_id": "record_status_fn"
+        }
+      ]
+    },
+    {
+      "id": "record_status_fn",
+      "name": "📝 record_status",
+      "type": "function",
+      "display_position": {
+        "x": 840,
+        "y": 1200
+      },
+      "tool_id": "tool_record_status",
+      "tool_type": "local",
+      "wait_for_result": true,
+      "speak_during_execution": false,
+      "edges": [
+        {
+          "id": "edge_15",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person needs help now or needs help to leave, or is staying while the zone state ({{zone_state}}) is order"
+          },
+          "destination_node_id": "location_consent"
+        }
+      ],
+      "else_edge": {
+        "id": "edge_16",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "after_record_split"
+      }
+    },
+    {
+      "id": "after_record_split",
+      "name": "🔀 Warning call or public line?",
+      "type": "branch",
+      "display_position": {
+        "x": 840,
+        "y": 1440
+      },
+      "edges": [
+        {
+          "id": "edge_17",
+          "transition_condition": {
+            "type": "equation",
+            "equations": [
+              {
+                "left": "{{stage}}",
+                "operator": "==",
+                "right": "1"
+              },
+              {
+                "left": "{{purpose}}",
+                "operator": "==",
+                "right": "inbound"
+              }
+            ],
+            "operator": "||"
+          },
+          "destination_node_id": "teach_back"
+        }
+      ],
+      "else_edge": {
+        "id": "edge_18",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "closing"
+      }
+    },
+    {
+      "id": "teach_back",
+      "name": "🔁 Teach-back",
+      "type": "conversation",
+      "display_position": {
+        "x": 840,
+        "y": 1680
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Ask: \"Where will you go, and by when?\" Then listen."
+      },
+      "edges": [
+        {
+          "id": "edge_19",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person answered"
+          },
+          "destination_node_id": "teach_back_fn"
+        }
+      ]
+    },
+    {
+      "id": "teach_back_fn",
+      "name": "📝 record_status (understood)",
+      "type": "function",
+      "display_position": {
+        "x": 840,
+        "y": 1920
+      },
+      "tool_id": "tool_record_status",
+      "tool_type": "local",
+      "wait_for_result": true,
+      "speak_during_execution": false,
+      "else_edge": {
+        "id": "edge_20",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "hazard_question"
+      }
+    },
+    {
+      "id": "hazard_question",
+      "name": "🔥 Do you see smoke or fire?",
+      "type": "conversation",
+      "display_position": {
+        "x": 840,
+        "y": 2160
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "They are leaving or already safe, so ask once: \"Do you see smoke or fire near you?\" Never ask anyone to go and look."
+      },
+      "edges": [
+        {
+          "id": "edge_21",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person says they see smoke, fire, damage or injury"
+          },
+          "destination_node_id": "hazard_fn"
+        }
+      ],
+      "else_edge": {
+        "id": "edge_22",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "collection_split"
+      }
+    },
+    {
+      "id": "hazard_fn",
+      "name": "📝 report_hazard",
+      "type": "function",
+      "display_position": {
+        "x": 420,
+        "y": 2400
+      },
+      "tool_id": "tool_report_hazard",
+      "tool_type": "local",
+      "wait_for_result": true,
+      "speak_during_execution": false,
+      "else_edge": {
+        "id": "edge_23",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "collection_split"
+      }
+    },
+    {
+      "id": "collection_split",
+      "name": "🔀 Collection on file?",
+      "type": "branch",
+      "display_position": {
+        "x": 840,
+        "y": 2400
+      },
+      "edges": [
+        {
+          "id": "edge_24",
+          "transition_condition": {
+            "type": "equation",
+            "equations": [
+              {
+                "left": "{{collection_note}}",
+                "operator": "!=",
+                "right": "(none)"
+              }
+            ],
+            "operator": "&&"
+          },
+          "destination_node_id": "collection_offer"
+        }
+      ],
+      "else_edge": {
+        "id": "edge_25",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "closing"
+      }
+    },
+    {
+      "id": "collection_offer",
+      "name": "🖼️ Collections line (asked once, last)",
+      "type": "conversation",
+      "display_position": {
+        "x": 840,
+        "y": 2640
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "A collection is on file: {{collection_note}}. Ask once: \"Do you need help moving the items on your list while there is still time?\" Never promise anyone will come."
+      },
+      "edges": [
+        {
+          "id": "edge_26",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person said yes"
+          },
+          "destination_node_id": "salvage_fn"
+        }
+      ],
+      "else_edge": {
+        "id": "edge_27",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "closing"
+      }
+    },
+    {
+      "id": "salvage_fn",
+      "name": "🙋 request_human (salvage)",
+      "type": "function",
+      "display_position": {
+        "x": 420,
+        "y": 2880
+      },
+      "tool_id": "tool_request_human_salvage",
+      "tool_type": "local",
+      "wait_for_result": true,
+      "speak_during_execution": false,
+      "else_edge": {
+        "id": "edge_28",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "closing"
+      }
+    },
+    {
+      "id": "location_consent",
+      "name": "📍 Live-location consent question",
+      "type": "conversation",
+      "display_position": {
+        "x": 1260,
+        "y": 1440
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Ask exactly once, translated faithfully if needed: \"Can I text you a link that shares your phone's live location with the response team? It stays on only until help reaches you.\" Never pressure them."
+      },
+      "edges": [
+        {
+          "id": "edge_29",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person clearly said yes to the text link"
+          },
+          "destination_node_id": "share_location_fn"
+        }
+      ],
+      "else_edge": {
+        "id": "edge_30",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "location_declined"
+      }
+    },
+    {
+      "id": "share_location_fn",
+      "name": "📲 share_live_location",
+      "type": "function",
+      "display_position": {
+        "x": 1260,
+        "y": 1680
+      },
+      "tool_id": "tool_share_live_location",
+      "tool_type": "local",
+      "wait_for_result": true,
+      "speak_during_execution": false,
+      "else_edge": {
+        "id": "edge_31",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "location_link_sent"
+      }
+    },
+    {
+      "id": "location_link_sent",
+      "name": "📲 Explain the link",
+      "type": "conversation",
+      "display_position": {
+        "x": 1260,
+        "y": 1920
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Say what the result says, in one or two short sentences. Link sent: it is on its way; they tap it and press Share; it stays on only until help reaches them; they can stop it at any time. A link already on: they can use the link they have. Nothing sent: ask where they are right now, in their words. Never say when anyone will arrive and never say a helper is coming; say only that the response team will have their location."
+      },
+      "edges": [
+        {
+          "id": "edge_32",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "No link was sent and the person said where they are"
+          },
+          "destination_node_id": "record_location_fn"
+        }
+      ],
+      "else_edge": {
+        "id": "edge_33",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "closing"
+      }
+    },
+    {
+      "id": "location_declined",
+      "name": "📍 No link: where are you?",
+      "type": "conversation",
+      "display_position": {
+        "x": 1680,
+        "y": 1680
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Say that is fine. Ask where they are right now, in their words. Never ask about the link again on this call."
+      },
+      "edges": [
+        {
+          "id": "edge_34",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person said where they are, or would not say"
+          },
+          "destination_node_id": "record_location_fn"
+        }
+      ]
+    },
+    {
+      "id": "record_location_fn",
+      "name": "📝 record_status (location)",
+      "type": "function",
+      "display_position": {
+        "x": 1680,
+        "y": 1920
+      },
+      "tool_id": "tool_record_status",
+      "tool_type": "local",
+      "wait_for_result": true,
+      "speak_during_execution": false,
+      "else_edge": {
+        "id": "edge_35",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "closing"
+      }
+    },
+    {
+      "id": "inbound_where",
+      "name": "📞 Public line: where are you?",
+      "type": "conversation",
+      "display_position": {
+        "x": 0,
+        "y": 480
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Ask where they are right now: an address, an intersection or a landmark.\n\nThe script for this call type (same as the single-prompt agent):\n- inbound: ask where they are right now, call lookup_zone, read the approved directive it returns exactly, then follow the stage 1 questions. If they want to report something they see and they are safe, use report_hazard."
+      },
+      "edges": [
+        {
+          "id": "edge_36",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person said where they are"
+          },
+          "destination_node_id": "lookup_zone_fn"
+        }
+      ]
+    },
+    {
+      "id": "lookup_zone_fn",
+      "name": "🗺️ lookup_zone",
+      "type": "function",
+      "display_position": {
+        "x": 0,
+        "y": 720
+      },
+      "tool_id": "tool_lookup_zone",
+      "tool_type": "local",
+      "wait_for_result": true,
+      "speak_during_execution": true,
+      "instruction": {
+        "type": "prompt",
+        "text": "One short sentence in the language of the call saying you are checking the instructions for that place."
+      },
+      "edges": [
+        {
+          "id": "edge_37",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The result names a zone and gives a directive to read"
+          },
+          "destination_node_id": "read_lookup_result"
+        },
+        {
+          "id": "edge_38",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The result says it could not find that place"
+          },
+          "destination_node_id": "ask_landmark"
+        }
+      ],
+      "else_edge": {
+        "id": "edge_39",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "no_instruction_fn"
+      }
+    },
+    {
+      "id": "ask_landmark",
+      "name": "🗺️ Ask once for a landmark",
+      "type": "conversation",
+      "display_position": {
+        "x": 0,
+        "y": 960
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Say you could not find that place. Ask once for a nearby intersection or landmark."
+      },
+      "edges": [
+        {
+          "id": "edge_40",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person named a place"
+          },
+          "destination_node_id": "lookup_zone_retry_fn"
+        }
+      ],
+      "else_edge": {
+        "id": "edge_41",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "no_instruction_fn"
+      }
+    },
+    {
+      "id": "lookup_zone_retry_fn",
+      "name": "🗺️ lookup_zone (second try)",
+      "type": "function",
+      "display_position": {
+        "x": 0,
+        "y": 1200
+      },
+      "tool_id": "tool_lookup_zone",
+      "tool_type": "local",
+      "wait_for_result": true,
+      "speak_during_execution": true,
+      "instruction": {
+        "type": "prompt",
+        "text": "One short sentence in the language of the call saying you are checking the instructions for that place."
+      },
+      "edges": [
+        {
+          "id": "edge_42",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The result names a zone and gives a directive to read"
+          },
+          "destination_node_id": "read_lookup_result"
+        }
+      ],
+      "else_edge": {
+        "id": "edge_43",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "no_instruction_fn"
+      }
+    },
+    {
+      "id": "read_lookup_result",
+      "name": "📢 Read the directive for that place",
+      "type": "conversation",
+      "display_position": {
+        "x": 420,
+        "y": 960
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Read exactly what the lookup returned for that place, in this order: the directive, the route, the evacuation point. Skip any that is (none). Translate faithfully if needed; add nothing. Do not ask a question yet."
+      },
+      "skip_response_edge": {
+        "id": "edge_44",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Skip response"
+        },
+        "destination_node_id": "ask_status"
+      }
+    },
+    {
+      "id": "no_instruction_fn",
+      "name": "🙋 request_human (no instruction)",
+      "type": "function",
+      "display_position": {
+        "x": 0,
+        "y": 1440
+      },
+      "tool_id": "tool_request_human_cannot_answer",
+      "tool_type": "local",
+      "wait_for_result": true,
+      "speak_during_execution": true,
+      "instruction": {
+        "type": "prompt",
+        "text": "Say, in the language of the call, that you have no instructions for their location and a person will call them back."
+      },
+      "else_edge": {
+        "id": "edge_45",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "closing"
+      }
+    },
+    {
+      "id": "qrt_callback",
+      "name": "🚑 Response-team callback",
+      "type": "conversation",
+      "display_position": {
+        "x": 1260,
+        "y": 480
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Say you are calling back from the response team about their request for help. Ask, one at a time: is it the same; how many people are with them; where are they right now. Then confirm back in one sentence.\n\nThe script for this call type (same as the single-prompt agent):\n- qrt_callback: say you are calling back from the response team about their request for help. Ask if it is the same, how many people, and where they are right now. Confirm, record_status, end."
+      },
+      "edges": [
+        {
+          "id": "edge_46",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person confirmed the summary is right"
+          },
+          "destination_node_id": "record_status_fn"
+        }
+      ]
+    },
+    {
+      "id": "linked_contact",
+      "name": "👪 Linked contact",
+      "type": "conversation",
+      "display_position": {
+        "x": 2100,
+        "y": 480
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Say you are calling because {{subject_name}} did not answer. Ask whether they have heard from {{subject_name}}, whether they are leaving, and whether they need help. Never say where {{subject_name}} is, or anything else about them. Then confirm back in one sentence.\n\nThe script for this call type (same as the single-prompt agent):\n- linked_contact: say you are calling because {{subject_name}} did not answer. Ask whether they have heard from them, whether they are leaving, and whether they need help. Call record_status about {{subject_name}} (not about the speaker). Never say where {{subject_name}} is. End."
+      },
+      "edges": [
+        {
+          "id": "edge_47",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person confirmed the summary is right"
+          },
+          "destination_node_id": "linked_record_fn"
+        }
+      ]
+    },
+    {
+      "id": "linked_record_fn",
+      "name": "📝 record_status (about the subject)",
+      "type": "function",
+      "display_position": {
+        "x": 2100,
+        "y": 720
+      },
+      "tool_id": "tool_record_status",
+      "tool_type": "local",
+      "wait_for_result": true,
+      "speak_during_execution": false,
+      "else_edge": {
+        "id": "edge_48",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "closing"
+      }
+    },
+    {
+      "id": "sentinel",
+      "name": "👀 Sentinel: does this match what you see?",
+      "type": "conversation",
+      "display_position": {
+        "x": 2520,
+        "y": 480
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Read the alert text exactly: \"{{alert_text}}\". Then ask: \"Does this match what you see? Yes, no, or not sure. What do you see, and in which direction?\" Do not tell them to do anything.\n\nThe script for this call type (same as the single-prompt agent):\n- sentinel: read the alert text exactly, then ask: \"Does this match what you see? Yes, no, or not sure. What do you see, and in which direction?\" Call read_observation with their answer. Thank them and end the call. Do not tell them to do anything."
+      },
+      "edges": [
+        {
+          "id": "edge_49",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person answered"
+          },
+          "destination_node_id": "sentinel_fn"
+        }
+      ]
+    },
+    {
+      "id": "sentinel_fn",
+      "name": "📝 read_observation",
+      "type": "function",
+      "display_position": {
+        "x": 2520,
+        "y": 720
+      },
+      "tool_id": "tool_read_observation",
+      "tool_type": "local",
+      "wait_for_result": true,
+      "speak_during_execution": false,
+      "else_edge": {
+        "id": "edge_50",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "closing"
+      }
+    },
+    {
+      "id": "canary",
+      "name": "🐤 Canary: did the alert arrive?",
+      "type": "conversation",
+      "display_position": {
+        "x": 2940,
+        "y": 480
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Do not read the alert. Ask: \"Did you receive an emergency alert on your phone in the last minute? Yes or no.\"\n\nThe script for this call type (same as the single-prompt agent):\n- canary: do not read the alert. Ask: \"Did you receive an emergency alert on your phone in the last minute? Yes or no.\" Call received_alert, thank them, end the call."
+      },
+      "edges": [
+        {
+          "id": "edge_51",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person answered yes or no"
+          },
+          "destination_node_id": "canary_fn"
+        }
+      ]
+    },
+    {
+      "id": "canary_fn",
+      "name": "📝 received_alert",
+      "type": "function",
+      "display_position": {
+        "x": 2940,
+        "y": 720
+      },
+      "tool_id": "tool_received_alert",
+      "tool_type": "local",
+      "wait_for_result": true,
+      "speak_during_execution": false,
+      "else_edge": {
+        "id": "edge_52",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "closing"
+      }
+    },
+    {
+      "id": "test_call",
+      "name": "🧪 Monthly test",
+      "type": "conversation",
+      "display_position": {
+        "x": 3360,
+        "y": 480
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Say this is the monthly test of the line. Ask them to say yes if they can hear this.\n\nThe script for this call type (same as the single-prompt agent):\n- test: say this is the monthly test of the line. Ask them to say yes if they can hear this. Call received_alert with yes or no, thank them, end."
+      },
+      "edges": [
+        {
+          "id": "edge_53",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person answered"
+          },
+          "destination_node_id": "test_fn"
+        }
+      ]
+    },
+    {
+      "id": "test_fn",
+      "name": "📝 received_alert (test)",
+      "type": "function",
+      "display_position": {
+        "x": 3360,
+        "y": 720
+      },
+      "tool_id": "tool_received_alert",
+      "tool_type": "local",
+      "wait_for_result": true,
+      "speak_during_execution": false,
+      "else_edge": {
+        "id": "edge_54",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "closing"
+      }
+    },
+    {
+      "id": "script_fallback",
+      "name": "📜 Any other purpose: follow its script",
+      "type": "subagent",
+      "display_position": {
+        "x": 3780,
+        "y": 480
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "This call's purpose is {{purpose}} (stage {{stage}}). Follow the script for that purpose below, exactly, using the tools it names. Do not end the call yourself; when the script is done, stop.\n\n# Scripts by purpose\n- resident, stage 1 (warning): in your first turn, right after the greeting, read all three approved texts in this order: the directive, the route text, the evacuation point. Then ask three things, one at a time: are they leaving, staying, or already gone; does anyone at the address need help to leave; where are they right now, and may their location be shared with the response team. Use the memory note to ask one caring question if it is relevant. Confirm, call record_status, then the teach-back: \"Where will you go, and by when?\" Set understood true only if they repeat it correctly (call record_status again with understood). If they are safe or leaving, you may ask if they see smoke or fire nearby and call report_hazard. If a collection is on file, ask once, last: \"Do you need help moving the items on your list while there is still time?\" If yes, call request_human with reason salvage and a short note of what and where; say leaving on time comes first, and never promise anyone will come. Then say goodbye and call end_call.\n- resident, stage 2 (check): \"Have you left? Do you need help leaving? Is anyone with you?\" Confirm, record_status, end_call.\n- resident, stage 3 (order): read the directive (it is an order), the route text and the evacuation point. Ask if they are leaving now. If they cannot leave, say \"Hang up and call {{emergency_number}} now\", record status needs_help_now with can_leave false, and call request_human (medical_emergency or refusal as fits, urgency now). Never offer help with a collection under an order; if they ask about it, say leaving now comes first and a team may contact them after the fire (request_human with reason salvage logs that). End the call.\n- resident, shelter: read the directive. Ask if anyone is hurt or trapped and where they are. Record, end.\n- resident, watch: read the directive (an advisory). Ask if anyone at the address would need help to leave if that changes. Record, end.\n- linked_contact: say you are calling because {{subject_name}} did not answer. Ask whether they have heard from them, whether they are leaving, and whether they need help. Call record_status about {{subject_name}} (not about the speaker). Never say where {{subject_name}} is. End.\n- sentinel: read the alert text exactly, then ask: \"Does this match what you see? Yes, no, or not sure. What do you see, and in which direction?\" Call read_observation with their answer. Thank them and end the call. Do not tell them to do anything.\n- canary: do not read the alert. Ask: \"Did you receive an emergency alert on your phone in the last minute? Yes or no.\" Call received_alert, thank them, end the call.\n- inbound: ask where they are right now, call lookup_zone, read the approved directive it returns exactly, then follow the stage 1 questions. If they want to report something they see and they are safe, use report_hazard.\n- qrt_callback: say you are calling back from the response team about their request for help. Ask if it is the same, how many people, and where they are right now. Confirm, record_status, end.\n- test: say this is the monthly test of the line. Ask them to say yes if they can hear this. Call received_alert with yes or no, thank them, end."
+      },
+      "tool_ids": [
+        "tool_record_status",
+        "tool_report_hazard",
+        "tool_request_human",
+        "tool_lookup_zone",
+        "tool_read_observation",
+        "tool_received_alert",
+        "tool_share_live_location"
+      ],
+      "edges": [
+        {
+          "id": "edge_55",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The script for this call is finished"
+          },
+          "destination_node_id": "closing"
+        }
+      ]
+    },
+    {
+      "id": "closing",
+      "name": "🙏 Thank you and goodbye",
+      "type": "conversation",
+      "display_position": {
+        "x": 2100,
+        "y": 2880
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Thank them and say goodbye in one or two short sentences. If they asked for help with their collection, say that leaving on time comes first; never promise anyone will come. Repeat an approved text only if they ask. Add no advice of your own."
+      },
+      "skip_response_edge": {
+        "id": "edge_56",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Skip response"
+        },
+        "destination_node_id": "end_call_fn"
+      }
+    },
+    {
+      "id": "end_call_fn",
+      "name": "📝 end_call (records the outcome)",
+      "type": "function",
+      "display_position": {
+        "x": 2100,
+        "y": 3120
+      },
+      "tool_id": "tool_end_call",
+      "tool_type": "local",
+      "wait_for_result": true,
+      "speak_during_execution": false,
+      "else_edge": {
+        "id": "edge_57",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "end"
+      }
+    },
+    {
+      "id": "end",
+      "name": "📴 Hang up",
+      "type": "end",
+      "display_position": {
+        "x": 2100,
+        "y": 3360
+      }
+    },
+    {
+      "id": "g_medical",
+      "name": "🚨 Medical emergency: hang up and call now",
+      "type": "function",
+      "display_position": {
+        "x": 2940,
+        "y": 1440
+      },
+      "tool_id": "tool_request_human_medical",
+      "tool_type": "local",
+      "wait_for_result": true,
+      "speak_during_execution": true,
+      "instruction": {
+        "type": "prompt",
+        "text": "Say exactly, translated faithfully into the language of the call: \"Hang up and call {{emergency_number}} now.\""
+      },
+      "else_edge": {
+        "id": "edge_58",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "medical_split"
+      },
+      "global_node_setting": {
+        "condition": {
+          "type": "prompt",
+          "prompt": "The person describes a medical emergency, someone trapped, or fire at the house, or, under an order, says they cannot leave"
+        }
+      }
+    },
+    {
+      "id": "medical_split",
+      "name": "🔀 Can this call share a location?",
+      "type": "branch",
+      "display_position": {
+        "x": 2940,
+        "y": 1680
+      },
+      "edges": [
+        {
+          "id": "edge_59",
+          "transition_condition": {
+            "type": "equation",
+            "equations": [
+              {
+                "left": "{{purpose}}",
+                "operator": "==",
+                "right": "resident"
+              },
+              {
+                "left": "{{purpose}}",
+                "operator": "==",
+                "right": "inbound"
+              },
+              {
+                "left": "{{purpose}}",
+                "operator": "==",
+                "right": "qrt_callback"
+              }
+            ],
+            "operator": "||"
+          },
+          "destination_node_id": "medical_record_fn"
+        }
+      ],
+      "else_edge": {
+        "id": "edge_60",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "closing"
+      }
+    },
+    {
+      "id": "medical_record_fn",
+      "name": "📝 record_status (life safety)",
+      "type": "function",
+      "display_position": {
+        "x": 2940,
+        "y": 1920
+      },
+      "tool_id": "tool_record_status",
+      "tool_type": "local",
+      "wait_for_result": true,
+      "speak_during_execution": false,
+      "else_edge": {
+        "id": "edge_61",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "medical_link_offer"
+      }
+    },
+    {
+      "id": "medical_link_offer",
+      "name": "📍 Offer the link once",
+      "type": "conversation",
+      "display_position": {
+        "x": 2940,
+        "y": 2160
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Ask once, exactly: \"Can I text you a link that shares your phone's live location with the response team? It stays on only until help reaches you.\" If they do not clearly say yes at once, the call ends."
+      },
+      "edges": [
+        {
+          "id": "edge_62",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person clearly said yes to the text link"
+          },
+          "destination_node_id": "share_location_fn"
+        }
+      ],
+      "else_edge": {
+        "id": "edge_63",
+        "transition_condition": {
+          "type": "prompt",
+          "prompt": "Else"
+        },
+        "destination_node_id": "closing"
+      }
+    },
+    {
+      "id": "g_unapproved",
+      "name": "🚫 Not approved to answer (ETA and the like)",
+      "type": "subagent",
+      "display_position": {
+        "x": 3360,
+        "y": 1440
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Say exactly, translated faithfully: \"I can't answer that; a person will call you back.\" Call request_human with reason asked_unapproved and a short note of what they asked (for example \"asked for an ETA\"). Never guess a time, never say anyone is safe, never say where another person is. Then ask if there is anything else."
+      },
+      "tool_ids": [
+        "tool_request_human"
+      ],
+      "edges": [
+        {
+          "id": "edge_64",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person has nothing else and wants to finish the call"
+          },
+          "destination_node_id": "closing"
+        }
+      ],
+      "global_node_setting": {
+        "condition": {
+          "type": "prompt",
+          "prompt": "The person asks for something the approved text does not answer: when help or a helper will arrive, any time estimate, whether it is safe to stay, where another person is, or any other question you cannot answer from the approved text"
+        },
+        "go_back_conditions": [
+          {
+            "id": "edge_65",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "The person moved on: they said okay, answered an earlier question, or asked something the approved text covers"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "g_doubts",
+      "name": "🛡️ Doubts the call is real",
+      "type": "subagent",
+      "display_position": {
+        "x": 3780,
+        "y": 1440
+      },
+      "instruction": {
+        "type": "prompt",
+        "text": "Repeat the verification phrase \"{{verification_phrase}}\" and the official callback number {{callback_number}}. Call request_human with reason doubts_call. Then ask whether they are willing to go on."
+      },
+      "tool_ids": [
+        "tool_request_human"
+      ],
+      "edges": [
+        {
+          "id": "edge_66",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "The person does not want to go on"
+          },
+          "destination_node_id": "closing"
+        }
+      ],
+      "global_node_setting": {
+        "condition": {
+          "type": "prompt",
+          "prompt": "The person doubts the call is real, or asks whether it is a scam"
+        },
+        "go_back_conditions": [
+          {
+            "id": "edge_67",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "The person agrees to go on"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "type": "custom",
+  "name": "read_observation",
+  "description": "Sentinel calls only: record whether what the person sees matches the alert you read.",
+  "url": "{{APP_BASE_URL}}/api/retell/tools/read_observation",
+  "method": "POST",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "sees": {
+        "type": "string",
+        "enum": [
+          "yes",
+          "no",
+          "unsure"
+        ],
+        "description": "Does the alert match what they see?"
+      },
+      "what": {
+        "type": "string",
+        "description": "What they see, short (e.g. 'smoke to the west')."
+      },
+      "direction": {
+        "type": "string",
+        "description": "Direction, if given."
+      }
+    },
+    "required": [
+      "sees"
+    ]
+  },
+  "speak_during_execution": false,
+  "speak_after_execution": true,
+  "timeout_ms": 10000,
+  "max_retry": 0
+}

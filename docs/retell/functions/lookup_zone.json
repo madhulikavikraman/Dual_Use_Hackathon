@@ -1,0 +1,25 @@
+{
+  "type": "custom",
+  "name": "lookup_zone",
+  "description": "When the person says they are somewhere other than their enrolled address, look up the zone for that place. Returns the zone and the directive a human approved for it, which you then read verbatim. If no zone is found, you have no instruction for them.",
+  "url": "{{APP_BASE_URL}}/api/retell/tools/lookup_zone",
+  "method": "POST",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "location_text": {
+        "type": "string",
+        "description": "The place in their words: address, intersection or landmark."
+      }
+    },
+    "required": [
+      "location_text"
+    ]
+  },
+  "speak_during_execution": true,
+  "execution_message_type": "prompt",
+  "execution_message_description": "One short sentence in the language of the call saying you are checking the instructions for that place.",
+  "speak_after_execution": true,
+  "timeout_ms": 20000,
+  "max_retry": 0
+}

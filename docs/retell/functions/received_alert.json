@@ -1,0 +1,27 @@
+{
+  "type": "custom",
+  "name": "received_alert",
+  "description": "Canary and test calls only: did they receive the alert (canary) or can they hear this call (test)?",
+  "url": "{{APP_BASE_URL}}/api/retell/tools/received_alert",
+  "method": "POST",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "received": {
+        "type": "string",
+        "enum": [
+          "yes",
+          "no"
+        ],
+        "description": "Their answer."
+      }
+    },
+    "required": [
+      "received"
+    ]
+  },
+  "speak_during_execution": false,
+  "speak_after_execution": true,
+  "timeout_ms": 10000,
+  "max_retry": 0
+}

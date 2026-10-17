@@ -1,0 +1,30 @@
+{
+  "type": "custom",
+  "name": "end_call",
+  "description": "End the call after saying goodbye.",
+  "url": "{{APP_BASE_URL}}/api/retell/tools/end_call",
+  "method": "POST",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "outcome": {
+        "type": "string",
+        "enum": [
+          "completed",
+          "wrong_person",
+          "voicemail",
+          "caller_hung_up",
+          "no_response"
+        ],
+        "description": "How the call ended."
+      }
+    },
+    "required": [
+      "outcome"
+    ]
+  },
+  "speak_during_execution": false,
+  "speak_after_execution": true,
+  "timeout_ms": 10000,
+  "max_retry": 0
+}

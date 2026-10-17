@@ -1,0 +1,95 @@
+{
+  "type": "custom",
+  "name": "record_status",
+  "description": "Record what the person told you, after you have confirmed it back to them. Call once per person, and again only if an answer changes. Use null for anything not asked or not answered.",
+  "url": "{{APP_BASE_URL}}/api/retell/tools/record_status",
+  "method": "POST",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": [
+          "leaving",
+          "staying",
+          "already_left",
+          "needs_help_leaving",
+          "needs_help_now",
+          "unclear",
+          "wrong_number",
+          "not_in_zone"
+        ],
+        "description": "needs_help_now = life safety (medical, trapped, fire at the house). needs_help_leaving = can leave only with help (wheelchair, oxygen, no car, children alone, pets)."
+      },
+      "understood": {
+        "type": "boolean",
+        "description": "Teach-back passed: the person repeated where they will go and by when (or the instruction) correctly."
+      },
+      "destination": {
+        "type": "string",
+        "description": "Where they will go, as they said it (e.g. 'Westchester Recreation Center')."
+      },
+      "people": {
+        "type": "integer",
+        "description": "People at the address including the speaker."
+      },
+      "needs": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "wheelchair",
+            "walker",
+            "no_car",
+            "oxygen",
+            "powered_medical_device",
+            "dialysis",
+            "bedbound",
+            "children_alone",
+            "hearing",
+            "vision",
+            "cognitive",
+            "other"
+          ]
+        },
+        "description": "Access and functional needs mentioned. Empty array if none."
+      },
+      "device_battery_hours": {
+        "type": "number",
+        "description": "Hours of battery left on a powered medical device, if mentioned."
+      },
+      "animals": {
+        "type": "string",
+        "description": "Pets or animals mentioned, short (e.g. 'small dog')."
+      },
+      "location_text": {
+        "type": "string",
+        "description": "Where the person is right now, in their words (address, intersection, landmark)."
+      },
+      "location_consent": {
+        "type": "boolean",
+        "description": "The person agreed their location may be shared with the response team."
+      },
+      "can_leave": {
+        "type": "boolean",
+        "description": "Whether they can leave on their own."
+      },
+      "refusal_reason": {
+        "type": "string",
+        "description": "If staying, the reason they gave, short."
+      },
+      "memory_note": {
+        "type": "string",
+        "description": "One short fact worth remembering for the next call (e.g. 'oxygen concentrator is charged'). No diagnoses."
+      }
+    },
+    "required": [
+      "status",
+      "needs"
+    ]
+  },
+  "speak_during_execution": false,
+  "speak_after_execution": true,
+  "timeout_ms": 10000,
+  "max_retry": 0
+}

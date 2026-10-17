@@ -1,0 +1,6 @@
+{
+  "type": "end_call",
+  "name": "hang_up",
+  "description": "Disconnect the phone line. Call this right after end_call has returned, once the goodbye has been said. Never call it before end_call.",
+  "speak_during_execution": false
+}

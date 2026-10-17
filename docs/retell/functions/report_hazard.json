@@ -1,0 +1,50 @@
+{
+  "type": "custom",
+  "name": "report_hazard",
+  "description": "Record what a resident sees, only if they are safe or already leaving. Never ask anyone to go and look.",
+  "url": "{{APP_BASE_URL}}/api/retell/tools/report_hazard",
+  "method": "POST",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "seen": {
+        "type": "boolean",
+        "description": "They see a hazard."
+      },
+      "type": {
+        "type": "string",
+        "enum": [
+          "smoke",
+          "fire",
+          "shaking",
+          "damage",
+          "injury",
+          "flood",
+          "power",
+          "other"
+        ],
+        "description": "What they see."
+      },
+      "direction": {
+        "type": "string",
+        "description": "Direction from them, e.g. 'west'."
+      },
+      "distance": {
+        "type": "string",
+        "description": "Rough distance, e.g. 'two blocks'."
+      },
+      "location_text": {
+        "type": "string",
+        "description": "Where they are, if different from their address."
+      }
+    },
+    "required": [
+      "seen",
+      "type"
+    ]
+  },
+  "speak_during_execution": false,
+  "speak_after_execution": true,
+  "timeout_ms": 10000,
+  "max_retry": 0
+}

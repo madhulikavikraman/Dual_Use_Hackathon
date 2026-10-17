@@ -1,0 +1,23 @@
+{
+  "type": "custom",
+  "name": "share_live_location",
+  "description": "Text the person a link that shares their phone's live location with the response team until help reaches them. Call it ONLY after you asked \"Can I text you a link that shares your phone's live location with the response team? It stays on only until help reaches you.\" and the person clearly said yes. Never on a no, a maybe, silence, or a yes to something else. Call it at most once per call.",
+  "url": "{{APP_BASE_URL}}/api/retell/tools/share_live_location",
+  "method": "POST",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "consent_quote": {
+        "type": "string",
+        "description": "The person's own words saying yes, verbatim (e.g. 'Yes, send it')."
+      }
+    },
+    "required": [
+      "consent_quote"
+    ]
+  },
+  "speak_during_execution": false,
+  "speak_after_execution": true,
+  "timeout_ms": 15000,
+  "max_retry": 0
+}

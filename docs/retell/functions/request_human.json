@@ -1,0 +1,47 @@
+{
+  "type": "custom",
+  "name": "request_human",
+  "description": "Hand the person to a human. Use for a medical emergency (after telling them to hang up and call the emergency number), for anything you cannot answer from the approved text, and whenever the person is confused, distressed, refuses, or doubts the call. Also use it when the person asks for something you are not allowed to give (an ETA, whether it is safe to stay, where another person is): describe the request in note. Someone who needs help to leave is recorded with record_status, not here. Collections line only: reason salvage logs a request for help moving the items on their grab list; it always ranks below every person.",
+  "url": "{{APP_BASE_URL}}/api/retell/tools/request_human",
+  "method": "POST",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "reason": {
+        "type": "string",
+        "enum": [
+          "medical_emergency",
+          "cannot_answer",
+          "confusion",
+          "distress",
+          "refusal",
+          "doubts_call",
+          "asked_unapproved",
+          "salvage"
+        ],
+        "description": "Why a person is needed."
+      },
+      "urgency": {
+        "type": "string",
+        "enum": [
+          "now",
+          "soon",
+          "later"
+        ],
+        "description": "now = life safety."
+      },
+      "note": {
+        "type": "string",
+        "description": "Short: what they asked or need, e.g. 'asked for an ETA', 'asked if it is safe to stay'."
+      }
+    },
+    "required": [
+      "reason",
+      "urgency"
+    ]
+  },
+  "speak_during_execution": false,
+  "speak_after_execution": true,
+  "timeout_ms": 10000,
+  "max_retry": 0
+}

@@ -1,0 +1,86 @@
+{
+  "agent_name": "VoiceFlare English flow (en-US)",
+  "voice_id": "retell-Cimo",
+  "language": "en-US",
+  "webhook_url": "{{APP_BASE_URL}}/api/retell/webhook",
+  "webhook_events": [
+    "call_started",
+    "call_ended",
+    "call_analyzed"
+  ],
+  "post_call_analysis_data": [
+    {
+      "type": "enum",
+      "name": "primary_intent",
+      "description": "The caller's main situation. needs_help_now: life safety (medical, trapped, fire at the house). needs_help_leaving: can leave only with help (wheelchair, oxygen, no car, children alone). leaving: will leave. staying: refuses or undecided. already_left: out of the zone. hazard_report: reports smoke, fire, damage or injury, or a sentinel says the alert matches what they see. no_hazard_seen: a sentinel sees nothing. info_request: only asked a question. wrong_number, not_in_zone, unclear, voicemail, silence: no usable answer.",
+      "choices": [
+        "needs_help_now",
+        "needs_help_leaving",
+        "leaving",
+        "staying",
+        "already_left",
+        "hazard_report",
+        "no_hazard_seen",
+        "info_request",
+        "wrong_number",
+        "not_in_zone",
+        "unclear",
+        "voicemail",
+        "silence"
+      ],
+      "required": false
+    },
+    {
+      "type": "string",
+      "name": "needs",
+      "description": "Access and functional needs mentioned, comma-separated, using only these words: wheelchair, walker, no_car, oxygen, powered_medical_device, dialysis, bedbound, children_alone, hearing, vision, cognitive, other. Empty if none.",
+      "required": false
+    },
+    {
+      "type": "number",
+      "name": "people",
+      "description": "Number of people at the address including the speaker, if stated.",
+      "required": false
+    },
+    {
+      "type": "boolean",
+      "name": "can_leave",
+      "description": "Whether the person said they can leave on their own.",
+      "required": false
+    },
+    {
+      "type": "string",
+      "name": "location_text",
+      "description": "Where the person said they are right now, in their words (address, intersection or landmark). Empty if not said.",
+      "required": false
+    },
+    {
+      "type": "boolean",
+      "name": "live_location_consent",
+      "description": "True only if the agent asked whether it may text a link that shares the person's live location with the response team and the person clearly said yes. False if they said no or were never asked clearly. A maybe is false.",
+      "required": false
+    },
+    {
+      "type": "string",
+      "name": "live_location_quote",
+      "description": "If live_location_consent is true: the person's own words saying yes, verbatim. Empty otherwise.",
+      "required": false
+    }
+  ],
+  "post_call_analysis_model": "claude-5.5-sonnet",
+  "begin_message_delay_ms": 800,
+  "end_call_after_silence_ms": 30000,
+  "max_call_duration_ms": 300000,
+  "ring_duration_ms": 30000,
+  "voicemail_option": {
+    "action": {
+      "type": "prompt",
+      "text": "Leave a voicemail under 30 seconds in {{language}}. Say this is the emergency information line and the verification phrase {{verification_phrase}}. If {{simulated}} is true, say this is a simulated call for a hackathon demonstration. If the purpose {{purpose}} is resident or linked_contact, read exactly, translated faithfully if needed and adding nothing: \"{{directive_text}}\" then \"{{move_text}}\" then the evacuation point \"{{evac_point}}\", skipping any that is (none). For any other purpose do not read an alert or a directive. End with the official callback number {{callback_number}}."
+    }
+  },
+  "timezone": "America/Los_Angeles",
+  "response_engine": {
+    "type": "conversation-flow",
+    "conversation_flow_id": "{{RETELL_FLOW_ID}}"
+  }
+}
