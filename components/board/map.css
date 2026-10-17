@@ -1,0 +1,252 @@
+/* Map marks for the Second Key board and QRT view. Leaflet builds this DOM outside React,
+   so these are plain classes, all prefixed sk-. */
+
+.sk-map {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  background: #e2e8f0;
+}
+.sk-map .leaflet-control-attribution {
+  font-size: 10px;
+}
+
+/* Zero-size divIcon wrapper: the mark is centred on the point. */
+.leaflet-marker-icon.sk-anchor {
+  background: none;
+  border: 0;
+}
+.sk-anchor > * {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+}
+
+/* Zone labels and model proposals */
+.sk-zone-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+  text-align: center;
+  pointer-events: none;
+}
+.sk-zone-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sk-zone-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: #0f172a;
+  text-shadow: 0 0 2px #fff, 0 0 3px #fff, 0 0 6px #fff, 0 0 8px #fff;
+}
+.sk-zone-state {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 0 6px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1.5px #fff;
+}
+.sk-proposal {
+  width: max-content;
+  max-width: 240px;
+  white-space: nowrap;
+  background: #fff;
+  border: 2px dashed var(--c);
+  border-radius: 5px;
+  padding: 2px 6px 3px;
+  font-size: 11px;
+  line-height: 1.25;
+  color: #0f172a;
+  box-shadow: 0 1px 5px rgb(15 23 42 / 0.2);
+}
+.sk-proposal-badge {
+  display: block;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #92400e;
+}
+.sk-proposal-state {
+  display: block;
+  font-weight: 800;
+}
+.sk-proposal-state i {
+  font-style: normal;
+  font-weight: 600;
+  color: #64748b;
+}
+/* One truncated line of the reason; four lines once zoomed in (see ZoomBand in MapView).
+   The Zones panel always has it in full. */
+.sk-proposal-reason {
+  display: block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10.5px;
+  color: #334155;
+}
+.sk-map[data-zoom="near"] .sk-proposal-reason {
+  width: 228px;
+  max-width: none;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Sentinels (diamonds), canaries (triangles) */
+.sk-anchor > .sk-diamond {
+  width: 9px;
+  height: 9px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: var(--c);
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 1px #0f172a;
+}
+.sk-anchor > .sk-diamond.sk-device {
+  width: 15px;
+  height: 15px;
+  border-width: 2px;
+  box-shadow: 0 0 0 1.5px #0f172a;
+}
+.sk-tri {
+  display: block;
+  filter: drop-shadow(0 0 1px #0f172a);
+}
+
+/* Help registry pins: priority colour, solid ring when the fix is fresh, dashed grey when stale */
+.sk-help {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--c);
+  color: var(--t);
+  font: 800 12px/22px system-ui, sans-serif;
+  text-align: center;
+  box-shadow: 0 0 0 2.5px #fff, 0 0 0 5px var(--c);
+}
+.sk-help.sk-stale {
+  box-shadow: 0 0 0 2.5px #fff;
+  outline: 2.5px dashed #475569;
+  outline-offset: 3px;
+}
+.sk-help.sk-done {
+  opacity: 0.45;
+}
+.sk-help.sk-selected {
+  box-shadow: 0 0 0 2.5px #fff, 0 0 0 5px var(--c), 0 0 0 8px #fff, 0 0 0 11px #2563eb;
+}
+
+/* Evacuation points */
+.sk-ep {
+  background: #15803d;
+  color: #fff;
+  font: 800 10px/1 system-ui, sans-serif;
+  padding: 4px 5px;
+  border-radius: 4px;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #14532d;
+  white-space: nowrap;
+}
+
+/* Cluster counts and the hold label */
+.sk-hex-count {
+  background: #fff;
+  border: 2px solid var(--c);
+  color: var(--c);
+  font: 800 12px/1 system-ui, sans-serif;
+  padding: 3px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+/* Just inside the polygon, under its northernmost vertex: clear of the zone label at the centroid,
+   and never clipped when the map fits the polygon. */
+.sk-anchor > .sk-hold-label {
+  transform: translate(-50%, 12px);
+}
+.sk-hold-label {
+  background: #b91c1c;
+  color: #fff;
+  font: 800 12px/1.3 system-ui, sans-serif;
+  padding: 4px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+  text-align: center;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.3);
+}
+
+/* Tooltips */
+.leaflet-tooltip.sk-tip {
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 4px 8px;
+}
+.leaflet-tooltip.sk-device-tip {
+  background: #0f172a;
+  color: #fff;
+  border: 0;
+  border-radius: 4px;
+  box-shadow: none;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 5px;
+}
+.leaflet-tooltip.sk-device-tip::before {
+  display: none;
+}
+.leaflet-tooltip.sk-ep-tip {
+  background: rgb(255 255 255 / 0.92);
+  border: 1px solid #15803d;
+  color: #14532d;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 5px;
+  box-shadow: none;
+}
+.leaflet-tooltip.sk-ep-tip::before {
+  display: none;
+}
+
+/* The edge-first sweep: queued and ringing pins pulse (SVG paths and HTML marks). */
+path.sk-pulse {
+  animation: sk-path-pulse 1.1s ease-in-out infinite;
+}
+@keyframes sk-path-pulse {
+  0%,
+  100% {
+    stroke-width: 2px;
+    stroke-opacity: 1;
+  }
+  50% {
+    stroke-width: 9px;
+    stroke-opacity: 0.3;
+  }
+}
+.sk-ring::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border: 3px solid var(--c);
+  animation: sk-ring 1.1s ease-out infinite;
+}
+@keyframes sk-ring {
+  from {
+    opacity: 0.9;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  path.sk-pulse,
+  .sk-ring::after {
+    animation: none;
+  }
+}

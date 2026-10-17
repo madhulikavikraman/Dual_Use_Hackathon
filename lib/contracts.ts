@@ -110,11 +110,17 @@ export interface DecideProposalBody {
   evac_point?: string | null;
 }
 
+export interface DecideProposalResult {
+  proposal: Proposal;
+  result: ApproveZoneResult | null;
+}
+
 export interface StartCampaignBody {
   zone_id: string;
   kind: Extract<CampaignKind, "warning" | "order" | "rollcall" | "test" | "checkin" | "shelter" | "all_clear">;
   wave?: 1 | 2 | 3;
   started_by: string;
+  reason?: string;
 }
 
 export interface OpenHoldBody {

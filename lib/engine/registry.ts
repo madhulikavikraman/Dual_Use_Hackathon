@@ -169,7 +169,7 @@ const HEAVY: Need[] = ["wheelchair", "oxygen", "bedbound", "powered_medical_devi
  * Pickup runs (PRD 11): wheelchair, oxygen, bedbound and powered-device needs always go to accessible vans;
  * order by device battery hours, then distance; nearest-neighbor route; four stops per vehicle.
  */
-export async function buildRuns(actor: string): Promise<PickupRun[]> {
+export async function buildRuns(actor: string, reason?: string): Promise<PickupRun[]> {
   const open = (await db().all("help_requests")).filter((r) => (r.status === "open" || r.status === "assigned") && !r.run_id && r.last_lat !== null && r.priority <= 2);
   if (!open.length) return [];
   const runs: PickupRun[] = [];
@@ -209,12 +209,12 @@ export async function buildRuns(actor: string): Promise<PickupRun[]> {
       }
     }
   }
-  await ledger({ actor, action: `build pickup runs (${runs.length})`, target: runs.map((r) => r.label).join("; "), reason: "registry priority 1-2" });
+  await ledger({ actor, action: `build pickup runs (${runs.length})`, target: runs.map((r) => r.label).join("; "), reason: reason ?? "registry priority 1-2" });
   return runs;
 }
 
 /** Response-team callback: a call to the person on the registry row, logged. */
-export async function callback(id: string, actor: string) {
+export async function callback(id: string, actor: string, reason?: string) {
   const row = await db().get("help_requests", id);
   if (!row || !row.household_id) return null;
   const h = await db().get("households", row.household_id);
@@ -230,6 +230,6 @@ export async function callback(id: string, actor: string) {
     planned_at: isoIn(0),
   });
   await db().insert("calls", call);
-  await ledger({ actor, action: "registry: call back", target: row.name ?? row.id.slice(0, 8), reason: row.reason });
+  await ledger({ actor, action: "registry: call back", target: row.name ?? row.id.slice(0, 8), reason: reason ?? row.reason });
   return call;
 }

@@ -19,6 +19,24 @@ export interface TurnResult {
 const MAX_STEPS = 4;
 const TROUBLE = "Sorry, I'm having trouble on this line. A person will call you back. Goodbye.";
 
+// Everything in `reply` is spoken. Low-effort turns occasionally narrate the instructions ("Hindi only, per
+// instructions."); drop those sentences, and only those, so the approved directive itself is never touched.
+const NARRATION = [
+  /\bper (my |the |your )?(instructions|rules|prompt)\b/i,
+  /\b(greeting|opening|call) must (include|start|begin)\b/i,
+  /\bexactly as approved\b/i,
+  /\b(record_status|report_hazard|request_human|end_call|lookup_zone|read_observation|received_alert)\b/i,
+  /^(now )?(read|reading) (the )?(directive|route|evacuation point|approved)/i,
+  /^(respond|speak|reply) (only )?in [\p{L} ()]+ only\.?$/iu,
+];
+
+export function spoken(text: string): string {
+  const sentences = text.split(/(?<=[.!?。।])\s+/);
+  const kept = sentences.filter((s) => !NARRATION.some((re) => re.test(s.trim())));
+  if (kept.length !== sentences.length) console.warn("[agent] dropped narration:", sentences.filter((s) => !kept.includes(s)).join(" | "));
+  return kept.join(" ").trim();
+}
+
 export async function agentTurn(callId: string, personText: string | null): Promise<TurnResult> {
   const call = await db().get("calls", callId);
   if (!call) throw new Error("call not found");
@@ -65,11 +83,13 @@ export async function agentTurn(callId: string, personText: string | null): Prom
       break;
     }
     messages.push({ role: "assistant", content: res.content });
-    const text = res.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join(" ")
-      .trim();
+    const text = spoken(
+      res.content
+        .filter((b): b is Anthropic.TextBlock => b.type === "text")
+        .map((b) => b.text)
+        .join(" ")
+        .trim(),
+    );
     if (text) reply = reply ? `${reply} ${text}` : text;
 
     const uses = res.content.filter((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");

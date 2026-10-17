@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AllClear",
-  description: "Multilingual AI evacuation roll call",
+  title: { default: "Second Key", template: "%s · Second Key" },
+  description:
+    "Before an automated system wakes a zone, Second Key asks the people at its edge, shows how many phones it will wake, and relays only what a named human approved. Hackathon demo: synthetic residents, simulated sends.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -23,7 +24,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      {/* Browser extensions (e.g. Grammarly) add attributes to <body>; don't warn about them. */}
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   );
 }
