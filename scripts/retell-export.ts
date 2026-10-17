@@ -92,6 +92,7 @@ const endCallTool = llm.general_tools.find((t): t is Extract<LlmTool, { type: "e
 // ---------- Dynamic variables: what each one is, and samples for the test panel ----------
 
 const VAR_INFO: Record<string, string> = {
+  mode: "The line: civilian or base (the emergency information line) or heat (the heat check-in line for older residents who signed up).",
   purpose: "Kind of call: resident, inbound (the public line), sentinel, canary, linked_contact, qrt_callback or test.",
   stage: "Where the call sits on the ladder: 1 (warning), 2 (check-in), 3 (order), shelter, watch, hold (sentinel), canary, callback (response team) or inbound.",
   language: "The call's language, by name. The agent speaks only this language unless the person answers in another.",

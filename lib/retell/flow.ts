@@ -32,12 +32,15 @@ export interface PromptParts {
   scriptsSection: string | null;
   /** Script lines per purpose ("resident" has one line per stage). */
   scripts: Map<string, string[]>;
+  /** The "# Heat mode" section, whole (null if the prompt has none). It also stays in the global prompt. */
+  heatSection: string | null;
 }
 
 export function splitPrompt(template: string = PROMPT_TEMPLATE): PromptParts {
   const parts = template.split(/^(?=# )/m);
   const i = parts.findIndex((p) => /^# Scripts by purpose/.test(p));
-  if (i < 0) return { global: template.trim(), scriptsSection: null, scripts: new Map() };
+  const heatSection = parts.find((p) => /^# Heat mode/.test(p))?.trim() ?? null;
+  if (i < 0) return { global: template.trim(), scriptsSection: null, scripts: new Map(), heatSection };
   const scriptsSection = parts[i].trim();
   const scripts = new Map<string, string[]>();
   for (const raw of scriptsSection.split("\n")) {
@@ -46,7 +49,7 @@ export function splitPrompt(template: string = PROMPT_TEMPLATE): PromptParts {
     if (!m) continue;
     scripts.set(m[1], [...(scripts.get(m[1]) ?? []), line.slice(2)]);
   }
-  return { global: parts.filter((_, j) => j !== i).join("").trim(), scriptsSection, scripts };
+  return { global: parts.filter((_, j) => j !== i).join("").trim(), scriptsSection, scripts, heatSection };
 }
 
 const FLOW_NOTE = `# This call runs as a flow
@@ -173,6 +176,7 @@ const LAYOUT: Record<string, [number, number]> = {
   canary: [7, 2], canary_fn: [7, 3],
   test_call: [8, 2], test_fn: [8, 3],
   script_fallback: [9, 2],
+  heat_checkin: [10, 2],
   closing: [5, 12], end_call_fn: [5, 13], end: [5, 14],
   g_medical: [7, 6], medical_split: [7, 7], medical_record_fn: [7, 8], medical_link_offer: [7, 9],
   g_unapproved: [8, 6], g_doubts: [9, 6],
@@ -272,13 +276,17 @@ export function buildFlow(opts: { baseUrl: string; model?: string; verificationP
   // --- Greeting and the purpose split ---
   conv(
     "greeting", "👋 Greeting: verification phrase and callback number",
-    "Open the call in {{language}}, in two short sentences at most. Say: this is the emergency information line; you are an automated AI voice; " +
+    "Open the call in {{language}}, in two short sentences at most. Say: this is the emergency information line (if the line mode is heat, " +
+      "and it is \"{{mode}}\", say \"the heat check-in line\" instead); you are an automated AI voice; " +
       "the verification phrase is \"{{verification_phrase}}\"; the official callback number is {{callback_number}}. " +
       "If simulated is \"true\" (it is \"{{simulated}}\"), also say this is a simulated call for a hackathon demonstration. " +
       "Do not read any directive yet and do not ask a question yet.",
     { skip: "route_purpose" },
   );
+  // Heat mode replaces the resident, public-line, callback and linked-contact scripts (lib/agent/prompt.ts, "# Heat mode").
+  const heatLane = parts.heatSection ? (["resident", "inbound", "qrt_callback", "linked_contact"] as const) : [];
   branch("route_purpose", "🔀 Call purpose", [
+    ...heatLane.map((p): [EquationCond, string] => [EQ("&&", eq("mode", "heat"), eq("purpose", p)), "heat_checkin"]),
     [EQ("&&", eq("purpose", "resident"), eq("stage", "2")), "ask_status"],
     [EQ("||", eq("purpose", "resident")), "resident_directive"],
     [EQ("||", eq("purpose", "inbound")), "inbound_where"],
@@ -441,6 +449,19 @@ export function buildFlow(opts: { baseUrl: string; model?: string; verificationP
     ["record_status", "report_hazard", "request_human", "lookup_zone", "read_observation", "received_alert", "share_live_location"],
     { edges: [[P("The script for this call is finished"), "closing"]] },
   );
+
+  if (parts.heatSection) {
+    sub(
+      "heat_checkin", "🌡️ Heat check-in line (mode heat)",
+      "This call is on the heat check-in line (purpose {{purpose}}, stage {{stage}}). The greeting is done. Follow the heat mode script below exactly, " +
+        "one question at a time, using the tools it names. Read the approved texts word for word: the directive \"{{directive_text}}\" and the route " +
+        "text \"{{move_text}}\". Do not end the call yourself; when the script is done, stop.\n\n" + parts.heatSection,
+      ["record_status", "request_human", "share_live_location", "lookup_zone"],
+      { edges: [[P("The script for this call is finished"), "closing"]] },
+    );
+  } else {
+    warnings.push('The prompt has no "# Heat mode" section: heat calls follow the fire scripts.');
+  }
 
   // --- Closing ---
   conv(

@@ -101,6 +101,9 @@ node) or a dynamic variable the kit has no description for.
 - **Lanes** from the purpose split: resident (directive read word for word, status, needs, record, live-location
   consent, teach-back, smoke question, collections offer), public line (where are you, `lookup_zone`, read the result),
   response-team callback, linked contact, sentinel, canary, monthly test, and a script fallback for any other purpose.
+- **Heat lane**: when `{{mode}}` is `heat`, resident, public-line, callback and linked-contact calls go to one
+  "Heat check-in line" node that follows the prompt's "# Heat mode" section (stay cool? water, a ride or a check-in?
+  CDC heat-stroke signs mean "Hang up and call {{emergency_number}} now"). The greeting names the heat check-in line.
 - **Function nodes** run a tool at a fixed step (`record_status`, `share_live_location`, `lookup_zone`, `end_call`, ...).
   Three copies of `request_human` pin the reason with `const` (`medical_emergency` + `now`, `cannot_answer`, `salvage`);
   they post to the same `/api/retell/tools/request_human`, which reads the tool from the URL.

@@ -17,6 +17,7 @@
     "memory_note": "(none)",
     "collection_note": "(none)",
     "subject_name": "(none)",
+    "mode": "(none)",
     "simulated": "true"
   },
   "inbound": {
@@ -36,6 +37,7 @@
     "memory_note": "(none)",
     "collection_note": "(none)",
     "subject_name": "(none)",
+    "mode": "(none)",
     "simulated": "true"
   },
   "sentinel": {
@@ -55,6 +57,7 @@
     "memory_note": "(none)",
     "collection_note": "(none)",
     "subject_name": "(none)",
+    "mode": "(none)",
     "simulated": "true"
   }
 }

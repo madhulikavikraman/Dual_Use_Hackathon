@@ -6,10 +6,14 @@ VoiceFlare has two transports and one agent contract (PRD section 8, decision D-
 | --- | --- | --- |
 | In-call brain | Retell LLM `claude-5.5-haiku` | Claude Haiku on our server (`AGENT_MODEL`) |
 | Prompt | `lib/agent/prompt.ts` template with `{{placeholders}}` | same template, rendered |
-| Tools | the seven tools as Retell custom functions -> `POST /api/retell/tools/<name>` | the same seven tools, called in-process |
+| Tools | the eight tools as Retell custom functions -> `POST /api/retell/tools/<name>` | the same eight tools, called in-process |
 | Hang-up | our `end_call` records the outcome, then Retell's built-in `hang_up` disconnects | `end_call` ends the call |
 | Events | `POST /api/retell/webhook` (`call_started`, `call_ended`, `call_analyzed`) | the page polls `GET /api/phone/[id]` |
 | Inbound | `POST /api/retell/inbound` (per-number inbound webhook) | `/call` (pick a language) |
+
+**Building it on the Retell board by hand, or as a conversation flow?** See [`docs/retell/README.md`](retell/README.md): the
+copy-by-hand kit (`docs/retell/retell-kit.html`), the 45-node conversation flow (`scripts/retell-flow-setup.ts`), and every
+request body and tool as JSON. Regenerate it with `npx tsx scripts/retell-export.ts`.
 
 If Retell fails on stage, the same six devices open their browser phone pages and the script does not change.
 
@@ -37,7 +41,7 @@ Files: `lib/retell/client.ts` (place and stop calls), `lib/retell/verify.ts` (si
    npx tsx scripts/retell-setup.ts --dry-run
    npx tsx scripts/retell-setup.ts
    ```
-   It creates one Retell LLM (shared prompt, seven custom functions plus `hang_up`), one agent per language
+   It creates one Retell LLM (shared prompt, eight custom functions plus `hang_up`), one agent per language
    (EN en-US, ES es-419, KO ko-KR, ZH zh-CN, HI hi-IN, FR fr-FR), and binds `RETELL_FROM_NUMBER` (English agent
    inbound and outbound, inbound webhook `${APP_BASE_URL}/api/retell/inbound`). Voices are picked from
    `GET /list-voices` by accent; override any with `RETELL_VOICE_EN` ... `RETELL_VOICE_FR`.
