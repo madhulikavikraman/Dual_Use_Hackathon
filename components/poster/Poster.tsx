@@ -452,8 +452,8 @@ function WhoPays() {
       </p>
       <ul className="mt-[2px] space-y-[2px] text-[30px] leading-[1.26]">
         <li>
-          <span className="font-semibold text-vf-flare">USC Department of Public Safety</span> · campus mode, monthly
-          test calls
+          <span className="font-semibold text-vf-flare">County senior services</span> · heat mode, check-in calls to older
+          residents who live alone
         </li>
         <li>
           <span className="font-semibold text-vf-flare">A military installation&apos;s command post</span> · base mode

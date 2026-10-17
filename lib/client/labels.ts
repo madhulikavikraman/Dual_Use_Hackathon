@@ -31,6 +31,8 @@ export const SCENARIO_OPTIONS: { id: Scenario; label: string }[] = [
   { id: "westside", label: "Westside Fire (LA)" },
   { id: "heat", label: "Heat wave: senior check-ins" },
   { id: "altadena", label: "West Altadena (Eaton fire framing)" },
+  { id: "norte", label: "Norte Fire, San Clemente (live)" },
+  { id: "chongqing", label: "Chongqing, China (Twist 2)" },
 ];
 
 export const scenarioLabel = (s: Scenario) => SCENARIO_OPTIONS.find((o) => o.id === s)?.label ?? s;

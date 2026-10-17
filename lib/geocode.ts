@@ -25,11 +25,6 @@ const GAZETTEER: { keys: string[]; lng: number; lat: number; label: string }[] =
   { keys: ["santa monica pier"], lng: -118.4973, lat: 34.0092, label: "Santa Monica Pier" },
   { keys: ["pico and la brea", "la brea and pico"], lng: -118.3443, lat: 34.0476, label: "Pico Blvd & La Brea Ave" },
   { keys: ["pico and crenshaw", "crenshaw and pico"], lng: -118.3305, lat: 34.0478, label: "Pico Blvd & Crenshaw Blvd" },
-  { keys: ["leavey library", "leavey"], lng: -118.2829, lat: 34.0218, label: "Leavey Library, USC" },
-  { keys: ["doheny library", "doheny"], lng: -118.2837, lat: 34.0201, label: "Doheny Library, USC" },
-  { keys: ["usc village"], lng: -118.2855, lat: 34.0258, label: "USC Village" },
-  { keys: ["tommy trojan"], lng: -118.2854, lat: 34.0206, label: "Tommy Trojan, USC" },
-  { keys: ["parkside", "residential west"], lng: -118.2905, lat: 34.0188, label: "Residential West, USC" },
   { keys: ["lincoln and highview", "highview and lincoln"], lng: -118.1589, lat: 34.1905, label: "Lincoln Ave & Highview Ave, Altadena" },
 ];
 

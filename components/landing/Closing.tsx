@@ -17,7 +17,7 @@ export function Closing() {
           </h2>
           <p className="mt-5 max-w-[58ch] text-[17px] leading-relaxed text-vf-bone/90">
             NSF SBIR Phase I (NSF 26-510, up to $305,000, no equity) pays to prove the 90-second edge read, multilingual distress
-            classification and the canary, in drills with USC DPS.
+            classification and the canary, in drills with a county emergency office.
           </p>
           <p className="mt-3 max-w-[58ch] text-[15px] leading-relaxed text-vf-smoke">
             Counties buy it with FEMA UASI and EMPG grants, since public alert and warning systems are on FEMA&rsquo;s Authorized

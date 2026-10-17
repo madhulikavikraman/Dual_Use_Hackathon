@@ -1,13 +1,16 @@
 import "server-only";
 import type { ApproveZoneBody, ApproveZoneResult, DecideProposalBody } from "@/lib/contracts";
 import { db, nowIso } from "@/lib/db";
-import { STATE_LABEL, STATE_RANK } from "@/lib/directives";
+import { STATE_RANK, stateLabelFor } from "@/lib/directives";
 import { HttpError } from "@/lib/http";
 import { zoneDefaults } from "@/lib/scenarios";
-import type { Proposal, Zone } from "@/lib/types";
+import type { Proposal, Zone, ZoneState } from "@/lib/types";
 import { startCampaign } from "./campaigns";
 import { applyZoneState, bypassHold, decideHold, openHold } from "./holds";
 import { feed, getMeta, ledger } from "./log";
+
+/** A ladder state in the words of the run's mode (heat mode says "Heat Advisory", not "Evacuation Warning"). */
+const labelOf = async (s: ZoneState) => stateLabelFor(s, (await getMeta()).mode);
 
 // Only a named human moves a zone (PRD 6.1). An Order opens the hold first; the approval records who,
 // when and why, and the approved directive, route and evacuation point are what the agent reads.
@@ -37,7 +40,7 @@ export async function approveZone(zoneId: string, body: ApproveZoneBody): Promis
   // timer would push the zone back to Order at 0:00.
   if (body.state !== "order" && body.state !== zone.state) {
     for (const open of await db().where("holds", { zone_id: zone.id, status: "open" })) {
-      await decideHold(open.id, { decision: "cancel", actor: body.approved_by, reason: `Superseded by ${STATE_LABEL[body.state]}: ${body.reason}` });
+      await decideHold(open.id, { decision: "cancel", actor: body.approved_by, reason: `Superseded by ${await labelOf(body.state)}: ${body.reason}` });
     }
   }
 
@@ -47,7 +50,7 @@ export async function approveZone(zoneId: string, body: ApproveZoneBody): Promis
       directive_text: directive || null, move_text: move || null, evac_point: evac, actor: body.approved_by, reason: body.reason,
       evac_point_lat: defaults.evac_point_lat, evac_point_lng: defaults.evac_point_lng,
     });
-    await ledger({ actor: body.approved_by, action: `re-approve ${STATE_LABEL[body.state]} (texts updated, no new calls)`, target: zone.name, reason: body.reason });
+    await ledger({ actor: body.approved_by, action: `re-approve ${await labelOf(body.state)} (texts updated, no new calls)`, target: zone.name, reason: body.reason });
     return { zone: (await db().get("zones", zoneId))!, campaign: null, hold: null };
   }
 
@@ -68,13 +71,21 @@ export async function approveZone(zoneId: string, body: ApproveZoneBody): Promis
     directive_text: directive || null, move_text: move || null, evac_point: evac, actor: body.approved_by, reason: body.reason,
     evac_point_lat: defaults.evac_point_lat, evac_point_lng: defaults.evac_point_lng,
   });
-  await ledger({ actor: body.approved_by, action: `approve zone: ${STATE_LABEL[body.state]}`, target: zone.name, reason: body.reason });
-  await feed({ kind: "info", zone_id: zone.id, title: `${zone.name}: ${STATE_LABEL[body.state]} approved by ${body.approved_by}`, detail: directive || null });
+  await ledger({ actor: body.approved_by, action: `approve zone: ${await labelOf(body.state)}`, target: zone.name, reason: body.reason });
+  await feed({ kind: "info", zone_id: zone.id, title: `${zone.name}: ${await labelOf(body.state)} approved by ${body.approved_by}`, detail: directive || null });
   const fresh = (await db().get("zones", zoneId))!;
 
   let campaign = null;
-  if (body.state === "warning") {
-    campaign = await startCampaign({ zone: fresh, kind: "warning", wave: 1, started_by: body.approved_by, reason: "Near-Crisis approved: Stage 1, edge-first" });
+  const heat = meta.mode === "heat";
+  if (heat && body.state === "watch") {
+    // A heat watch is the ordinary-Tuesday rung: check-in calls to the people who live alone, nobody else.
+    campaign = await startCampaign({ zone: fresh, kind: "checkin", wave: null, started_by: body.approved_by });
+  } else if (body.state === "warning") {
+    campaign = await startCampaign({
+      zone: fresh, kind: "warning", wave: 1, started_by: body.approved_by,
+      // Heat mode words its own reason in startCampaign (people who live alone or have no air conditioning first).
+      reason: heat ? undefined : "Near-Crisis approved: Stage 1, edge-first",
+    });
   } else if (body.state === "shelter_in_place") {
     campaign = await startCampaign({ zone: fresh, kind: "shelter", wave: null, started_by: body.approved_by, reason: "Shelter in Place approved" });
   }
@@ -100,7 +111,7 @@ export async function decideProposal(id: string, body: DecideProposalBody): Prom
   const zone = (await db().get("zones", p.zone_id))!;
   if (body.decision === "reject") {
     const proposal = (await db().update("proposals", id, { status: "rejected", decided_by: body.actor, decided_at: nowIso(), decision_reason: body.reason }))!;
-    await ledger({ actor: body.actor, action: `reject model proposal: ${STATE_LABEL[p.proposed_state]}`, target: zone.name, reason: body.reason });
+    await ledger({ actor: body.actor, action: `reject model proposal: ${await labelOf(p.proposed_state)}`, target: zone.name, reason: body.reason });
     await feed({ kind: "proposal", zone_id: zone.id, title: `Proposal rejected for ${zone.name}`, detail: `${p.reason} — rejected: ${body.reason}` });
     return { proposal, result: null };
   }

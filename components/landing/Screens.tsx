@@ -33,7 +33,7 @@ const SMALL: { href: string; name: string; what: string; who: string; art: React
   {
     href: "/demo",
     name: "Operator console",
-    what: "Resets a scenario (Westside LA, USC campus, Altadena or Chongqing) and fires simulator events.",
+    what: "Resets a scenario (Westside LA, the heat wave, Altadena, Norte or Chongqing) and fires simulator events.",
     who: "The operator’s laptop.",
     art: <LaptopMini />,
   },

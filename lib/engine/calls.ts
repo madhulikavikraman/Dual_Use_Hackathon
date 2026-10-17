@@ -3,19 +3,22 @@ import { after } from "next/server";
 import { z } from "zod";
 import { toolsForPurpose, type ToolName } from "@/lib/agent/tools";
 import { db, isoIn, nowIso, uid } from "@/lib/db";
-import { STATE_LABEL } from "@/lib/directives";
+import { stateLabelFor } from "@/lib/directives";
 import { geocode } from "@/lib/geocode";
 import { centroidOf, zoneForPoint } from "@/lib/geo";
 import { languageByCode } from "@/lib/languages";
 import { isE164, requestOrigin } from "@/lib/sms";
 import type {
   Call, CallVars, HelpSource, Household, HouseholdStatus, Intent, IntentFlag, Need, PrimaryIntent, Report, ReportType,
-  ShareConsentSource, Status, Zone,
+  ShareConsentSource, Status, Zone, ZoneState,
 } from "@/lib/types";
 import { NEEDS } from "@/lib/types";
 import { blankStatus, buildVars, inboundCampaign, newCall } from "./campaigns";
 import { activeShareFor, createShare } from "./locate";
 import { feed, getMeta, ledger } from "./log";
+
+/** A ladder state in the words of the run's mode (heat mode says "Heat Advisory", not "Evacuation Warning"). */
+const labelOf = async (s: ZoneState) => stateLabelFor(s, (await getMeta()).mode);
 import { enrolledFix, refreshLocation, upsertHelp, type Fix } from "./registry";
 
 // Call lifecycle and the shared tool executor. Both transports (browser + Claude, phone + Retell) and the
@@ -371,7 +374,7 @@ async function lookupZone(ctx: Ctx, a: z.infer<typeof LookupZone>): Promise<Tool
   // A public-line caller's pin moves to where they said they are; they never join a zone's call list.
   if (ctx.household?.device_label === "Public line") await db().update("households", ctx.household.id, { lat: hit.lat, lng: hit.lng });
   return {
-    result: `Zone: ${zone.name} (${STATE_LABEL[zone.state]}). Read exactly. Directive: "${zone.directive_text}" Route: "${zone.move_text ?? "(none)"}" Evacuation point: "${zone.evac_point ?? "(none)"}"`,
+    result: `Zone: ${zone.name} (${await labelOf(zone.state)}). Read exactly. Directive: "${zone.directive_text}" Route: "${zone.move_text ?? "(none)"}" Evacuation point: "${zone.evac_point ?? "(none)"}"`,
   };
 }
 

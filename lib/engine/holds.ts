@@ -1,14 +1,17 @@
 import "server-only";
 import type { HoldDecisionBody, OpenHoldBody } from "@/lib/contracts";
 import { db, isoIn, nowIso, uid } from "@/lib/db";
-import { STATE_LABEL, directiveFor } from "@/lib/directives";
+import { directiveFor, stateLabelFor } from "@/lib/directives";
 import { areaSqMi, edgeDistanceM, pickSentinels, pointInPolygon } from "@/lib/geo";
 import { HttpError } from "@/lib/http";
 import { wrongPolygonFor, zoneDefaults } from "@/lib/scenarios";
-import type { Call, Canary, Hold, HoldSentinel, HoldTally, Household, Zone, ZoneEvent } from "@/lib/types";
+import type { Call, Canary, Hold, HoldSentinel, HoldTally, Household, Zone, ZoneEvent, ZoneState } from "@/lib/types";
 import { firstWave } from "./blocks";
 import { buildVars, cancelQueued, newCall, startCampaign } from "./campaigns";
 import { feed, getMeta, ledger, setMeta } from "./log";
+
+/** A ladder state in the words of the run's mode (heat mode says "Heat Advisory", not "Evacuation Warning"). */
+const labelOf = async (s: ZoneState) => stateLabelFor(s, (await getMeta()).mode);
 import { activatePlan, closePlan, planFor, proposePlan } from "./plans";
 
 // The hold (PRD 8.1): before an Order is broadcast, ring sentinels at the polygon's edges for up to
@@ -120,14 +123,14 @@ export async function openHold(body: OpenHoldBody): Promise<Hold> {
   }
   hold.tally = tallyOf(hold.sentinels);
   await db().update("holds", hold.id, { sentinels: hold.sentinels, tally: hold.tally });
-  await ledger({ actor: body.opened_by, action: `open hold: ${STATE_LABEL[body.proposed_state]}`, target: `${zone.name} (${hold.polygon_label})`, reason: body.reason });
+  await ledger({ actor: body.opened_by, action: `open hold: ${await labelOf(body.proposed_state)}`, target: `${zone.name} (${hold.polygon_label})`, reason: body.reason });
   // Block-by-block: an Order for a zone with exit roads gets a proposed plan (or uses the approved one standing by).
   // The dose keeps the zone total; wave 1 is how many move first. The Order itself never waits for the plan.
   const plan = body.proposed_state === "order" ? await proposePlan(zone.id).catch(() => null) : null;
   const w1 = plan && !county ? firstWave(plan) : null;
   await feed({
     kind: "hold", severity: "warn", zone_id: zone.id,
-    title: `Hold opened: ${STATE_LABEL[body.proposed_state]} for ${zone.name}`,
+    title: `Hold opened: ${await labelOf(body.proposed_state)} for ${zone.name}`,
     detail: `Wakes about ${hold.population_est.toLocaleString("en-US")} people across ${hold.area_sq_mi} sq mi (estimate).${w1 ? ` ${waveDoseText(w1)}.` : ""} ${hold.sentinels.filter((s) => s.call_id).length} sentinels ringing; sends on time in 90 s.`,
   });
   return hold;
@@ -201,7 +204,7 @@ export async function decideHold(id: string, body: HoldDecisionBody): Promise<Ho
       await ledger({ actor: body.actor, action: "hand to authority (hold keeps running; sends on time)", target: zone.name, reason: body.reason });
       await feed({
         kind: "hand_off", severity: "warn", zone_id: zone.id,
-        title: `Handed to the duty officer: ${STATE_LABEL[hold.proposed_state]} for ${zone.name}`,
+        title: `Handed to the duty officer: ${await labelOf(hold.proposed_state)} for ${zone.name}`,
         detail: `Read: ${hold.read} (yes ${t.yes}, no ${t.no}, unsure ${t.unsure}, silent ${t.silent}). Wakes about ${hold.population_est.toLocaleString("en-US")}. Polygon: ${hold.polygon_label}. Still sends at 0:00 unless the authority decides first. ${body.reason}`,
       });
       return (await db().update("holds", id, { handed_off_by: body.actor, handed_off_at: nowIso() }))!;
@@ -234,7 +237,7 @@ export async function sendHold(hold: Hold, actor: string, reason: string, decisi
   });
   await feed({
     kind: "send", severity: "critical", zone_id: zone.id,
-    title: `Sent (simulated): ${STATE_LABEL[hold.proposed_state]} for ${zone.name}`,
+    title: `Sent (simulated): ${await labelOf(hold.proposed_state)} for ${zone.name}`,
     detail: `Polygon: ${hold.polygon_label}, about ${hold.population_est.toLocaleString("en-US")} phones. Read at send: ${hold.read}. Canary in 15 s.`,
   });
   await scheduleCanaries(next, fresh);
@@ -266,7 +269,7 @@ export async function applyZoneState(zone: Zone, state: Zone["state"], o: {
   await db().insert("zone_events", ev);
   if (state === "lifted" || state === "monitor") {
     await cancelQueued(zone.id);
-    await closePlan(zone.id, o.actor, `${zone.name} moved to ${STATE_LABEL[state]}`).catch(() => undefined);
+    await closePlan(zone.id, o.actor, `${zone.name} moved to ${await labelOf(state)}`).catch(() => undefined);
   } else if (state !== zone.state) {
     // Calls still waiting from earlier waves carry the old state's text: cancel them. The new wave started by
     // the caller (Stage 3 after an Order, shelter calls) reaches everyone not confirmed gone.
