@@ -1,3 +1,5 @@
+// Real incidents behind VoiceFlare (collections stories: Hyperallergic, The Art Newspaper, ADN, Classic FM, Dainik Prabhat;
+// no report was found that names a Pimpri-Chinchwad library losing historic books in July 2026, so none is claimed).
 // Real incidents behind VoiceFlare, for the landing page, /global and the poster. Every fact carries a source and
 // comes from fact-checked research (PRD findings F-1, F-2 and the October 17 research runs); nothing here is
 // invented for the demo. Content is filled in as the research lands; the shape is stable. Client-safe.
@@ -167,7 +169,62 @@ export const HERITAGE: {
   name: "Collections line",
   one_liner:
     "Museums, libraries, archives and collectors get the same verified warnings, and a way to ask for help moving what cannot be replaced while there is still time. Lives first, always.",
-  stories: [],
+  stories: [
+    {
+      id: "warning-at-3am",
+      title: "A 3 AM warning, three works saved",
+      where: "Altadena (Eaton fire)",
+      when: "January 8, 2025",
+      what_happened: "Collectors Joy Silverman and George Bermudez had a warning, not an order: an alert woke them at 3 AM and they packed three artworks. The house and the rest of the collection burned.",
+      what_voiceflare_changes: "At Warning, the call reads the approved warning, then asks once whether they need help moving their grab list; a heritage team gets the request while roads are open, ranked below every person.",
+      source_url: "https://hyperallergic.com/983707/the-unfathomable-loss-of-artistic-heritage-in-altadena/",
+    },
+    {
+      id: "yellow-not-red",
+      title: "Art handlers could help only before a zone turned red",
+      where: "Los Angeles",
+      when: "January 2025",
+      what_happened: "Fine-art shippers pulled work out of yellow (prepare to leave) zones but would not enter red ones; one storage firm had 5 to 10 times its normal requests in the first week.",
+      what_voiceflare_changes: "The salvage window is the Warning stage, so the request goes out then, with the zone, the address and the grab list, not after the order.",
+      source_url: "https://www.theartnewspaper.com/2025/02/14/los-angeles-wildfires-art-storage-handling-logistics",
+    },
+    {
+      id: "judgment-call",
+      title: "An alert at 10:45 AM, a collection gone by afternoon",
+      where: "Pacific Palisades",
+      when: "January 7, 2025",
+      what_happened: "Collector Ron Rivlin got his first alert at 10:45 AM, judged the fire would not cross Sunset, and left with three Warhol prints; hundreds of works, about 30 of them Warhols, burned.",
+      what_voiceflare_changes: "A call that reads the approved warning and asks a direct question (\"do you need help moving your list?\") turns a judgment call into a plan while there is still time.",
+      source_url: "https://www.adn.com/nation-world/2025/03/24/extreme-weather-is-testing-the-notoriously-secretive-art-world",
+    },
+    {
+      id: "never-go-back",
+      title: "Why the agent never says \"go back\"",
+      where: "Altadena (Eaton fire)",
+      when: "January 2025",
+      what_happened: "Artists Adam and Caitlin Ross went back into the flames once to pull 11 paintings, then watched their studio burn; about 5,000 works were lost.",
+      what_voiceflare_changes: "The agent never tells anyone to stay or go back for objects. Under an Order the only instruction is to leave; a request for help is logged for after the fire.",
+      source_url: "https://www.theartnewspaper.com/2026/02/25/los-angeles-artists-wildfires-anniversary",
+    },
+    {
+      id: "backup-on-site",
+      title: "The backup burned with the archive",
+      where: "Pacific Palisades",
+      when: "January 2025",
+      what_happened: "More than 100,000 Arnold Schoenberg scores and parts at Belmont Music Publishers burned, and so did the digital backup kept on site; the originals in Vienna were safe.",
+      what_voiceflare_changes: "Enrollment on an ordinary Tuesday is when a holder writes the grab list and says what cannot be replaced; VoiceFlare keeps it with the household, so the warning call can act on it.",
+      source_url: "https://www.classicfm.com/music-news/arnold-schoenberg-scores-destroyed-la-fires/",
+    },
+    {
+      id: "pimpri-chinchwad-2026",
+      title: "A week of rain in Pimpri-Chinchwad",
+      where: "Pimpri-Chinchwad, Pune, India",
+      when: "June 29 to July 8, 2026",
+      what_happened: "After a week of continuous rain (268 mm in 24 hours at Chinchwad), water reached first floors in Tanajinagar, Keshavnagar and Laxminagar and more than 1,500 people were trapped. In India's 2018 Kerala floods, more than 225 public libraries were hit.",
+      what_voiceflare_changes: "River levels and dam releases give hours of notice: riverside homes, libraries and collectors get a call at Warning in their language, with the collections question asked while the water is still rising.",
+      source_url: "https://www.dainikprabhat.com/pimpri-chinchwad-rain-pimpri-chinchwads-mess-municipal-corporations-drain-cleaning-is-open-citizens-plight-as-water-enters-houses",
+    },
+  ],
   flow: [
     { stage: "Ordinary Tuesday", what_happens: "Institutions and collectors enroll, keep a short grab list of priority items, and answer a monthly test call.", rule: "The list is theirs; it is shared only with the response team." },
     { stage: "Warning", what_happens: "The call reads the approved warning first, then asks whether they need help moving priority items while there is time.", rule: "Salvage requests rank below every life-safety request." },
