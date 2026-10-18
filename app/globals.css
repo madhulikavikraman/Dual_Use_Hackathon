@@ -65,10 +65,15 @@ html:has(.vf-landing) {
   background: var(--vf-ink);
   color-scheme: dark;
   scroll-padding-top: 4.5rem;
+  /* A hard fling past the top or bottom must not bounce the page and expose an empty black band. */
+  overscroll-behavior-y: none;
 }
 body:has(.vf-landing) {
   background: var(--vf-ink);
   color: var(--vf-bone);
+  overscroll-behavior-y: none;
+  /* The hero's decorative glows reach past the right edge; never let them add sideways scroll. */
+  overflow-x: clip;
 }
 @media (prefers-reduced-motion: no-preference) {
   html:has(.vf-landing) {

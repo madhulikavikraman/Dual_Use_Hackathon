@@ -24,7 +24,7 @@ export function StickyBar({ watchId }: { watchId: string }) {
   return (
     <MotionRoot>
       <m.div
-        className={`fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-vf-ink/85 backdrop-blur-md ${show ? "" : "pointer-events-none"}`}
+        className={`fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-vf-ink/95 ${show ? "" : "pointer-events-none"}`}
         initial={false}
         animate={show ? { y: 0, opacity: 1 } : { y: "-100%", opacity: 0 }}
         transition={{ duration: T.duration.normal, ease: T.easing.smooth }}
