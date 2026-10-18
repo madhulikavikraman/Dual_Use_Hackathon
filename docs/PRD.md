@@ -4,7 +4,7 @@
 
 "VoiceFlare" is the working name. The name is decision D-01 in `decisions.md`; the alternates are "Lookout" and keeping "AllClear". Nothing in this document depends on the name.
 
-**Builds on** the team's current documents and code: the AllClear Project Document (Oct 16, @Madhu: the 45-item backlog, the Claude agent with a browser phone page, the Supabase schema) and the Phase 0 commit in the team repo `madhulikavikraman/Dual_Use_Hackathon` (Next.js 16 scaffold, `supabase/schema.sql`, the synthetic west Altadena seed, env validation, health check). It carries forward the earlier AllClear + AllFound plan and the teammate feedback, and folds in the ideation verdict (VoiceFlare) and tonight's new requirements: zones with directives set by a human or a prediction model, staged calls along the polygon edge, an intent classifier, a geo-tagged help registry, and an ArcGIS feed. Section 1.1 lists exactly what changes.
+**Builds on** the team's current documents and code: the AllClear Project Document (Oct 16, @Madhu: the 45-item backlog, the Claude agent with a browser phone page, the Supabase schema) and the Phase 0 commit in the team repo `madhulikavikraman/voice_flare` (Next.js 16 scaffold, `supabase/schema.sql`, the synthetic west Altadena seed, env validation, health check). It carries forward the earlier AllClear + AllFound plan and the teammate feedback, and folds in the ideation verdict (VoiceFlare) and tonight's new requirements: zones with directives set by a human or a prediction model, staged calls along the polygon edge, an intent classifier, a geo-tagged help registry, and an ArcGIS feed. Section 1.1 lists exactly what changes.
 
 **One line.** Before an automated system wakes a zone, VoiceFlare asks the people at the zone's edge, shows the human how many phones it will wake, and relays only the instruction a named human approved for that zone. Afterwards it checks that the message landed, keeps a live list of who said they need help and where they were last heard from, and hands the pattern of calls to the response team's own map.
 
@@ -901,7 +901,7 @@ Each is logged with a recommendation in `decisions.md`: the name (D-01); directi
 ## 23. Sources
 
 - Team: AllClear Project Document (Oct 16, 2026, @Madhu), Google Doc 1C0s-RdMa22j8LdwSIOYXg0hVx9Yj5Y7nGbshRTun7s4
-- Team: repo `madhulikavikraman/Dual_Use_Hackathon`, Phase 0 commit `6ce4472` (Next.js skeleton, Supabase schema, env validation, health check, synthetic seed): https://github.com/madhulikavikraman/Dual_Use_Hackathon
+- Team: repo `madhulikavikraman/voice_flare`, Phase 0 commit `6ce4472` (Next.js skeleton, Supabase schema, env validation, health check, synthetic seed): https://github.com/madhulikavikraman/voice_flare
 - Team: `AllClear + AllFound PRD and Build Plan.md` and `AllClear vs Relay Feedback.md` in `D:\LAtw`
 - Participant Hub (problem statement, tracks, twist schedule, judging): Google Doc 1a6SQQuvQJoI5g6YQUjzOVkruyOI94UwS-c1Wbrz-dsY
 - Kickoff deck (the three tests): Google Slides 1OfEJ04CogX7IIZfFd0Ne7B1Un-zJ9Wm7ogd-Vr89yDk

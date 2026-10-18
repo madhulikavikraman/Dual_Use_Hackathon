@@ -3,7 +3,7 @@ import "server-only";
 // and NWS alerts at the ignition point. Read-only and advisory: it goes in the feed, never changes a zone. Each fetch
 // has a short timeout and a dated fallback snapshot, so a reset never waits on, or fails because of, the network.
 
-const UA = "VoiceFlare-hackathon-demo (github.com/madhulikavikraman/Dual_Use_Hackathon)";
+const UA = "VoiceFlare-hackathon-demo (github.com/madhulikavikraman/voice_flare)";
 const CALFIRE_LIST = "https://incidents.fire.ca.gov/umbraco/api/IncidentApi/List?inactive=false";
 
 export interface LiveFire {

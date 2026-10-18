@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState, type ChangeEvent, type ReactNode } fr
 import type { TwistEntry } from "@/lib/types";
 import { Button, Linkify, DemoBadge, clock } from "./ui";
 
-const REPO = "https://github.com/madhulikavikraman/Dual_Use_Hackathon";
+const REPO = "https://github.com/madhulikavikraman/voice_flare";
 const SCHEDULE: Record<number, string> = { 1: "Fri 11:30 PM", 2: "Sat 4:30 AM", 3: "Sat 7:00 AM" };
 
 interface Draft {

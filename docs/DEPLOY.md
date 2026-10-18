@@ -6,7 +6,7 @@ so a deploy without the Supabase variables refuses to start.
 
 ## 1. Import the project (once)
 
-1. vercel.com → **Add New → Project** → import `madhulikavikraman/Dual_Use_Hackathon` from GitHub.
+1. vercel.com → **Add New → Project** → import `madhulikavikraman/voice_flare` from GitHub.
 2. Framework: **Next.js** (detected). Leave the build and output settings at their defaults.
 3. Production branch: **main** (Settings → Git, if it is not already).
 4. Node.js version: the default (22 or later) is fine; `package.json` asks for `>=22`.

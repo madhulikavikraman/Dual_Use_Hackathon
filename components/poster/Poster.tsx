@@ -8,7 +8,7 @@ import { JURISDICTIONS } from "@/lib/jurisdictions";
 import { FitBox } from "./FitBox";
 import { Arcs, Chip, QrCode, Section, SectionHead, host } from "./primitives";
 
-const REPO = "https://github.com/madhulikavikraman/Dual_Use_Hackathon";
+const REPO = "https://github.com/madhulikavikraman/voice_flare";
 
 const POSTER_CSS = `
 @page { size: 24in 36in; margin: 0; }
@@ -545,7 +545,7 @@ function Footer() {
           <p className="mt-[10px] font-mono text-[19px] leading-[1.3] text-vf-smoke">
             github.com/madhulikavikraman
             <br />
-            /Dual_Use_Hackathon
+            /voice_flare
           </p>
         </div>
         <QrCode value={REPO} className="h-[180px] w-[180px] shrink-0 overflow-hidden rounded-[10px]" />

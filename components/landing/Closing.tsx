@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Container, Cta, ExternalLink } from "./ui";
 
-const REPO = "https://github.com/madhulikavikraman/Dual_Use_Hackathon";
+const REPO = "https://github.com/madhulikavikraman/voice_flare";
 
 export function Closing() {
   return (

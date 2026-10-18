@@ -10,7 +10,7 @@ Decision log for the USC Viterbi x InnovateLA Dual-Use Hackathon build (Resilien
 2. Our seat (Comms track): the overnight supervisor of a call line in a surge of unverified calls; residents are the earliest sensor and the biggest flood; who needs a person now, what must never be automated, what happens when someone does not pick up.
 3. Judging: dual-use fit (tie-break), technical execution, feasibility and impact, adapting to twists, demo and pitch, 1 to 5 each; Devpost needs a two-line responsible-use note; Best Shift Adapter is scored on build changes with proof.
 4. Deadlines: team lock Fri 11:59 PM (extended); twists Fri 11:30 PM, Sat 4:30 AM, Sat 7:00 AM, six hours each; Devpost Sat 10:00 PM, no extensions; finalists at midnight; finalist deck Sun 9:00 AM; demos and pitches Sun 12:00 to 3:30 PM, Ginsburg Hall.
-5. Team state at 10:30 PM: the AllClear Project Document (@Madhu) with a 45-item backlog, and the Phase 0 commit in `madhulikavikraman/Dual_Use_Hackathon` (Next.js 16 scaffold, Supabase schema, env validation, health check, synthetic west Altadena seed). Agent brain is Claude; demo voice is a browser phone page; no Retell wired yet.
+5. Team state at 10:30 PM: the AllClear Project Document (@Madhu) with a 45-item backlog, and the Phase 0 commit in `madhulikavikraman/voice_flare` (Next.js 16 scaffold, Supabase schema, env validation, health check, synthetic west Altadena seed). Agent brain is Claude; demo voice is a browser phone page; no Retell wired yet.
 6. The PRD merges that build with the ideation verdict (Second Key) and the user's additions from 10:05 PM: zones with directives set by a human or a model, LA-named; staged calls along polygon edges via Retell; an intent classifier; a geo-tagged help registry with last-seen locations; an ArcGIS feed for earthquake-style patterns.
 
 ## 2. Decision log
@@ -111,7 +111,7 @@ Decision log for the USC Viterbi x InnovateLA Dual-Use Hackathon build (Resilien
 ## 5. Files and links
 
 - `D:\LAtw\PRD.md` and `D:\LAtw\decisions.md` (this file); copies in `D:\LAtw\Dual_Use_Hackathon\docs\`
-- Repo: https://github.com/madhulikavikraman/Dual_Use_Hackathon (cloned at `D:\LAtw\Dual_Use_Hackathon`)
+- Repo: https://github.com/madhulikavikraman/voice_flare (cloned at `D:\LAtw\Dual_Use_Hackathon`)
 - AllClear Project Document: https://docs.google.com/document/d/1C0s-RdMa22j8LdwSIOYXg0hVx9Yj5Y7nGbshRTun7s4/edit
 - Participant Hub: https://docs.google.com/document/d/1a6SQQuvQJoI5g6YQUjzOVkruyOI94UwS-c1Wbrz-dsY/edit
 - Kickoff deck: https://docs.google.com/presentation/d/1OfEJ04CogX7IIZfFd0Ne7B1Un-zJ9Wm7ogd-Vr89yDk/edit

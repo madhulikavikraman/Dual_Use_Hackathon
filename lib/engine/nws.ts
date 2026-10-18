@@ -7,7 +7,7 @@ import { getMeta, ledger } from "./log";
 // Adopt a live National Weather Service alert polygon as a zone (PRD backlog 8). The zone starts at Monitor
 // with no directive: adopting a polygon is not approving an instruction; a named human still does that.
 
-const UA = "VoiceFlare-hackathon-demo (github.com/madhulikavikraman/Dual_Use_Hackathon)";
+const UA = "VoiceFlare-hackathon-demo (github.com/madhulikavikraman/voice_flare)";
 
 export interface NwsAlert {
   id: string;

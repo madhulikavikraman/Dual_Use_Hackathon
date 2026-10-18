@@ -32,7 +32,7 @@ export interface FireRun {
 }
 
 const NWS_POINT = "https://api.weather.gov/points/34.02,-118.49";
-const USER_AGENT = "VoiceFlare-hackathon-demo (github.com/madhulikavikraman/Dual_Use_Hackathon)";
+const USER_AGENT = "VoiceFlare-hackathon-demo (github.com/madhulikavikraman/voice_flare)";
 const PERIMETER_CENTER: [number, number] = [-118.492, 34.036]; // northern Santa Monica (seeded, demo choice)
 const HALF_LEN_KM = 0.5;
 const HALF_WIDTH_KM = 0.3;

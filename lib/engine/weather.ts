@@ -13,7 +13,7 @@ import { nwsAlertsAtPoint, type PointAlert } from "./nws";
 // on, or fails because of, the network: without a live reading the zone keeps the labeled simulated heat wave.
 // The threshold table (lib/scenarios/heatLadder.ts, a demo setting) proposes a level; a named human approves it.
 
-const UA = "VoiceFlare-hackathon-demo (github.com/madhulikavikraman/Dual_Use_Hackathon)";
+const UA = "VoiceFlare-hackathon-demo (github.com/madhulikavikraman/voice_flare)";
 const OPEN_METEO = "https://api.open-meteo.com/v1/forecast";
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e)).slice(0, 120);
