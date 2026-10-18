@@ -31,7 +31,14 @@ export async function onRetellCallStarted(callId: string, retellCallId: string):
   if (call.state === "ringing" || call.state === "queued") await answerCall(callId);
 }
 
-const NO_CONNECT = new Set(["dial_no_answer", "dial_busy", "dial_failed", "invalid_destination", "telephony_provider_permission_denied", "telephony_provider_unavailable", "sip_routing_error", "marked_as_spam", "user_declined", "no_valid_payment", "concurrency_limit_reached"]);
+// Retell disconnection_reason values (spec revision 2026-10-16) where no person was reached.
+const NO_CONNECT = new Set([
+  "dial_no_answer", "dial_busy", "dial_failed", "invalid_destination", "telephony_provider_permission_denied", "telephony_provider_unavailable",
+  "sip_routing_error", "marked_as_spam", "network_blocked", "user_declined", "no_valid_payment", "credit_exhausted", "budget_reached",
+  "concurrency_limit_reached", "no_concurrency_fallback", "scam_detected", "error_user_not_joined", "registered_call_timeout",
+]);
+/** Reached a phone tree, not a person: no answer (the retry and linked-contact follow-ups run), never a completed call. */
+const NO_PERSON = new Set(["dial_no_answer", "dial_busy", "user_declined", "ivr_reached"]);
 
 export async function onRetellCallEnded(callId: string, info: RetellEndedInfo): Promise<void> {
   const call = await db().get("calls", callId);
@@ -47,11 +54,16 @@ export async function onRetellCallEnded(callId: string, info: RetellEndedInfo): 
   }
   const reason = info.disconnection_reason ?? "";
   if (reason === "voicemail_reached") await failCall(callId, "voicemail");
-  else if (NO_CONNECT.has(reason) || (!call.answered_at && !info.transcript)) await failCall(callId, reason.startsWith("dial") || reason === "user_declined" ? "no_answer" : "failed", reason || undefined);
+  else if (NO_CONNECT.has(reason) || reason === "ivr_reached" || (!call.answered_at && !info.transcript)) await failCall(callId, NO_PERSON.has(reason) ? "no_answer" : "failed", reason || undefined);
   else {
     if (!call.answered_at) await answerCall(callId);
     await endCall(callId, reason || "completed");
   }
+}
+
+function peopleCount(v: unknown): number | null {
+  const n = typeof v === "number" ? v : typeof v === "string" && v.trim() ? Number(v) : NaN;
+  return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
 function asIntent(v: unknown): PrimaryIntent | null {
@@ -74,7 +86,8 @@ export async function onRetellCallAnalyzed(callId: string, info: RetellAnalyzedI
       .filter((n): n is Need => (NEEDS as string[]).includes(n));
     const row: Intent = {
       id: uid(), call_id: callId, household_id: call.subject_household_id ?? call.household_id, primary_intent: primary, flags: [], needs,
-      people: Number.isFinite(Number(custom.people)) ? Number(custom.people) : null, location_text: (custom.location_text as string) || null,
+      // Number(null) and Number("") are 0: only a real number (or numeric text) is a count of people.
+      people: peopleCount(custom.people), location_text: (custom.location_text as string) || null,
       destination: null, can_leave: typeof custom.can_leave === "boolean" ? custom.can_leave : null, understood: null,
       language: call.vars.language, confidence: 0.6, summary: (a.call_summary as string) ?? null, source: "retell", review_needed: false,
       created_at: nowIso(),

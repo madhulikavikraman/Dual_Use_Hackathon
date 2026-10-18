@@ -30,6 +30,8 @@ const serverSchema = z.object({
   RETELL_AGENT_ID_ZH: optionalString,
   RETELL_AGENT_ID_HI: optionalString,
   RETELL_AGENT_ID_FR: optionalString,
+  RETELL_AGENT_ID_HY: optionalString, // Armenian (hy-AM); optional: without it Armenian calls use the English agent
+  RETELL_AGENT_ID_TL: optionalString, // Tagalog (fil-PH); optional: without it Tagalog calls use the English agent
   // Text messages (the live-location link and the helper link). All optional: without them a send is
   // simulated and labeled (feed + ledger), and the six demo devices get the link on their browser phone.
   TWILIO_ACCOUNT_SID: optionalString,

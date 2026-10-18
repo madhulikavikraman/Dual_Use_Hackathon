@@ -16,8 +16,8 @@ export const LANGUAGES: LanguageInfo[] = [
   { code: "zh-CN", name: "Chinese (Mandarin)", native: "中文", retellEnv: "RETELL_AGENT_ID_ZH", voice: "good" },
   { code: "hi-IN", name: "Hindi", native: "हिन्दी", retellEnv: "RETELL_AGENT_ID_HI", voice: "good" },
   { code: "fr-FR", name: "French", native: "Français", retellEnv: "RETELL_AGENT_ID_FR", voice: "good" },
-  { code: "hy-AM", name: "Armenian", native: "Հայերեն", retellEnv: null, voice: "thin" },
-  { code: "fil-PH", name: "Tagalog", native: "Tagalog", retellEnv: null, voice: "thin" },
+  { code: "hy-AM", name: "Armenian", native: "Հայերեն", retellEnv: "RETELL_AGENT_ID_HY", voice: "thin" },
+  { code: "fil-PH", name: "Tagalog", native: "Tagalog", retellEnv: "RETELL_AGENT_ID_TL", voice: "thin" },
 ];
 
 export function languageByCode(code: string | null | undefined): LanguageInfo {

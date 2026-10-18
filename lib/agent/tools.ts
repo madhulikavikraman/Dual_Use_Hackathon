@@ -135,6 +135,14 @@ export function toolDefsFor(p: CallPurpose): ToolDef[] {
 }
 
 /**
+ * Retell custom-function description of a tool. Retell's form has no null type (nullable fields are optional instead),
+ * so "use null" would make a model send the word "null": there it says to leave the field out.
+ */
+export function retellDescription(t: ToolDef): string {
+  return t.description.replace(/Use null for anything not asked or not answered\./, "Leave out anything not asked or not answered.");
+}
+
+/**
  * Retell custom-function form of a tool: nullable fields become optional (Retell's LLM does not need the
  * strict-mode null pattern). Required = the non-nullable fields.
  */

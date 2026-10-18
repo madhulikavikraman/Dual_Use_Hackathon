@@ -12,6 +12,8 @@
 // Edges: edges[] (prompt or equation conditions), else_edge ("Else"), skip_response_edge ("Skip response").
 // Global nodes: global_node_setting.condition, go_back_conditions.
 import { PROMPT_TEMPLATE } from "../agent/prompt";
+import { toolsForPurpose } from "../agent/tools";
+import type { CallPurpose } from "../types";
 import {
   buildAgentPayload,
   buildLlmPayload,
@@ -74,14 +76,18 @@ export type FlowTool = Omit<CustomTool, "parameters" | "name" | "description"> &
 
 export const toolId = (name: string) => `tool_${name}`;
 
-/** request_human with its reason pinned (const), for function nodes where the reason is never in doubt. */
-const HANDOFFS = [
+/**
+ * request_human with its reason pinned (const), for function nodes where the reason is never in doubt. Retell applies a
+ * const property directly (a property with a description is filled by the LLM), and the tools route applies the same
+ * values again from the tool name (pinnedHandoff), so a dropped const can never turn a medical hand-off into a P3 row.
+ */
+export const HANDOFFS = [
   {
     name: "request_human_medical",
     reason: "medical_emergency",
     urgency: "now",
     description:
-      "Hand the person to a human now: a medical emergency, someone trapped, fire at the house, or someone who cannot leave under an order. Call only after saying \"Hang up and call the emergency number now\". Reason and urgency are fixed; put what happened in note.",
+      "Hand the person to a human now: a medical emergency, someone trapped, fire at the house, or someone who cannot leave even with help under an evacuation order (waiting for their block's wave is not that). Call only after saying \"Hang up and call ... now\". Reason and urgency are fixed; put what happened in note.",
   },
   {
     name: "request_human_cannot_answer",
@@ -99,6 +105,12 @@ const HANDOFFS = [
   },
 ] as const;
 
+/** The pinned request_human arguments for a flow hand-off copy, by the tool name Retell sends in the body. */
+export function pinnedHandoff(name: string | null | undefined): { reason: string; urgency?: string } | null {
+  const h = HANDOFFS.find((x) => x.name === name);
+  return h ? { reason: h.reason, ...(h.urgency ? { urgency: h.urgency } : {}) } : null;
+}
+
 export function buildFlowTools(baseUrl: string): FlowTool[] {
   const llm = buildLlmPayload({ baseUrl, verificationPhrase: "", callbackNumber: "" });
   const custom = llm.general_tools.filter((t): t is CustomTool => t.type === "custom");
@@ -114,16 +126,17 @@ export function buildFlowTools(baseUrl: string): FlowTool[] {
     if (h.urgency && !urgencies.includes(h.urgency)) throw new Error(`flow: request_human has no urgency "${h.urgency}" any more`);
     const properties: Record<string, Schema> = {
       ...rhParams.properties,
-      reason: { type: "string", const: h.reason, description: `Always "${h.reason}".` },
-      ...(h.urgency ? { urgency: { type: "string", const: h.urgency, description: `Always "${h.urgency}".` } } : {}),
+      reason: { type: "string", const: h.reason },
+      ...(h.urgency ? { urgency: { type: "string", const: h.urgency } } : {}),
     };
+    const pinned = new Set(["reason", ...(h.urgency ? ["urgency"] : [])]);
     tools.push({
       ...rh,
       // Same endpoint: the route takes the tool from the URL (/tools/request_human), not from the body's name.
       name: h.name,
       tool_id: toolId(h.name),
       description: h.description,
-      parameters: { type: "object", properties, required: rhParams.required ?? Object.keys(properties) },
+      parameters: { type: "object", properties, required: (rhParams.required ?? Object.keys(properties)).filter((k) => !pinned.has(k)) },
     });
   }
   return tools;
@@ -176,7 +189,7 @@ const LAYOUT: Record<string, [number, number]> = {
   canary: [7, 2], canary_fn: [7, 3],
   test_call: [8, 2], test_fn: [8, 3],
   script_fallback: [9, 2],
-  heat_checkin: [10, 2],
+  heat_checkin: [10, 2], heat_callback: [11, 2], heat_contact: [12, 2], staying_split: [3, 5],
   closing: [5, 12], end_call_fn: [5, 13], end: [5, 14],
   g_medical: [7, 6], medical_split: [7, 7], medical_record_fn: [7, 8], medical_link_offer: [7, 9],
   g_unapproved: [8, 6], g_doubts: [9, 6],
@@ -276,17 +289,23 @@ export function buildFlow(opts: { baseUrl: string; model?: string; verificationP
   // --- Greeting and the purpose split ---
   conv(
     "greeting", "👋 Greeting: verification phrase and callback number",
-    "Open the call in {{language}}, in two short sentences at most. Say: this is the emergency information line (if the line mode is heat, " +
-      "and it is \"{{mode}}\", say \"the heat check-in line\" instead); you are an automated AI voice; " +
+    "Open the call in {{language}}, in two short sentences at most. Say: this is the emergency information line (the line mode is \"{{mode}}\": " +
+      "if it is heat, say \"the heat check-in line\" instead; if it is base, \"the installation's emergency line\"); you are an automated AI voice; " +
       "the verification phrase is \"{{verification_phrase}}\"; the official callback number is {{callback_number}}. " +
       "If simulated is \"true\" (it is \"{{simulated}}\"), also say this is a simulated call for a hackathon demonstration. " +
       "Do not read any directive yet and do not ask a question yet.",
     { skip: "route_purpose" },
   );
   // Heat mode replaces the resident, public-line, callback and linked-contact scripts (lib/agent/prompt.ts, "# Heat mode").
-  const heatLane = parts.heatSection ? (["resident", "inbound", "qrt_callback", "linked_contact"] as const) : [];
+  // One node per tool set, the same tools each purpose has on the browser phone (toolsForPurpose).
+  const HEAT_NODES = [
+    { id: "heat_checkin", purposes: ["resident", "inbound"], tools: ["record_status", "request_human", "share_live_location", "lookup_zone"] },
+    { id: "heat_callback", purposes: ["qrt_callback"], tools: ["record_status", "request_human", "share_live_location"] },
+    { id: "heat_contact", purposes: ["linked_contact"], tools: ["record_status", "request_human"] },
+  ] as const;
+  const heatLane = parts.heatSection ? HEAT_NODES.flatMap((n) => n.purposes.map((p) => [p, n.id] as const)) : [];
   branch("route_purpose", "🔀 Call purpose", [
-    ...heatLane.map((p): [EquationCond, string] => [EQ("&&", eq("mode", "heat"), eq("purpose", p)), "heat_checkin"]),
+    ...heatLane.map(([p, id]): [EquationCond, string] => [EQ("&&", eq("mode", "heat"), eq("purpose", p)), id]),
     [EQ("&&", eq("purpose", "resident"), eq("stage", "2")), "ask_status"],
     [EQ("||", eq("purpose", "resident")), "resident_directive"],
     [EQ("||", eq("purpose", "inbound")), "inbound_where"],
@@ -300,8 +319,9 @@ export function buildFlow(opts: { baseUrl: string; model?: string; verificationP
   // --- Resident: read the approved words, then the questions ---
   conv(
     "resident_directive", "📢 Read the approved directive, word for word",
-    "Read the approved texts for this zone now, exactly as written, in this order: the directive \"{{directive_text}}\", the route text \"{{move_text}}\", " +
-      "the evacuation point \"{{evac_point}}\". Skip any that is (none). If the call's language differs from a text, translate it faithfully: add nothing, " +
+    "Read the approved texts for this zone now, exactly as written and in full, in this order: the directive \"{{directive_text}}\", the route text \"{{move_text}}\", " +
+      "the evacuation point \"{{evac_point}}\". Skip any that is (none), and skip the evacuation point if the route text already names it (a block's route text does). " +
+      "If the call's language differs from a text, translate it faithfully: add nothing, " +
       "remove nothing, soften nothing. Say nothing else: no advice, no time estimate, nothing about the hazard beyond the text. Do not ask a question yet." +
       script("resident"),
     { skip: "ask_status" },
@@ -311,9 +331,12 @@ export function buildFlow(opts: { baseUrl: string; model?: string; verificationP
     "Ask one short question for this call's stage, then listen. The stage is {{stage}}.\n" +
       "- Warning (stage 1) or a public-line caller: \"Are you leaving, staying, or already gone?\"\n" +
       "- Check-in (stage 2): \"Have you left?\"\n" +
-      "- Order (stage 3): \"Are you leaving now?\"\n" +
+      "- Order (stage 3): \"Are you leaving now?\" But if the route text gives their block a later wave (a planned time, get ready, we will call again), " +
+      "ask instead: \"Will you be ready to leave when your wave starts?\" Waiting for their wave is not a refusal and not \"cannot leave\".\n" +
       "- Shelter: \"Is anyone hurt or trapped?\"\n" +
       "- Watch: \"Would anyone at the address need help to leave if that changes?\"\n" +
+      "- Roll call (stage rollcall): \"Are you out of the area?\"\n" +
+      "- Lifted (stage all_clear): \"Does anyone at the address need help?\" Never say it is safe; add nothing about going back.\n" +
       "If they ask something, answer only from the approved texts, then ask again.",
     {
       edges: [
@@ -326,15 +349,23 @@ export function buildFlow(opts: { baseUrl: string; model?: string; verificationP
     "ask_needs", "♿ Needs and people",
     "Ask what is still missing, one question at a time:\n" +
       "- unless the stage is shelter or watch: does anyone at the address need help to leave (for example a wheelchair, oxygen, no car, children alone, pets), and how many people are there;\n" +
-      "- unless the stage is watch: where they are right now, in their words.\n" +
+      "- unless the stage is watch: where they are right now, in their words; on a warning call (stage 1) or the public line, also whether " +
+      "that place may be shared with the response team (this is not the live-location link).\n" +
       "Use the memory note ({{memory_note}}) for one caring question if it is relevant. Then confirm everything back in one sentence, " +
       "for example \"I heard you are leaving with two children for Westchester, is that right?\"",
     { edges: [[P("The person confirmed the summary is right"), "record_status_fn"]] },
   );
   fn("record_status_fn", "📝 record_status", "record_status", {
-    edges: [[P("The person needs help now or needs help to leave, or is staying while the zone state ({{zone_state}}) is order"), "location_consent"]],
+    edges: [
+      [P("The person needs help now or needs help to leave, or is staying while the zone state ({{zone_state}}) is order"), "location_consent"],
+      [P("The person said they are staying, and the zone state ({{zone_state}}) is not order"), "staying_split"],
+    ],
     else: "after_record_split",
   });
+  // Staying (not under an Order): no teach-back and no smoke question; a warning call may still offer the collections help.
+  branch("staying_split", "🔀 Staying: warning call or public line?", [
+    [EQ("||", eq("stage", "1"), eq("purpose", "inbound")), "collection_split"],
+  ], "closing");
   branch("after_record_split", "🔀 Warning call or public line?", [
     [EQ("||", eq("stage", "1"), eq("purpose", "inbound")), "teach_back"],
   ], "closing");
@@ -344,11 +375,14 @@ export function buildFlow(opts: { baseUrl: string; model?: string; verificationP
   fn("teach_back_fn", "📝 record_status (understood)", "record_status", { else: "hazard_question" });
   conv(
     "hazard_question", "🔥 Do you see smoke or fire?",
-    "They are leaving or already safe, so ask once: \"Do you see smoke or fire near you?\" Never ask anyone to go and look.",
+    "Ask once: \"Do you see smoke or fire near you?\" Never ask anyone to go and look.",
     { edges: [[P("The person says they see smoke, fire, damage or injury"), "hazard_fn"]], else: "collection_split" },
   );
   fn("hazard_fn", "📝 report_hazard", "report_hazard", { else: "collection_split" });
-  branch("collection_split", "🔀 Collection on file?", [[EQ("&&", eq("collection_note", "(none)", "!=")), "collection_offer"]], "closing");
+  // Collections help is offered only at Warning ("while there is still time"); under an Order or Shelter in Place, leaving comes first.
+  branch("collection_split", "🔀 Collection on file, zone at Warning?", [
+    [EQ("&&", eq("collection_note", "(none)", "!="), eq("zone_state", "warning")), "collection_offer"],
+  ], "closing");
   conv(
     "collection_offer", "🖼️ Collections line (asked once, last)",
     "A collection is on file: {{collection_note}}. Ask once: \"Do you need help moving the items on your list while there is still time?\" " +
@@ -406,9 +440,10 @@ export function buildFlow(opts: { baseUrl: string; model?: string; verificationP
       "Translate faithfully if needed; add nothing. Do not ask a question yet.",
     { skip: "ask_status" },
   );
+  // No instruction for that place: a person calls back, and the caller can still report smoke or fire they see.
   fn("no_instruction_fn", "🙋 request_human (no instruction)", "request_human_cannot_answer", {
     say: "Say, in the language of the call, that you have no instructions for their location and a person will call them back.",
-    else: "closing",
+    else: "hazard_question",
   });
 
   // --- Other purposes ---
@@ -451,14 +486,25 @@ export function buildFlow(opts: { baseUrl: string; model?: string; verificationP
   );
 
   if (parts.heatSection) {
-    sub(
-      "heat_checkin", "🌡️ Heat check-in line (mode heat)",
-      "This call is on the heat check-in line (purpose {{purpose}}, stage {{stage}}). The greeting is done. Follow the heat mode script below exactly, " +
-        "one question at a time, using the tools it names. Read the approved texts word for word: the directive \"{{directive_text}}\" and the route " +
-        "text \"{{move_text}}\". Do not end the call yourself; when the script is done, stop.\n\n" + parts.heatSection,
-      ["record_status", "request_human", "share_live_location", "lookup_zone"],
-      { edges: [[P("The script for this call is finished"), "closing"]] },
-    );
+    const HEAT_NAMES: Record<string, string> = {
+      heat_checkin: "🌡️ Heat check-in line (resident, public line)",
+      heat_callback: "🌡️ Heat check-in line (response-team callback)",
+      heat_contact: "🌡️ Heat check-in line (linked contact)",
+    };
+    for (const n of HEAT_NODES) {
+      sub(
+        n.id, HEAT_NAMES[n.id],
+        "This call is on the heat check-in line (purpose {{purpose}}, stage {{stage}}). The greeting is done. Follow the heat mode script below exactly, " +
+          "one question at a time, using the tools it names. Read the approved texts word for word: the directive \"{{directive_text}}\" and the route " +
+          "text \"{{move_text}}\"." +
+          (n.tools.includes("lookup_zone" as never)
+            ? " On a public-line call where the directive is (none), first ask where they are right now and call lookup_zone, then read the heat message it returns."
+            : "") +
+          " Do not end the call yourself; when the script is done, stop.\n\n" + parts.heatSection,
+        [...n.tools],
+        { edges: [[P("The script for this call is finished"), "closing"]] },
+      );
+    }
   } else {
     warnings.push('The prompt has no "# Heat mode" section: heat calls follow the fire scripts.');
   }
@@ -475,8 +521,11 @@ export function buildFlow(opts: { baseUrl: string; model?: string; verificationP
 
   // --- Global nodes: reachable from any step ---
   fn("g_medical", "🚨 Medical emergency: hang up and call now", "request_human_medical", {
-    say: "Say exactly, translated faithfully into the language of the call: \"Hang up and call {{emergency_number}} now.\"",
-    global: "The person describes a medical emergency, someone trapped, or fire at the house, or, under an order, says they cannot leave",
+    say: "Say exactly, translated faithfully into the language of the call: for a medical emergency \"Hang up and call {{medical_number}} now.\"; " +
+      "for someone trapped or fire at the house \"Hang up and call {{emergency_number}} now.\"",
+    global:
+      "The person describes a medical emergency, someone trapped, or fire at the house; or, on an evacuation order call (stage 3, not the heat " +
+      "check-in line), says they cannot leave now. A person waiting for their block's later wave is not someone who cannot leave",
     else: "medical_split",
   });
   branch("medical_split", "🔀 Can this call share a location?", [

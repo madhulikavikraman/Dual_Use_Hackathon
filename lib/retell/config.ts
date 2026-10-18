@@ -4,7 +4,8 @@
 // Field names and enums follow the Retell API reference (spec revision 2026-10-16):
 //   POST /create-retell-llm, POST /create-agent, PATCH /update-phone-number/{number}.
 import { PROMPT_TEMPLATE, retellPromptTemplate } from "../agent/prompt";
-import { TOOL_DEFS, retellParameters, type ToolDef } from "../agent/tools";
+import { TOOL_DEFS, retellDescription, retellParameters, type ToolDef } from "../agent/tools";
+import { jurisdictionFor } from "../jurisdictions";
 import { LANGUAGES, type LanguageInfo } from "../languages";
 import { NEEDS, PRIMARY_INTENTS } from "../types";
 
@@ -38,9 +39,11 @@ const ACCENTS: Record<string, string[]> = {
   ZH: ["chinese", "mandarin"],
   HI: ["indian", "hindi"],
   FR: ["french", "parisian"],
+  HY: ["armenian"],
+  TL: ["filipino", "tagalog", "philippine"],
 };
 
-/** One agent per language that has a RETELL_AGENT_ID_* env var: EN, ES, KO, ZH, HI, FR. */
+/** One agent per language that has a RETELL_AGENT_ID_* env var: EN, ES, KO, ZH, HI, FR, HY (Armenian), TL (Tagalog). */
 export const RETELL_LANGS: RetellLang[] = LANGUAGES.filter((l) => l.retellEnv).map((lang) => {
   const envVar = lang.retellEnv as string;
   const suffix = envVar.replace("RETELL_AGENT_ID_", "");
@@ -66,22 +69,31 @@ export function promptPlaceholders(): string[] {
 }
 
 /**
- * Fallbacks Retell uses when a call arrives without variables (for example the inbound webhook failed).
- * Retell leaves a placeholder raw ("{{zone_name}}") when no value is supplied, so every one gets a value.
+ * Fallbacks Retell uses when a call arrives without variables (for example the inbound webhook failed, or a dashboard
+ * test call). Retell leaves a placeholder raw ("{{zone_name}}") when no value is supplied, so every one gets a value.
+ * The life-safety numbers are never "(none)": "Hang up and call ... now" must always name a real number. Retell runs
+ * the US line (China uses a domestic platform, lib/jurisdictions.ts), so the default jurisdiction is Los Angeles.
  */
-export function defaultDynamicVariables(opts: { verificationPhrase: string; callbackNumber: string }): Record<string, string> {
+export function defaultDynamicVariables(opts: { verificationPhrase: string; callbackNumber: string; jurisdiction?: string }): Record<string, string> {
   const out: Record<string, string> = {};
   for (const k of promptPlaceholders()) out[k] = "(none)";
+  const j = jurisdictionFor(opts.jurisdiction ?? "US-CA");
   return {
     ...out,
     purpose: "inbound",
     stage: "inbound",
     language: "the caller's language",
+    mode: "civilian",
+    emergency_number: j.call_now,
+    medical_number: j.emergency.medical,
     simulated: "true",
     verification_phrase: opts.verificationPhrase,
     callback_number: opts.callbackNumber,
   };
 }
+
+/** Tools that can take a few seconds (a geocode of a stated place, or a text message): a typing sound fills the line. */
+const SLOW_WRITES = new Set(["record_status", "report_hazard", "share_live_location"]);
 
 function customTool(t: ToolDef, baseUrl: string) {
   const isLookup = t.name === "lookup_zone";
@@ -90,12 +102,16 @@ function customTool(t: ToolDef, baseUrl: string) {
   return {
     type: "custom" as const,
     name: t.name,
-    description: t.description,
+    description: retellDescription(t),
     url: toolUrl(baseUrl, t.name),
     method: "POST" as const,
     parameters: retellParameters(t),
-    // lookup_zone geocodes (a second or two): fill the silence. Everything else is a quick write.
+    // The server needs the {name, call, args} wrapper: the call object maps the request to our call ("Payload: args only" off).
+    args_at_root: false,
+    // lookup_zone geocodes (a second or two) and says it is checking. record_status and report_hazard may geocode a
+    // stated place too (up to about 5 s) and share_live_location sends a text: a typing sound fills that, no extra words.
     speak_during_execution: isLookup,
+    ...(SLOW_WRITES.has(t.name) ? { enable_typing_sound: true } : {}),
     ...(isLookup
       ? {
           execution_message_type: "prompt" as const,
@@ -148,7 +164,8 @@ export const POST_CALL_ANALYSIS = [
       "wrong_number, not_in_zone, unclear, voicemail, silence: no usable answer. " +
       "On the heat check-in line (mode heat): needs_help_now = heat-stroke warning signs or feeling unwell in the heat; " +
       "needs_help_leaving = needs a ride to a cooling center; leaving = going to a cooling center or somewhere cool; " +
-      "already_left = at home and cool; staying = staying home and declining help (or wants a check-in visit).",
+      "already_left = at home and cool; staying = staying home and declining help (or wants a check-in visit). " +
+      "Block-by-block evacuation: a resident told their block's wave is later who will go with it is leaving, not staying.",
     choices: [...PRIMARY_INTENTS],
     required: false,
   },
@@ -181,7 +198,8 @@ export const POST_CALL_ANALYSIS = [
     name: "live_location_consent",
     description:
       "True only if the agent asked whether it may text a link that shares the person's live location with the response team " +
-      "and the person clearly said yes. False if they said no or were never asked clearly. A maybe is false.",
+      "and the person clearly said yes. False if they said no or were never asked clearly. A maybe is false. A yes to sharing " +
+      "the place they named (no text link) is false.",
     required: false,
   },
   {
@@ -192,13 +210,17 @@ export const POST_CALL_ANALYSIS = [
   },
 ];
 
-/** Voicemail: leave only approved text (PRD 8.2 / 13: the directive, the evacuation point and the callback number). */
+/**
+ * Voicemail: leave only approved text (PRD 8.2 / 13: the directive, the route, the evacuation point and the callback
+ * number). Approved texts are read in full: a block's get-ready route ends with the leave-right-away line.
+ */
 export const VOICEMAIL_PROMPT =
-  "Leave a voicemail under 30 seconds in {{language}}. Say this is the emergency information line (if the mode {{mode}} is heat: the heat check-in line) and the verification phrase " +
+  "Leave a short voicemail in {{language}}; keep your own words brief. Say this is the emergency information line (if the mode {{mode}} is heat: the heat check-in line; if base: the installation's emergency line) and the verification phrase " +
   "{{verification_phrase}}. If {{simulated}} is true, say this is a simulated call for a hackathon demonstration. " +
-  "If the purpose {{purpose}} is resident or linked_contact, read exactly, translated faithfully if needed and adding nothing: " +
-  "\"{{directive_text}}\" then \"{{move_text}}\" then the evacuation point \"{{evac_point}}\", skipping any that is (none). " +
-  "For any other purpose do not read an alert or a directive. End with the official callback number {{callback_number}}.";
+  "If the purpose {{purpose}} is resident or linked_contact, read exactly and in full, translated faithfully if needed, adding nothing and cutting nothing, " +
+  "even if that makes the message long: \"{{directive_text}}\" then \"{{move_text}}\" then the evacuation point \"{{evac_point}}\", skipping any that is (none) " +
+  "and skipping the evacuation point if the route text already names it. " +
+  "For any other purpose do not read an alert or a directive. Never say anyone is safe and never give a time. End with the official callback number {{callback_number}}.";
 
 /** POST /create-agent (or PATCH /update-agent/{agent_id}) body for one language. */
 export function buildAgentPayload(l: RetellLang, opts: { llmId: string; voiceId: string; baseUrl: string; analysisModel?: string }) {
@@ -238,7 +260,7 @@ export interface RetellVoice {
   gender?: string;
 }
 
-/** Platform voices are tuned for telephony and cover all six languages; used when no accent matches. */
+/** Platform voices are tuned for telephony; used when no accent matches (test Armenian and Tagalog before relying on it). */
 export const DEFAULT_RETELL_VOICE = "retell-Cimo";
 
 /** Pick a voice for a language from GET /list-voices: accent match, platform voices first. */
