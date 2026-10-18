@@ -81,8 +81,12 @@ export function checkEnv(): string[] {
 /** Which data store the server uses. */
 export function storageBackend(): "supabase" | "local" {
   const env = serverEnv();
-  if (env.STORAGE === "local") return "local";
   const hasSupabase = Boolean(env.NEXT_PUBLIC_SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY);
+  // Vercel's filesystem is read-only and every instance is separate, so the file store cannot work there.
+  if (process.env.VERCEL && (env.STORAGE === "local" || !hasSupabase)) {
+    throw new Error("On Vercel the local file store cannot work: set the Supabase variables and STORAGE=supabase (docs/DEPLOY.md)");
+  }
+  if (env.STORAGE === "local") return "local";
   if (env.STORAGE === "supabase" && !hasSupabase) {
     throw new Error("STORAGE=supabase but NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are not set");
   }

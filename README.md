@@ -42,6 +42,7 @@ Open `/board` (the supervisor's screen), `/phones` (QR codes for the six volunte
 and rehearsal controls), `/qrt` (response team), `/evidence` (Twist 1: Phase I milestones measured live),
 `/twists`, and `/api/health`.
 
+- **Deploying?** Vercel needs Supabase (the file store cannot run there): see [`docs/DEPLOY.md`](docs/DEPLOY.md).
 - **No Supabase?** The server keeps data in `.data/secondkey.json` (one machine, one process). With Supabase,
   run `supabase/schema.sql` then `supabase/migrations/002_second_key.sql` in the SQL editor and set the three
   Supabase variables; the app switches automatically (`STORAGE=local` forces the file store).
