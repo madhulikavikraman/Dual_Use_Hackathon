@@ -11,9 +11,9 @@ import { Stories } from "@/components/landing/Stories";
 import { Collections, Tuesday } from "@/components/landing/Tuesday";
 
 export const metadata: Metadata = {
-  title: { absolute: "VoiceFlare: ask the edge before an alert wakes a zone" },
+  title: { absolute: "VoiceFlare: help that understands you" },
   description:
-    "VoiceFlare holds an evacuation order 90 seconds for a named human, asks the people at the zone's edge what they see, shows how many phones it will wake, and calls residents with only the words that human approved. Hackathon demo: synthetic residents; nothing reaches a real alert system.",
+    "VoiceFlare helps people evacuate, so fewer lives are lost and getting out is easier: calls in each household's language, block-by-block waves so roads stay clear, and a helper sent to anyone who cannot leave alone. A named person approves every word. Hackathon demo: synthetic residents; nothing reaches a real alert system.",
 };
 
 // The landing page, which is also the demo's setup guide. The shell is a server component: the logo, the copy and

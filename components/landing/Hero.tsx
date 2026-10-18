@@ -76,11 +76,13 @@ export function Hero() {
               className="vf-rise mt-9 max-w-[17ch] text-balance font-display text-[clamp(2.2rem,1.25rem+2.9vw,3.6rem)] font-semibold leading-[1.03] tracking-[-0.025em] text-vf-bone"
               style={delay(90)}
             >
-              Before an alert wakes 10 million phones, ask 4 neighbors at the edge of the zone.
+              Help that understands you
             </h1>
-            <p className="vf-rise mt-6 max-w-[56ch] text-lg leading-relaxed text-vf-smoke sm:text-[1.2rem]" style={delay(170)}>
-              VoiceFlare holds an evacuation order 90 seconds for a named human, asks the people at the zone&rsquo;s edge what they
-              see, and then calls residents in their own language with only the words that human approved.
+            <p className="vf-rise mt-6 max-w-[58ch] text-lg leading-relaxed text-vf-smoke sm:text-[1.2rem]" style={delay(170)}>
+              VoiceFlare helps people evacuate, so fewer lives are lost and getting out is easier. It calls every household in its
+              own language, moves neighborhoods out block by block so the roads stay clear, finds the people who cannot leave on
+              their own and sends a helper to their exact spot. Before any alert wakes a city, it checks with the neighbors at the
+              zone&rsquo;s edge, and a named person approves every word.
             </p>
             <p className="vf-rise mt-5 flex max-w-[60ch] flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[15px] leading-relaxed text-vf-bone/90" style={delay(210)}>
               <span className="rounded-[3px] border border-vf-ember/60 px-1.5 py-0.5 text-[11px] font-black tracking-[0.12em] text-vf-ember">DUAL-USE</span>
