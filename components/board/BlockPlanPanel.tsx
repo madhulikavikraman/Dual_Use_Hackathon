@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { blockMessage, capPerWave, firstWave, overloads, waveCount } from "@/lib/engine/blocks";
+import {
+  blockMessage, blockWords, capPerWave, firstWave, holdReleaseAt, lastWaveStartMin, overloads, roadFloorH, sharedRoads, templatesOf, waveCount,
+  type PlanTemplates, type TemplateKey,
+} from "@/lib/engine/blocks";
 import { LEAVE_IF_UNSAFE } from "@/lib/directives";
-import type { EvacBlock, EvacPlan, EvacTemplates, Zone } from "@/lib/types";
+import type { EvacBlock, EvacPlan, Zone } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { inputClass } from "@/components/ui/Field";
 import { useToast } from "@/components/ui/Toast";
@@ -38,6 +41,9 @@ function span(ms: number): string {
   return `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}`;
 }
 
+/** "45 min", "2.5 h" (to the quarter hour). */
+const hoursText = (min: number) => (min < 60 ? `${Math.round(min)} min` : `${(Math.round((min / 60) * 4) / 4).toLocaleString("en-US")} h`);
+
 /** "🏃 Wave 1 now: about 3,280 people in 4 blocks", for the hold's dose preview (HoldStrip can mount this). */
 export function HoldWaveDose({ zoneId, className = "" }: { zoneId: string; className?: string }) {
   const plan = useZonePlan(zoneId);
@@ -47,7 +53,7 @@ export function HoldWaveDose({ zoneId, className = "" }: { zoneId: string; class
     <p className={`text-sm font-semibold leading-snug text-red-800 ${className}`}>
       <span aria-hidden="true">🏃 </span>
       Wave {w.wave} now: about {fmtN(w.people)} people in {w.blocks} block{w.blocks === 1 ? "" : "s"}
-      {plan.status === "proposed" ? <span className="font-normal text-slate-600"> (plan proposed)</span> : null}
+      {plan.status === "proposed" ? <span className="font-normal text-slate-600"> if the block plan is approved</span> : null}
     </p>
   );
 }
@@ -82,7 +88,10 @@ export function BlockPlanPanel({ zoneId }: { zoneId?: string }) {
           <h2 id="block-plan-title" className="flex items-center gap-1.5 text-base font-bold text-slate-900">
             <span aria-hidden="true">🚦</span> Block by block
           </h2>
-          <p className="text-xs text-slate-600">Moves people out in waves, nearest the fire first, so no road jams. Simulated.</p>
+          <p className="text-xs text-slate-600">
+            Moves people out in waves, nearest the fire first, so no road jams. Patches up to about half a mile (800 m) on a side; several go in
+            each wave.
+          </p>
         </div>
         {!zoneId && ordered.length > 1 ? (
           <label className="text-xs font-semibold text-slate-700">
@@ -101,13 +110,16 @@ export function BlockPlanPanel({ zoneId }: { zoneId?: string }) {
           </label>
         ) : null}
       </header>
-      <PlanBody plan={plan} zone={zone} clockOffset={clockOffset} onDone={refresh} />
+      <PlanBody plan={plan} zone={zone} others={plans} zoneName={(id) => zoneById.get(id)?.name ?? id} clockOffset={clockOffset} onDone={refresh} />
     </section>
   );
 }
 
-function PlanBody({ plan, zone, clockOffset, onDone }: { plan: EvacPlan; zone: Zone; clockOffset: number; onDone: () => void }) {
+function PlanBody({ plan, zone, others, zoneName, clockOffset, onDone }: {
+  plan: EvacPlan; zone: Zone; others: EvacPlan[]; zoneName: (id: string) => string; clockOffset: number; onDone: () => void;
+}) {
   const total = waveCount(plan);
+  const shared = sharedRoads(plan, others);
   const cars = plan.blocks.reduce((t, b) => t + b.vehicles_est, 0);
   const people = plan.blocks.reduce((t, b) => t + b.people_est, 0);
   const [selected, setSelected] = useState<number | null>(null);
@@ -123,6 +135,7 @@ function PlanBody({ plan, zone, clockOffset, onDone }: { plan: EvacPlan; zone: Z
   const order = zone.state === "order";
   const done = running && plan.current_wave > total;
   const nextIn = running && plan.wave_started_at && !done ? Date.parse(plan.wave_started_at) + plan.wave_minutes * 60_000 - now : null;
+  const releaseAt = running ? holdReleaseAt(plan) : null;
   const over = overloads(plan);
 
   return (
@@ -179,7 +192,11 @@ function PlanBody({ plan, zone, clockOffset, onDone }: { plan: EvacPlan; zone: Z
               </b>{" "}
               {plan.held ? (
                 <>
-                  <span aria-hidden="true">⏸️ </span>Wave {plan.current_wave + 1} held by {plan.held_by}.
+                  <span aria-hidden="true">⏸️ </span>Wave {plan.current_wave + 1} held by {plan.held_by}.{" "}
+                  {nextIn !== null && nextIn < 0 ? (
+                    <b className="text-red-700">Held {span(-nextIn)} past its start. </b>
+                  ) : null}
+                  {releaseAt !== null ? <>The wave clock releases it in about {span(releaseAt - now)}.</> : null}
                 </>
               ) : nextIn !== null ? (
                 <>Wave {plan.current_wave + 1} starts in about {span(nextIn)}.</>
@@ -193,7 +210,16 @@ function PlanBody({ plan, zone, clockOffset, onDone }: { plan: EvacPlan; zone: Z
         </p>
       ) : null}
 
-      <Controls plan={plan} zone={zone} order={order} done={done} onAction={setAction} />
+      <Controls plan={plan} zone={zone} order={order} done={done} last={running && plan.current_wave >= total} onAction={setAction} />
+
+      {shared.length ? (
+        <p role="status" className="rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-950">
+          <span aria-hidden="true">🛣️ </span>
+          <b>Shared roads:</b>{" "}
+          {shared.map((s) => `${s.route.short} (also ${s.zones.map(zoneName).join(", ")})`).join("; ")}. Another zone&apos;s running plan uses
+          the same street. Plans packed after it leave room for its cars; watch these roads.
+        </p>
+      ) : null}
 
       <WaveStrip plan={plan} total={total} wave={wave} onPick={setSelected} />
       <WaveDetail plan={plan} zone={zone} wave={wave} />
@@ -228,7 +254,9 @@ function Stat({ emoji, label, value }: { emoji: string; label: string; value: st
   );
 }
 
-function Controls({ plan, zone, order, done, onAction }: { plan: EvacPlan; zone: Zone; order: boolean; done: boolean; onAction: (a: Action) => void }) {
+function Controls({ plan, zone, order, done, last, onAction }: {
+  plan: EvacPlan; zone: Zone; order: boolean; done: boolean; last: boolean; onAction: (a: Action) => void;
+}) {
   const running = plan.status === "active";
   return (
     <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Block plan controls for ${zone.name}`}>
@@ -249,10 +277,10 @@ function Controls({ plan, zone, order, done, onAction }: { plan: EvacPlan; zone:
           </Button>
           {plan.held ? (
             <Button size="sm" onClick={() => onAction("release")}>
-              <span aria-hidden="true">▶️</span> Release wave {plan.current_wave + 1}
+              <span aria-hidden="true">▶️</span> {last || done ? "Clear the hold" : `Release wave ${plan.current_wave + 1}`}
             </Button>
           ) : (
-            <Button size="sm" disabled={done} onClick={() => onAction("hold")}>
+            <Button size="sm" disabled={done || last} title={last ? "This is the last wave: there is no next wave to hold" : undefined} onClick={() => onAction("hold")}>
               <span aria-hidden="true">⏸️</span> Hold next wave
             </Button>
           )}
@@ -395,18 +423,32 @@ function Messages({ plan, zone }: { plan: EvacPlan; zone: Zone }) {
       </summary>
       <p className="mt-2 text-xs font-semibold text-slate-600">A block going now:</p>
       <blockquote className="border-l-4 border-red-600 pl-2 text-slate-800">“{blockMessage(goNow, first, zone, plan.status === "all_go" ? "all_go" : "go_now")}”</blockquote>
-      {later ? (
+      {later && plan.status !== "all_go" ? (
         <>
-          <p className="mt-2 text-xs font-semibold text-slate-600">A block in a later wave (called again when its wave starts):</p>
-          <blockquote className="border-l-4 border-yellow-500 pl-2 text-slate-800">“{blockMessage(plan, later, zone, "get_ready")}”</blockquote>
+          <p className="mt-2 text-xs font-semibold text-slate-600">A block in a later wave (called again when its wave starts), in place of the Order text:</p>
+          <blockquote className="border-l-4 border-yellow-500 pl-2 text-slate-800">
+            “{blockWords(plan, later, zone, "get_ready").directive_text} {blockMessage(plan, later, zone, "get_ready")}”
+          </blockquote>
+          <p className="mt-2 text-xs font-semibold text-slate-600">
+            Exception: people who need extra time to leave (access and functional needs on file, or an open help row) do not wait for their wave:
+          </p>
+          <blockquote className="border-l-4 border-red-600 pl-2 text-slate-800">“{blockMessage(plan, later, zone, "extra_time")}”</blockquote>
         </>
       ) : null}
       <p className="mt-2 text-xs text-slate-600">
-        The agent reads these words after the zone&apos;s approved directive. It never gives an arrival time and never says anyone is safe.
+        Blocks going now hear the zone&apos;s approved Order first. The agent never gives an arrival time and never says anyone is safe.
       </p>
     </details>
   );
 }
+
+const TEMPLATE_LABEL: Record<TemplateKey, string> = {
+  go_now: "Wave going now (must say “leave now”)",
+  get_ready_directive: "Later waves: read in place of the Order text (must keep the leave-right-away line; never “leave now”)",
+  get_ready: "Later waves: route line (must keep the leave-right-away line)",
+  extra_time: "People who need extra time, in a later wave (must say “leave now”)",
+  all_go: "Everyone go now (must say “leave now”)",
+};
 
 const SUGGEST: Record<Action, string[]> = {
   approve: ["Roads are open; nearest the fire first", "Exit roads checked with traffic control"],
@@ -420,9 +462,11 @@ const SUGGEST: Record<Action, string[]> = {
 function ActionDialog({ action, plan, zone, onClose, onDone }: { action: Action; plan: EvacPlan; zone: Zone; onClose: () => void; onDone: () => void }) {
   const toast = useToast();
   const [minutes, setMinutes] = useState(plan.wave_minutes);
-  const [templates, setTemplates] = useState<EvacTemplates>(plan.templates);
+  const [templates, setTemplates] = useState<Required<PlanTemplates>>(() => templatesOf(plan));
   const next = plan.current_wave + 1;
   const total = waveCount(plan);
+  // How long the plan runs: the last wave's start, beside the floor the roads set (every car at full road capacity).
+  const runs = `The last wave starts about ${hoursText(lastWaveStartMin(plan))} after wave 1 (the roads need at least about ${hoursText(roadFloorH(plan) * 60)} for every car).`;
   const title: Record<Action, string> = {
     approve: `Approve the block plan for ${zone.name}`,
     reject: `Reject the block plan for ${zone.name}`,
@@ -434,11 +478,11 @@ function ActionDialog({ action, plan, zone, onClose, onDone }: { action: Action;
   const description: Record<Action, string> = {
     approve:
       zone.state === "order"
-        ? `${plan.blocks.length} blocks in ${total} waves. Wave 1 goes now; later waves hear when to get ready, and to leave right away if they see fire or smoke or feel unsafe. The Order stays the Order for the whole zone.`
-        : `${plan.blocks.length} blocks in ${total} waves. The plan stands by and starts with wave 1 when an Order is sent.`,
+        ? `${plan.blocks.length} blocks in ${total} waves of ${plan.wave_minutes} min. ${runs} Wave 1 goes now; later waves hear when to get ready, and to leave right away if they see fire or smoke or feel unsafe. People who need extra time leave now. The Order stays the Order for the whole zone.`
+        : `${plan.blocks.length} blocks in ${total} waves of ${plan.wave_minutes} min. ${runs} The plan stands by and starts with wave 1 when an Order is sent.`,
     reject: "Every call reads the full Order: everyone leaves now by the zone's approved route.",
     advance: `Wave ${next} blocks hear "leave now" on their roads. Calls start at once.`,
-    hold: `Wave ${plan.current_wave} keeps going. Wave ${next} waits until you release it. Residents waiting still hear: ${LEAVE_IF_UNSAFE}`,
+    hold: `Wave ${plan.current_wave} keeps going. Wave ${next} waits until you release it, or one wave length (${plan.wave_minutes} min) past its start at most: then the wave clock releases it. Residents waiting still hear: ${LEAVE_IF_UNSAFE}`,
     release: `Wave ${next} may start on the wave clock again.`,
     go_now: `All ${plan.blocks.length} blocks leave at once, each on its own road. Roads may jam; use this when the fire is faster than the plan.`,
   };
@@ -456,7 +500,8 @@ function ActionDialog({ action, plan, zone, onClose, onDone }: { action: Action;
       onClose={onClose}
       onConfirm={async (s) => {
         if (action === "approve") {
-          const changed = Object.fromEntries(Object.entries(templates).filter(([k, v]) => v !== plan.templates[k as keyof EvacTemplates]));
+          const before = templatesOf(plan);
+          const changed = Object.fromEntries(Object.entries(templates).filter(([k, v]) => v !== before[k as TemplateKey]));
           await planApi.approvePlan(zone.id, s, { wave_minutes: minutes !== plan.wave_minutes ? minutes : undefined, templates: changed });
         } else if (action === "reject") await planApi.rejectPlan(zone.id, s);
         else if (action === "advance") await planApi.advanceWave(zone.id, s);
@@ -480,17 +525,17 @@ function ActionDialog({ action, plan, zone, onClose, onDone }: { action: Action;
               ))}
             </select>
             <span className="mt-1 block text-xs font-normal text-slate-500">
-              Raised on its own if a block would put more cars on its road than the road carries in one wave.
+              A different length re-plans the waves. A patch with more cars than its road carries in one wave is cut into smaller patches.
             </span>
           </label>
           <details className="rounded-md border border-slate-200 p-2">
             <summary className="cursor-pointer text-[13px] font-semibold text-slate-800">The words the agent reads (edit if needed)</summary>
-            {(["go_now", "get_ready", "all_go"] as const).map((k) => (
+            {(["go_now", "get_ready_directive", "get_ready", "extra_time", "all_go"] as const).map((k) => (
               <label key={k} className="mt-2 block text-xs font-semibold text-slate-700">
-                {k === "go_now" ? "Wave going now" : k === "get_ready" ? "Later waves (must keep the leave-right-away line)" : "Everyone go now"}
+                {TEMPLATE_LABEL[k]}
                 <textarea
                   className={`${inputClass} mt-1 text-sm`}
-                  rows={k === "get_ready" ? 4 : 2}
+                  rows={k === "get_ready" || k === "get_ready_directive" ? 4 : 2}
                   value={templates[k]}
                   onChange={(e) => setTemplates((t) => ({ ...t, [k]: e.target.value }))}
                 />

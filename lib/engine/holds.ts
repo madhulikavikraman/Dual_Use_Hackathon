@@ -7,7 +7,7 @@ import { HttpError } from "@/lib/http";
 import { wrongPolygonFor, zoneDefaults } from "@/lib/scenarios";
 import type { Call, Canary, Hold, HoldSentinel, HoldTally, Household, Zone, ZoneEvent, ZoneState } from "@/lib/types";
 import { firstWave } from "./blocks";
-import { buildVars, cancelQueued, newCall, startCampaign } from "./campaigns";
+import { buildVars, cancelQueued, newCall, planWords, startCampaign } from "./campaigns";
 import { feed, getMeta, ledger, setMeta } from "./log";
 
 /** A ladder state in the words of the run's mode (heat mode says "Heat Advisory", not "Evacuation Warning"). */
@@ -131,14 +131,17 @@ export async function openHold(body: OpenHoldBody): Promise<Hold> {
   await feed({
     kind: "hold", severity: "warn", zone_id: zone.id,
     title: `Hold opened: ${await labelOf(body.proposed_state)} for ${zone.name}`,
-    detail: `Wakes about ${hold.population_est.toLocaleString("en-US")} people across ${hold.area_sq_mi} sq mi (estimate).${w1 ? ` ${waveDoseText(w1)}.` : ""} ${hold.sentinels.filter((s) => s.call_id).length} sentinels ringing; sends on time in 90 s.`,
+    detail: `Wakes about ${hold.population_est.toLocaleString("en-US")} people across ${hold.area_sq_mi} sq mi (estimate).${w1 ? ` ${waveDoseText(w1, plan?.status === "proposed")}.` : ""} ${hold.sentinels.filter((s) => s.call_id).length} sentinels ringing; sends on time in 90 s.`,
   });
   return hold;
 }
 
-/** "Wave 1 now: about 3,280 people in 4 blocks": the hold's dose preview line for a block plan. */
-export function waveDoseText(w: { wave: number; blocks: number; people: number }): string {
-  return `Wave ${w.wave} now: about ${w.people.toLocaleString("en-US")} people in ${w.blocks} block${w.blocks === 1 ? "" : "s"}`;
+/**
+ * "Wave 1 now: about 3,280 people in 4 blocks": the hold's dose preview line for a block plan. While the plan is only
+ * proposed, it says so: until a named human approves it, everyone hears the full Order.
+ */
+export function waveDoseText(w: { wave: number; blocks: number; people: number }, proposed = false): string {
+  return `Wave ${w.wave} now: about ${w.people.toLocaleString("en-US")} people in ${w.blocks} block${w.blocks === 1 ? "" : "s"}${proposed ? " if the block plan is approved" : ""}`;
 }
 
 /** The hold's dose: the zone total, plus wave 1 of the zone's block plan when the hold's polygon is the zone's own. */
@@ -147,7 +150,7 @@ export async function holdDose(hold: Hold): Promise<{ total: number; wave1: Retu
   const plan = zone && JSON.stringify(hold.polygon) === JSON.stringify(zone.geom) ? await planFor(zone.id) : null;
   const wave1 = plan ? firstWave(plan) : null;
   const total = `Wakes about ${hold.population_est.toLocaleString("en-US")} people`;
-  return { total: hold.population_est, wave1, text: wave1 ? `${total} · ${waveDoseText(wave1)}` : total };
+  return { total: hold.population_est, wave1, text: wave1 ? `${total} · ${waveDoseText(wave1, plan?.status === "proposed")}` : total };
 }
 
 /** Supervisor decisions on a hold: Send now, Hold once, Edit polygon, Cancel, Hand to authority. */
@@ -218,7 +221,7 @@ async function cancelSentinelCalls(hold: Hold) {
   }
 }
 
-/** The (simulated) broadcast: the zone changes state, Stage 3 calls start, the canary is scheduled. */
+/** The broadcast (a demo: it reaches no alert system): the zone changes state, Stage 3 calls start, the canary is scheduled. */
 export async function sendHold(hold: Hold, actor: string, reason: string, decision: Hold["decision"]): Promise<Hold> {
   const zone = (await db().get("zones", hold.zone_id))!;
   const at = nowIso();
@@ -232,12 +235,12 @@ export async function sendHold(hold: Hold, actor: string, reason: string, decisi
   });
   const fresh = (await db().get("zones", zone.id))!;
   await ledger({
-    actor, action: decision === "timer" ? "sent on timer, no decision (simulated)" : decision === "bypass" ? "send, IC order bypassed the hold (simulated)" : "send (simulated)",
+    actor, action: decision === "timer" ? "sent on timer, no decision" : decision === "bypass" ? "send, IC order bypassed the hold" : "send",
     target: `${zone.name} (${hold.polygon_label})`, reason, kind: decision === "timer" ? "system" : "decision",
   });
   await feed({
     kind: "send", severity: "critical", zone_id: zone.id,
-    title: `Sent (simulated): ${await labelOf(hold.proposed_state)} for ${zone.name}`,
+    title: `Sent: ${await labelOf(hold.proposed_state)} for ${zone.name}`,
     detail: `Polygon: ${hold.polygon_label}, about ${hold.population_est.toLocaleString("en-US")} phones. Read at send: ${hold.read}. Canary in 15 s.`,
   });
   await scheduleCanaries(next, fresh);
@@ -279,11 +282,19 @@ export async function applyZoneState(zone: Zone, state: Zone["state"], o: {
       await db().update("campaigns", c.id, { status: "done" });
     }
   } else {
-    // Same state, corrected texts: calls still waiting read the corrected approval.
+    // Same state, corrected texts: calls still waiting read the corrected approval. Under a running block plan, a
+    // resident keeps their block's words (with the corrected evacuation point), not the zone's bare route.
+    const corrected = { ...zone, state, directive_text: o.directive_text, move_text: o.move_text, evac_point: o.evac_point };
+    const mode = (await getMeta()).mode;
     for (const c of await db().where("campaigns", { zone_id: zone.id, status: "running" })) {
       for (const call of await db().where("calls", { campaign_id: c.id, state: "queued" })) {
+        const h = call.purpose === "resident" && call.household_id ? await db().get("households", call.household_id) : null;
+        const block = h ? await planWords(corrected, h, mode) : null;
         await db().update("calls", call.id, {
-          vars: { ...call.vars, directive_text: o.directive_text ?? "", move_text: o.move_text ?? "", evac_point: o.evac_point ?? "", zone_state: state },
+          vars: {
+            ...call.vars, directive_text: o.directive_text ?? "", move_text: o.move_text ?? "", evac_point: o.evac_point ?? "", zone_state: state,
+            ...(block ?? {}),
+          },
         });
       }
     }

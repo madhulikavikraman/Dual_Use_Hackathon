@@ -48,7 +48,7 @@ const HEAT: Vocab = {
 };
 
 /**
- * The heat message a human approves: the opening, the zone's reading (labeled when it is the simulated heat wave),
+ * The heat message a human approves: the opening, the zone's reading (labeled when it is the demo heat wave),
  * the NWS heat product if one is active at the zone, what the level means, and 211. Read verbatim on the call.
  */
 export function heatDirective(state: ZoneState, zone: string, weather: ZoneWeather | null | undefined): string {
@@ -59,11 +59,11 @@ export function heatDirective(state: ZoneState, zone: string, weather: ZoneWeath
     const n = Math.round(weather.feels_like_high_f);
     parts.push(
       weather.basis === "simulated"
-        ? `In the simulated heat wave for this demonstration, it may feel like ${n} degrees here today.`
+        ? `In the demo heat wave, it may feel like ${n} degrees here today.`
         : `It may feel like ${n} degrees here today.`,
     );
     const product = heatProduct(weather);
-    if (product) parts.push(`The National Weather Service has issued a ${product} for this area.`);
+    if (product) parts.push(`The National Weather Service has issued ${/^[aeiou]/i.test(product) ? "an" : "a"} ${product} for this area.`);
   }
   parts.push(HEAT_ACTION[state], HEAT_211);
   return parts.join(" ");
@@ -165,6 +165,8 @@ export const STATE_RUNG: Record<ZoneState, string> = {
 // ---------- Block-by-block evacuation: message templates (a named human approves them with the plan) ----------
 // The agent reads the filled text verbatim as the route line. {block}, {wave}, {time}, {route}, {to_evac} and {zone}
 // come from the approved plan. Every "wait for your wave" message carries LEAVE_IF_UNSAFE: a plan never holds anyone back.
+// A block still waiting also hears get_ready_directive in place of the zone's Order text, so one call never says both
+// "leave now" and "wait for your wave". People who need extra time to leave hear extra_time: they never wait for a wave.
 
 export const LEAVE_IF_UNSAFE = "If you see fire or smoke, or feel unsafe, leave right away. Do not wait for your wave.";
 
@@ -172,6 +174,8 @@ export const BLOCK_TEMPLATES = {
   go_now: "Your block, {block}, is in wave {wave}: leave now by {route}{to_evac}.",
   get_ready: `Your block, {block}, is in wave {wave}, planned for about {time}, by {route}{to_evac}. Get ready now. We will call you again when your wave starts. ${LEAVE_IF_UNSAFE}`,
   all_go: "Everyone in {zone} leaves now. Your block, {block}: leave now by {route}{to_evac}.",
+  extra_time: "Your block, {block}, is in wave {wave}. People who need extra time to leave should not wait for the wave: leave now by {route}{to_evac}.",
+  get_ready_directive: `Evacuation Order for {zone}: immediate threat to life. To keep the roads moving, your block leaves in wave {wave}. ${LEAVE_IF_UNSAFE}`,
 } as const;
 
 export function fillBlockTemplate(

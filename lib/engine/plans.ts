@@ -3,8 +3,10 @@ import { db, nowIso, uid } from "@/lib/db";
 import { LEAVE_IF_UNSAFE } from "@/lib/directives";
 import { HttpError } from "@/lib/http";
 import type { EvacPlan, EvacTemplates, Scenario, Zone } from "@/lib/types";
-import { buildPlan, firstWave, pullForward, refresh, waveCount } from "./blocks";
-import { startBlockCalls, applyPlanToQueuedCalls } from "./campaigns";
+import {
+  buildPlan, firstWave, holdReleaseAt, lastWaveStartMin, pullForward, refresh, TEMPLATE_KEYS, templatesOf, waveCount, type PlanTemplates,
+} from "./blocks";
+import { startBlockCalls, applyPlanToQueuedCalls, isMachineActor } from "./campaigns";
 import { routesFor } from "./evacRoutes";
 import { feed, ledger } from "./log";
 
@@ -65,60 +67,76 @@ export async function proposePlan(zoneId: string, by = PLANNER_ACTOR, opts: { wa
   const routes = routesFor(zone.id);
   if (!routes.length) return null;
   const households = await db().where("households", { zone_id: zone.id });
-  const plan = buildPlan({ zone, households, routes, proposed_by: by, wave_minutes: opts.wave_minutes });
+  // Streets shared with another zone's running plan: its cars in each wave are counted before this plan's are packed.
+  const others = await plansNow().catch(() => [] as EvacPlan[]);
+  const plan = buildPlan({ zone, households, routes, proposed_by: by, wave_minutes: opts.wave_minutes, others });
   await db().insert("evac_plans", plan);
   if (!opts.quiet) {
     const w1 = firstWave(plan);
     await feed({
       kind: "proposal", severity: "warn", zone_id: zone.id,
       title: `Block plan proposed for ${zone.name}: ${plan.blocks.length} blocks in ${waveCount(plan)} waves of ${plan.wave_minutes} min`,
-      detail: `Wave 1 now: about ${w1.people.toLocaleString("en-US")} people in ${w1.blocks} block${w1.blocks === 1 ? "" : "s"}, on ${plan.routes.length} exit roads. Needs a named human. Until then every call reads the full Order.`,
+      detail: `If approved, wave 1 goes first: about ${w1.people.toLocaleString("en-US")} people in ${w1.blocks} block${w1.blocks === 1 ? "" : "s"}, on ${plan.routes.length} exit roads. The last wave starts about ${hoursText(lastWaveStartMin(plan))} after wave 1. Needs a named human. Until then every call reads the full Order.`,
     });
     await ledger({ actor: by, action: "propose block plan", kind: "system", target: zone.name, reason: `${plan.blocks.length} blocks, ${waveCount(plan)} waves of ${plan.wave_minutes} min; nearest the hazard first` });
   }
   return plan;
 }
 
-const TEMPLATE_RULES: { key: keyof EvacTemplates; need: string[] }[] = [
-  { key: "go_now", need: ["{block}", "{route}"] },
-  { key: "get_ready", need: ["{block}", "{wave}", "{route}"] },
-  { key: "all_go", need: ["{block}", "{route}"] },
+/** "45 min", "2.5 h". */
+export const hoursText = (min: number) => (min < 60 ? `${Math.round(min)} min` : `${(Math.round((min / 60) * 4) / 4).toLocaleString("en-US")} h`);
+
+// Every message needs its fill-ins; every go message says "leave now"; every wait message keeps the exact
+// leave-right-away line; the get-ready directive names the Order and never says "leave now" (the block waits for its wave).
+const TEMPLATE_RULES: { key: keyof Required<PlanTemplates>; label: string; need: string[]; must?: string; mustNot?: RegExp }[] = [
+  { key: "go_now", label: "wave going now", need: ["{block}", "{route}"], must: "leave now" },
+  { key: "get_ready", label: "later waves", need: ["{block}", "{wave}", "{route}"], must: LEAVE_IF_UNSAFE },
+  { key: "get_ready_directive", label: "later waves' directive", need: ["{wave}"], must: LEAVE_IF_UNSAFE, mustNot: /leave now/i },
+  { key: "extra_time", label: "extra time", need: ["{block}", "{route}"], must: "leave now" },
+  { key: "all_go", label: "everyone go now", need: ["{block}", "{route}"], must: "leave now" },
 ];
 
-function checkTemplates(t: EvacTemplates) {
-  for (const { key, need } of TEMPLATE_RULES) {
+function checkTemplates(t: Required<PlanTemplates>) {
+  for (const { key, label, need, must, mustNot } of TEMPLATE_RULES) {
     const missing = need.filter((x) => !t[key].includes(x));
-    if (missing.length) throw new HttpError(400, `The ${key.replace("_", " ")} message needs ${missing.join(", ")}`);
+    if (missing.length) throw new HttpError(400, `The ${label} message needs ${missing.join(", ")}`);
+    // A "wait for your wave" message must always tell people to go at once if they are in danger.
+    if (must && !t[key].toLowerCase().includes(must.toLowerCase())) throw new HttpError(400, `The ${label} message must keep: "${must}"`);
+    if (mustNot?.test(t[key])) throw new HttpError(400, `The ${label} message must not say "leave now": that block waits for its wave`);
   }
-  // A "wait for your wave" message must always tell people to go at once if they are in danger.
-  if (!/leave right away/i.test(t.get_ready)) throw new HttpError(400, `The get-ready message must keep: "${LEAVE_IF_UNSAFE}"`);
+  if (!/evacuation order/i.test(t.get_ready_directive)) throw new HttpError(400, "The later waves' directive must say the Evacuation Order covers the zone");
 }
 
 /** A named human approves the plan (and its message templates). Under an Order it starts at once; else it stands by. */
 export async function approvePlan(zoneId: string, body: {
-  approved_by: string; reason: string; wave_minutes?: number; templates?: Partial<EvacTemplates>;
+  approved_by: string; reason: string; wave_minutes?: number; templates?: Partial<PlanTemplates>;
 }): Promise<EvacPlan> {
   needName(body.approved_by, body.reason);
   const zone = await zoneOrThrow(zoneId);
   let plan = (await planFor(zoneId)) ?? (await proposePlan(zoneId, PLANNER_ACTOR, { quiet: true }));
   if (!plan) throw new HttpError(409, "No exit roads are set up for this zone, so there is no block plan to approve");
   if (plan.status !== "proposed") throw new HttpError(409, `The block plan is already ${plan.status === "all_go" ? "everyone go now" : plan.status}`);
-  const templates = { ...plan.templates, ...Object.fromEntries(Object.entries(body.templates ?? {}).filter(([, v]) => typeof v === "string" && v.trim())) } as EvacTemplates;
+  const edits = Object.fromEntries(
+    Object.entries(body.templates ?? {}).filter(([k, v]) => (TEMPLATE_KEYS as string[]).includes(k) && typeof v === "string" && v.trim()),
+  );
+  const templates = { ...templatesOf(plan), ...edits } as Required<PlanTemplates>;
   checkTemplates(templates);
   if (body.wave_minutes && body.wave_minutes !== plan.wave_minutes) {
     // A different wave length re-packs the waves (and is raised if a block would not fit its road).
     const households = await db().where("households", { zone_id: zone.id });
-    const rebuilt = buildPlan({ zone, households, routes: plan.routes, proposed_by: plan.proposed_by, wave_minutes: body.wave_minutes, id: plan.id, at: plan.created_at });
+    const others = await plansNow().catch(() => [] as EvacPlan[]);
+    const rebuilt = buildPlan({ zone, households, routes: plan.routes, proposed_by: plan.proposed_by, wave_minutes: body.wave_minutes, id: plan.id, at: nowIso(), others });
     plan = { ...rebuilt, created_at: plan.created_at };
   }
   const at = nowIso();
   const order = zone.state === "order";
   plan = await save({
-    ...plan, templates, approved_by: body.approved_by, approved_at: at, reason: body.reason,
+    ...plan, templates: templates as EvacTemplates, approved_by: body.approved_by, approved_at: at, reason: body.reason,
     status: order ? "active" : "standby", current_wave: order ? 1 : 0, wave_started_at: order ? at : null,
   });
   await ledger({
-    actor: body.approved_by, action: `approve block plan: ${plan.blocks.length} blocks, ${waveCount(plan)} waves of ${plan.wave_minutes} min${order ? ", wave 1 goes now" : " (stands by until an Order)"}`,
+    actor: body.approved_by,
+    action: `approve block plan: ${plan.blocks.length} blocks, ${waveCount(plan)} waves of ${plan.wave_minutes} min, last wave starts about ${hoursText(lastWaveStartMin(plan))} after wave 1${order ? "; wave 1 goes now" : " (stands by until an Order)"}`,
     target: zone.name, reason: body.reason,
   });
   if (order) await onWaveStart(zone, plan, body.approved_by, `Block plan approved: wave 1 goes now`, true);
@@ -142,7 +160,7 @@ export async function activatePlan(zone: Zone, actor: string): Promise<EvacPlan 
   if (!plan || plan.status !== "standby") return plan;
   const at = nowIso();
   const next = await save({ ...plan, status: "active", current_wave: 1, wave_started_at: at, held: false });
-  await ledger({ actor, action: "block plan starts: wave 1 goes now", kind: actor === "timer" || actor === "system" ? "system" : "decision", target: zone.name, reason: `Order sent; plan approved by ${plan.approved_by}` });
+  await ledger({ actor, action: "block plan starts: wave 1 goes now", kind: isMachineActor(actor) ? "system" : "decision", target: zone.name, reason: `Order sent; plan approved by ${plan.approved_by}` });
   return next;
 }
 
@@ -157,7 +175,7 @@ export async function advanceWave(zoneId: string, actor: string, reason: string)
   const next = await save({ ...plan, current_wave: plan.current_wave + 1, wave_started_at: nowIso(), held: false, held_by: null, held_reason: null });
   await ledger({
     actor, action: next.current_wave > total ? "block plan: last wave done" : `start wave ${next.current_wave} of ${total}`, target: zone.name, reason,
-    kind: actor === CLOCK_ACTOR ? "system" : "decision",
+    kind: isMachineActor(actor) ? "system" : "decision",
   });
   if (next.current_wave <= total) await onWaveStart(zone, next, actor, reason, false);
   return next;
@@ -170,6 +188,7 @@ export async function holdWave(zoneId: string, actor: string, reason: string, re
   const plan = await livePlanOrThrow(zoneId);
   if (plan.status !== "active") throw new HttpError(409, "Only a running plan has a next wave to hold");
   if (release === !plan.held) return refresh(plan);
+  if (!release && plan.current_wave >= waveCount(plan)) throw new HttpError(409, "This is the last wave: there is no next wave to hold");
   const next = await save({ ...plan, held: !release, held_by: release ? null : actor, held_reason: release ? null : reason });
   await ledger({
     actor, action: release ? `release hold: wave ${plan.current_wave + 1} may start` : `hold wave ${plan.current_wave + 1} (wave ${plan.current_wave} keeps going)`,
@@ -178,7 +197,9 @@ export async function holdWave(zoneId: string, actor: string, reason: string, re
   await feed({
     kind: "info", severity: release ? "info" : "warn", zone_id: zone.id,
     title: release ? `${zone.name}: wave ${plan.current_wave + 1} released by ${actor}` : `${zone.name}: wave ${plan.current_wave + 1} held by ${actor}`,
-    detail: release ? reason : `${reason}. Residents waiting still hear: ${LEAVE_IF_UNSAFE}`,
+    detail: release
+      ? reason
+      : `${reason}. A hold can delay the wave by one wave length (${plan.wave_minutes} min) at most; then the wave clock releases it. Residents waiting still hear: ${LEAVE_IF_UNSAFE}`,
   });
   return next;
 }
@@ -209,20 +230,22 @@ export async function pullBlocksForward(zoneId: string, blockIds: string[], acto
   const zone = await db().get("zones", zoneId);
   const plan = await planFor(zoneId);
   if (!zone || !plan || plan.status === "all_go") return null;
-  const r = pullForward(plan, blockIds, why);
+  const others = (await plansNow().catch(() => [] as EvacPlan[])).filter((p) => p.zone_id !== zoneId);
+  const r = pullForward(plan, blockIds, why, nowIso(), others);
   if (!r.moved.length) return { plan, moved: [] };
   const next = await save(r.plan);
   const running = next.status === "active";
   await ledger({
     actor, action: `pull block${r.moved.length === 1 ? "" : "s"} forward to ${running ? "go now" : "wave 1"}: ${r.moved.join(", ")}`,
-    kind: actor.startsWith("model") || actor === "system" ? "system" : "decision", target: zone.name, reason: `${why}. Later waves reflowed.`,
+    kind: isMachineActor(actor) ? "system" : "decision", target: zone.name, reason: `${why}. Later waves reflowed.`,
   });
   await feed({
     kind: "info", severity: "warn", zone_id: zone.id,
     title: `${zone.name}: ${r.moved.join(", ")} pulled forward to ${running ? "go now" : "wave 1"}`,
     detail: `${why}. Later waves reflowed; now ${waveCount(next)} waves.`,
   });
-  if (running) await startBlockCalls(zone, next, r.moved, actor === "system" ? "system" : actor, why);
+  // The model's name stays on the calls' ledger row, which is a system row (isMachineActor), never a human decision.
+  if (running) await startBlockCalls(zone, next, r.moved, actor, why);
   return { plan: next, moved: r.moved };
 }
 
@@ -246,11 +269,26 @@ export async function planTick(now: string): Promise<number> {
   let n = 0;
   const rows = await db().where("evac_plans", { status: "active" }).catch(() => [] as EvacPlan[]);
   for (const plan of rows) {
-    if (plan.held || !plan.wave_started_at) continue;
+    if (!plan.wave_started_at) continue;
     if (plan.current_wave > waveCount(plan)) continue;
-    if (Date.parse(now) - Date.parse(plan.wave_started_at) < plan.wave_minutes * 60_000) continue;
     const zone = await db().get("zones", plan.zone_id);
     if (!zone || zone.state !== "order") continue;
+    if (plan.held) {
+      // A forgotten hold must not keep later waves waiting: it delays the wave by one wave length at most.
+      const releaseAt = holdReleaseAt(plan);
+      if (releaseAt === null || Date.parse(now) < releaseAt) continue;
+      const wave = plan.current_wave + 1;
+      await save({ ...plan, held: false, held_by: null, held_reason: null });
+      await ledger({
+        actor: CLOCK_ACTOR, kind: "system", target: zone.name, action: `hold ends: wave ${wave} released by the wave clock`,
+        reason: `Held by ${plan.held_by ?? "a person"} (${plan.held_reason ?? "no reason given"}); a hold delays a wave by ${plan.wave_minutes} min at most`,
+      });
+      await feed({
+        kind: "info", severity: "warn", zone_id: zone.id,
+        title: `${zone.name}: hold on wave ${wave} ended by the wave clock`,
+        detail: `Held by ${plan.held_by ?? "a person"} for one wave length (${plan.wave_minutes} min) past its start. Wave ${wave} starts now. Hold it again if the road is still blocked.`,
+      });
+    } else if (Date.parse(now) - Date.parse(plan.wave_started_at) < plan.wave_minutes * 60_000) continue;
     await advanceWave(plan.zone_id, CLOCK_ACTOR, `${plan.wave_minutes} min wave clock`);
     n++;
   }
@@ -278,11 +316,13 @@ export async function seedPlans(scenario: Scenario, at: string) {
   const households = await db().all("households");
   const seeds: { id: string; done: number }[] =
     scenario === "westside" ? [{ id: "LA-SM", done: 3 }, { id: "LA-VN", done: 0 }] : scenario === "norte" ? [{ id: "NOR-FR", done: 1 }] : [];
+  const seeded: EvacPlan[] = [];
   for (const s of seeds) {
     const zone = zones.find((z) => z.id === s.id);
     const routes = routesFor(s.id);
     if (!zone || !routes.length) continue;
-    const base = buildPlan({ zone, households: households.filter((h) => h.zone_id === zone.id), routes, proposed_by: PLANNER_ACTOR, at, id: uid() });
+    // Venice shares Lincoln Blvd and Centinela Ave with Santa Monica: Santa Monica's running waves are counted first.
+    const base = buildPlan({ zone, households: households.filter((h) => h.zone_id === zone.id), routes, proposed_by: PLANNER_ACTOR, at, id: uid(), others: seeded });
     const order = zone.state === "order";
     const current = order ? Math.min(waveCount(base), s.done + 1) : 0;
     // The current wave began a few minutes ago; earlier waves ran on the clock before it.
@@ -295,6 +335,7 @@ export async function seedPlans(scenario: Scenario, at: string) {
       at,
     );
     await db().insert("evac_plans", plan);
+    seeded.push(plan);
     await ledger({
       actor: SEED_ACTOR,
       action: `approve block plan: ${plan.blocks.length} blocks, ${waveCount(plan)} waves of ${plan.wave_minutes} min${order ? `, wave ${current} going now` : " (stands by until an Order)"}`,

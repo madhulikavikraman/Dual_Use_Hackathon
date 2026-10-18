@@ -6,10 +6,16 @@ import { jurisdictionFor } from "@/lib/jurisdictions";
 import type {
   Call, CallPurpose, CallVars, Campaign, CampaignKind, EvacPlan, Household, HouseholdStatus, Meta, Stage, Status, Zone,
 } from "@/lib/types";
-import { blockAt, blockMessage, messageKind, refresh } from "./blocks";
+import { blockAt, blockMessage, blockWords, messageKind, refresh } from "./blocks";
 import { getMeta, ledger } from "./log";
 
 // Campaigns and calls: who gets called, in what order, with which variables (PRD 8.2).
+
+/** Actors that are not people: their ledger rows are "system", never counted as human decisions. */
+export const isMachineActor = (actor: string) =>
+  ["system", "timer", "agent", "wave clock"].includes(actor) || actor.startsWith("system ") || actor.startsWith("model");
+
+const pickWords = (w: { directive_text: string; move_text: string }) => ({ directive_text: w.directive_text, move_text: w.move_text });
 
 const LEGACY_STAGE: Partial<Record<CampaignKind, Stage>> = {
   warning: "warning", order: "order", all_clear: "all_clear", checkin: "checkin", test: "checkin",
@@ -54,6 +60,7 @@ export function buildVars(opts: {
     simulated: "true",
     mode: meta.mode,
     emergency_number: jurisdictionFor(meta.jurisdiction).call_now,
+    medical_number: jurisdictionFor(meta.jurisdiction).emergency.medical,
     collection_note: (opts.subject ?? household)?.collection_note ?? "",
   };
 }
@@ -196,14 +203,17 @@ export async function startCampaign(opts: {
   // Block-by-block plan (Order relay only): the blocks going now are called first, later waves hear when to get
   // ready, and edge-first ordering still applies inside each wave. Without an approved plan everyone hears the full Order.
   const plan = kind === "order" && !heat ? await runningPlan(zone.id) : null;
+  // People who need extra time to leave never wait for their block's wave (their few cars barely change a road's load).
+  const extra = plan ? await needsExtraTime(zone.id) : new Set<string>();
   const ranked = roster
     .map((h) => {
       const d = edgeDistanceM(h.lng, h.lat, zone.geom, zone.hazard_origin);
       const block = plan ? blockAt(plan, h.lng, h.lat) : null;
-      const goNow = !plan || !block || messageKind(plan, block) !== "get_ready";
+      const say = plan && block ? messageKind(plan, block, extra.has(h.id)) : null;
+      const goNow = say !== "get_ready";
       // Heat has no hazard edge: "ring" 0 is the people who live alone or have no air conditioning, ring 1 everyone else.
       const ring = heat ? (heatRisk(h) ? 0 : 1) : Math.floor(d / RING_M);
-      return { h, d, ring, block, wave: goNow ? 0 : block!.wave };
+      return { h, d, ring, block, say, wave: goNow ? 0 : block!.wave };
     })
     .sort((a, b) => a.wave - b.wave || a.ring - b.ring || Number(b.h.afn_flags.length > 0) - Number(a.h.afn_flags.length > 0) || a.d - b.d);
 
@@ -211,14 +221,14 @@ export async function startCampaign(opts: {
   const stage = stageLabel(kind, wave);
   let group = -1;
   let last = "";
-  const calls: Call[] = ranked.map(({ h, d, ring, block, wave: w }, i) => {
+  const calls: Call[] = ranked.map(({ h, d, ring, block, say, wave: w }, i) => {
     // Each ring (and each later wave) goes out a beat after the previous one so the sweep is visible from the hazard side.
     if (`${w}:${ring}` !== last) {
       group++;
       last = `${w}:${ring}`;
     }
     const vars = buildVars({ zone, household: h, purpose, stage, meta, alert_text: zone.directive_text });
-    if (plan && block) vars.move_text = blockMessage(plan, block, zone);
+    if (plan && block && say) Object.assign(vars, pickWords(blockWords(plan, block, zone, say)));
     return newCall({
       campaign_id: campaign.id,
       household: h,
@@ -251,7 +261,7 @@ export async function startCampaign(opts: {
     reason: opts.reason ?? (heat
       ? `${stateLabelFor(zone.state, meta.mode)}; people who live alone or have no air conditioning first`
       : `${STATE_LABEL[zone.state]}; edge-first from the hazard side`),
-    kind: started_by === "system" || started_by === "timer" ? "system" : "decision",
+    kind: isMachineActor(started_by) ? "system" : "decision",
   });
   return campaign;
 }
@@ -266,12 +276,41 @@ async function runningPlan(zoneId: string): Promise<EvacPlan | null> {
 }
 
 /**
+ * Both approved texts for a household under a running block plan: the directive (the zone's Order, or the approved
+ * get-ready directive for a block still waiting) and the route line. Null without a running plan (or on the heat line).
+ * People who need extra time to leave hear the extra-time words: they never wait for a wave.
+ */
+export async function planWords(zone: Zone, h: Pick<Household, "id" | "lng" | "lat">, mode: Meta["mode"]): Promise<{ directive_text: string; move_text: string } | null> {
+  if (zone.state !== "order" || mode === "heat") return null;
+  const plan = await runningPlan(zone.id);
+  const block = plan ? blockAt(plan, h.lng, h.lat) : null;
+  if (!plan || !block) return null;
+  const extra = await needsExtraTime(zone.id);
+  return pickWords(blockWords(plan, block, zone, messageKind(plan, block, extra.has(h.id))));
+}
+
+/**
+ * Households in a zone who need extra time to leave: access and functional needs on file, or an open help row (not a
+ * collections row). Under a block plan they hear "leave now" whatever their block's wave.
+ */
+export async function needsExtraTime(zoneId: string): Promise<Set<string>> {
+  const out = new Set<string>();
+  for (const h of await db().where("households", { zone_id: zoneId })) if (h.afn_flags?.length) out.add(h.id);
+  const help = await db().where("help_requests", { zone_id: zoneId }).catch(() => []);
+  for (const r of help) {
+    if (r.household_id && (r.kind ?? "people") === "people" && ["open", "assigned", "en_route"].includes(r.status)) out.add(r.household_id);
+  }
+  return out;
+}
+
+/**
  * The plan was just approved (or changed) while Order calls wait in the queue: each queued call takes its block's
  * approved words, and the blocks going now ring first. Calls already made said "leave now" (the full Order); that stands.
  */
 export async function applyPlanToQueuedCalls(zone: Zone, plan: EvacPlan): Promise<number> {
   let n = 0;
   const now = Date.now();
+  const extra = await needsExtraTime(zone.id);
   for (const c of await db().where("campaigns", { zone_id: zone.id, status: "running" })) {
     if (c.kind !== "order") continue;
     for (const call of await db().where("calls", { campaign_id: c.id, state: "queued" })) {
@@ -279,9 +318,9 @@ export async function applyPlanToQueuedCalls(zone: Zone, plan: EvacPlan): Promis
       const h = await db().get("households", call.household_id);
       const block = h ? blockAt(plan, h.lng, h.lat) : null;
       if (!block) continue;
-      const kind = messageKind(plan, block);
+      const kind = messageKind(plan, block, extra.has(call.household_id));
       await db().update("calls", call.id, {
-        vars: { ...call.vars, move_text: blockMessage(plan, block, zone) },
+        vars: { ...call.vars, ...pickWords(blockWords(plan, block, zone, kind)) },
         // Go-now calls keep their place; get-ready calls move behind them, a wave at a time.
         planned_at: new Date(Math.max(Date.parse(call.planned_at), now + (kind === "get_ready" ? 2500 * Math.min(block.wave, 12) : 0))).toISOString(),
       });
@@ -314,7 +353,7 @@ export async function startBlockCalls(zone: Zone, plan: EvacPlan, blockIds: stri
   for (const p of people) {
     const call = queued.get(p.h.id);
     if (call) {
-      await db().update("calls", call.id, { vars: { ...call.vars, move_text: blockMessage(plan, p.block, zone) }, planned_at: nowIso() });
+      await db().update("calls", call.id, { vars: { ...call.vars, ...pickWords(blockWords(plan, p.block, zone)) }, planned_at: nowIso() });
     } else fresh.push(p);
   }
   if (!fresh.length) return null;
@@ -333,7 +372,7 @@ export async function startBlockCalls(zone: Zone, plan: EvacPlan, blockIds: stri
     .sort((a, b) => a.ring - b.ring || Number(b.h.afn_flags.length > 0) - Number(a.h.afn_flags.length > 0) || a.d - b.d);
   const calls = ranked.map(({ h, block, d, ring }, i) => {
     const vars = buildVars({ zone, household: h, purpose: "resident", stage: "3", meta, alert_text: zone.directive_text });
-    vars.move_text = blockMessage(plan, block, zone);
+    Object.assign(vars, pickWords(blockWords(plan, block, zone)));
     return newCall({
       campaign_id: campaign.id, household: h, purpose: "resident", vars, planned_at: isoIn(Math.min(ring, 12) * 2500),
       order_index: i, ring_index: ring, edge_distance_m: Math.round(d),
@@ -343,7 +382,8 @@ export async function startBlockCalls(zone: Zone, plan: EvacPlan, blockIds: stri
   await db().upsert("household_status", ranked.map(({ h }) => blankStatus(campaign.id, h.id, "queued")));
   await ledger({
     actor: started_by, action: `start go-now calls for ${[...ids].join(", ")} (${calls.length})`, target: zone.name, reason,
-    kind: started_by === "system" || started_by === "timer" ? "system" : "decision",
+    // The fire model pulling blocks forward (or the wave clock) is not a person: a system row, never a human decision.
+    kind: isMachineActor(started_by) ? "system" : "decision",
   });
   return campaign;
 }

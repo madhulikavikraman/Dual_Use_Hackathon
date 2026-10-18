@@ -6,9 +6,15 @@ const Body = z.object({
   approved_by: z.string().trim().min(1, "name required"),
   reason: z.string().trim().min(1, "reason required"),
   wave_minutes: z.number().int().min(5).max(60).optional(),
-  // The human may edit the message templates; {block}, {wave}, {route} and the leave-now-if-unsafe line are checked.
+  // The human may edit the message templates; {block}, {wave}, {route}, "leave now" and the leave-right-away line are checked.
   templates: z
-    .object({ go_now: z.string().max(600).optional(), get_ready: z.string().max(800).optional(), all_go: z.string().max(600).optional() })
+    .object({
+      go_now: z.string().max(600).optional(),
+      get_ready: z.string().max(800).optional(),
+      get_ready_directive: z.string().max(800).optional(),
+      extra_time: z.string().max(600).optional(),
+      all_go: z.string().max(600).optional(),
+    })
     .optional(),
 });
 

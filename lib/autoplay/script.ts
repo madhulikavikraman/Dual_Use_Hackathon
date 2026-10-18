@@ -264,9 +264,9 @@ export const BEATS: Beat[] = [
   {
     id: "reset",
     rung: "watch",
-    title: "The Westside Fire (simulated)",
+    title: "The Westside Fire",
     caption:
-      "Santa Monica is under an Evacuation Order, moving out block by block: gray blocks are done, red ones go now, yellow ones get ready. Venice is under a Warning. Everything here is simulated; autopilot answers for the six volunteer phones.",
+      "Santa Monica is under an Evacuation Order, moving out block by block: gray blocks are done, red ones go now, yellow ones get ready. Venice is under a Warning. This is a demo: residents are synthetic, and autopilot answers for the six volunteer phones.",
     focus: { tab: "zones", target: '[data-tour="map"]' },
     dwellMs: 7000,
     async act({ env, memo, snap, signal }) {
@@ -561,7 +561,7 @@ export const BEATS: Beat[] = [
     id: "send",
     rung: "hand",
     title: "Send now",
-    caption: "Send now, with a name and a reason. The Order goes out (simulated) to the corrected polygon only.",
+    caption: "Send now, with a name and a reason. The Order goes out to the corrected polygon only.",
     focus: { target: ['[data-tour="hold-actions"]', '[data-tour="last-hold"]'] },
     dwellMs: 7000,
     async act({ env, memo, snap, signal }) {
@@ -660,7 +660,7 @@ export const BEATS: Beat[] = [
     rung: "watch",
     title: "Meanwhile: a tower goes down",
     caption:
-      "While Stage 3 calls go out, a cell tower fails (simulated) and one Palms block stops answering at once. Silence is never read as safe: correlated silence goes to a person.",
+      "While Stage 3 calls go out, a cell tower fails and one Palms block stops answering at once. Silence is never read as safe: correlated silence goes to a person.",
     focus: { target: ['[data-tour="feed-ticker"]', '[data-tour="map"]'] },
     dwellMs: 9000,
     async act({ env, signal }) {
@@ -806,7 +806,7 @@ export const BEATS: Beat[] = [
     rung: "hand",
     title: "The ledger",
     caption:
-      "Every decision has a name and a reason, and every refusal sits beside the allowlist. Autoplay's decisions are labeled simulated and are not counted as human decisions.",
+      "Every decision has a name and a reason, and every refusal sits beside the allowlist. Autoplay's decisions are signed by the autoplay supervisor and are not counted as human decisions.",
     focus: { tab: "ledger", target: '[data-tour="side-panel"]' },
     dwellMs: 11_000,
     outcome: (snap) => {
