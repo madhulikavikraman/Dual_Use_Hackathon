@@ -62,8 +62,8 @@ The sidebar folds to an icon rail; on a phone it opens as a drawer.
 4. Live option: on `/demo`, reset **Norte Fire, San Clemente (live)**. The feed shows the live CAL FIRE status and NWS
    alerts for the real fire. Approve a Warning for Talega: calls ring out edge-first with the Cal OES warning and 911.
    Say that zone states and residents are demo data, and that real orders come from OCFA.
-5. Twist 2 on a second screen: `/global` (the six adapters), then **Load the Chongqing scenario**. The flood page
-   (`/global/flood`) is being built as a second Twist 2 screen; use it only if it is live.
+5. Twist 2 on a second screen: `/global` (the six adapters), then **Load the Chongqing scenario**. Then the flood page
+   (`/global/flood`): the same ladder for floods in six countries.
 
 ## The run (supervisor at `/board`, narrator beside the screen)
 

@@ -76,7 +76,7 @@ cancel an alert, give an ETA, say anyone is safe, or tell a caller where another
 | `/l/<token>`, `/helper/<token>` | The person's live-location link; the helper's page |
 | `/demo` | Scenario reset, presets (wrong polygon, tower down), autopilot |
 | `/evidence` | Twist 1: Phase I milestones measured live (JSON and CSV at `/api/evidence`) |
-| `/global` | Twist 2: six adapters side by side, the Chongqing scenario. A flood page, `/global/flood`, is being built as a second screen |
+| `/global` | Twist 2: six adapters side by side, the Chongqing scenario. `/global/flood` is the second screen: the same ladder for floods in six countries |
 | `/twists`, `/poster` | The twist log; the 24 x 36 in poster (Twist 3) |
 | `/api/health` | Health check |
 

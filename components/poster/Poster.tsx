@@ -264,7 +264,7 @@ function Board() {
       </div>
       <figcaption className="mt-[12px] text-[30px] leading-[1.26] text-vf-bone/85">
         The Order waits in the 90 s hold. The supervisor edited the countywide polygon back to Culver City and Palms, so the
-        dose fell from about 9.8 million phones to 41,000; wave 1 is about 4,540 people in 7 blocks. Sentinels at the edge ring.
+        dose fell from about 9.8 million phones to 41,000; wave 1 is about 3,780 people in 9 blocks. Sentinels at the edge ring.
       </figcaption>
     </figure>
   );
@@ -478,16 +478,16 @@ function WhoPays() {
 
 function Results() {
   const tiles = [
-    { big: "38/38", small: "end-to-end checks pass" },
+    { big: "40/40", small: "end-to-end checks pass" },
     { big: "9.8M→41K", small: "phones, after Edit polygon (8.4 sq mi)" },
-    { big: "48 s", small: "quorum read (target <90 s)" },
-    { big: "26 s", small: "canary clear" },
+    { big: "46 s", small: "quorum read (target <90 s)" },
+    { big: "31 s", small: "canary clear" },
   ];
   const checks = [
     "Rings went out edge-first",
     "The needs-help caller surfaced at priority 1",
     "An older man who did not answer was accounted for through his linked contact",
-    "36/36 block-plan checks: no road over capacity, nearest the fire first",
+    "49/49 block-plan checks: no road over capacity, nearest the fire first",
   ];
   return (
     <Section n="09" title="Results" kicker="One run, Oct 17 · scripts/e2e.ts" className="flex-1">

@@ -153,7 +153,7 @@ the incident closes.
 
   Japan (Ōfunato 2025), Greece (Rhodes 2023), India (Cyclone Dana 2024) and Australia (Black Summer) are profiled too.
   Proof: a live Mandarin call reads the Chinese directive word for word and files a "needs help leaving" row. A flood
-  page (`/global/flood`) is being built as a second screen for the same answer on a different hazard.
+  page (`/global/flood`) is a second screen: the same answer on a different hazard, in six countries.
 - **Twist 3 (poster):** a 24 x 36 inch poster built from the live app (the /poster page renders it from the same data
   as the product; exported to PDF for print and JPG for this gallery): the problem, the ladder, the board, one call in
   any language, global, the collections line, who pays, results and responsible use.

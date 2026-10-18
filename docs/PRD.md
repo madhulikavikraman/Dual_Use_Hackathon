@@ -240,7 +240,7 @@ Every sentinel and every heat-line roster member gets a 20-second test call once
 
 1. **Blocks.** A square grid of about 800 m cells (about half a mile on a side) is clipped to the zone polygon; slivers under 15% of a cell merge into a neighbor. Each block gets an id from the zone's short code and its rank from the hazard edge (SM-01 is nearest), using the same edge distance as the call sweep.
 2. **Roads.** Each zone has named exit roads with outbound lane counts (OpenStreetMap). Capacity is a planning assumption shown on screen: 950 cars per outbound lane per hour (half the Highway Capacity Manual's base saturation flow), 2.5 people and 1 car per household.
-3. **Waves.** Blocks are placed nearest-to-hazard first. Each takes the earliest wave on its nearest exit road with room (or a road within 1.5 km of it); no road gets more cars in a wave than it carries in the wave's length, and on every road a nearer block never goes after a farther one. The wave length starts at 10 minutes and rises in 5-minute steps until every block fits. Several blocks leave in each wave. In the demo, Culver City and Palms make 42 blocks; wave 1 is about 4,540 people in 7 blocks, shown in the hold's dose.
+3. **Waves.** Blocks are placed nearest-to-hazard first. Each takes the earliest wave on its nearest exit road with room (or a road within 4 km of it, to balance the roads); no road gets more cars in a wave than it carries in the wave's length, and on every road a nearer block never goes after a farther one. The wave length starts at 10 minutes and rises in 5-minute steps until every block fits. Several blocks leave in each wave. In the demo, Culver City and Palms make 42 blocks; wave 1 is about 4,540 people in 7 blocks, shown in the hold's dose.
 4. **Approval and the clock.** A named human approves the plan (it stands by until the Order is sent). After the send, the wave clock starts the next wave every wave length unless a human holds it; **Start next wave**, **Hold next wave** and **Release** are buttons with a name and a reason, and the ledger records each.
 5. **The words.** The approved templates: "go now" for the blocks whose wave is running, "get ready" for later blocks ("Your block, CC-06, is in wave 2, planned for about 5:48 PM, by Overland Avenue south. Get ready now. We will call you again when your wave starts."), and "everyone go now". When a wave starts, everyone in its blocks gets a "leave now" call on their block's road.
 
@@ -864,7 +864,7 @@ The Project Document's 45 items keep their numbers. Priorities are the Project D
 | 74 | Play the full fire (`/board?autoplay=1`) | P1 | Built (D-44) |
 | 75 | Board sidebar with six views and emoji; guided tour | P1 | Built (D-47) |
 | 76 | Retell kit: export, conversation flow setup, copy-by-hand page | P1 | Built (D-45) |
-| 77 | Twist 2 flood page (`/global/flood`) | P2 | In progress (D-51) |
+| 77 | Twist 2 flood page (`/global/flood`) | P2 | Built (D-51) |
 
 ### Cut line
 
