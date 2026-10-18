@@ -11,7 +11,7 @@ export function PlayFireButton({ className = "" }: { className?: string }) {
       type="button"
       onClick={() => autoplay.open()}
       aria-label={playing ? "Autoplay is playing: show its captions" : "Play the full fire"}
-      title="Plays the whole simulated fire on this board, with captions, in about 4 minutes"
+      title="Plays the whole demo fire on this board, with captions, in about 4 minutes"
       className={`relative inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-white ring-1 ring-inset ring-white/25 transition-colors hover:bg-white/10 hover:ring-vf-flare/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vf-ember ${className}`}
     >
       <svg viewBox="0 0 16 16" aria-hidden="true" className="size-3.5 text-vf-flare" fill="currentColor">

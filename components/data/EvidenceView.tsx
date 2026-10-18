@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Evidence, EvidenceItem } from "@/lib/engine/evidence";
 import { FUNDING } from "./funding";
-import { Button, DataTable, SimulatedBadge, StatusBadge, clock, fmtCell } from "./ui";
+import { plain } from "@/lib/ui/display";
+import { Button, DataTable, DemoBadge, StatusBadge, clock, fmtCell } from "./ui";
 
 const REFRESH_MS = 5000;
 
@@ -18,9 +19,9 @@ function MilestoneCard({ m }: { m: EvidenceItem }) {
         <span className="font-mono text-xs font-bold text-neutral-500">{m.id === "SAFETY" ? "Safety bar" : `Milestone ${m.id.slice(1)}`}</span>
         <StatusBadge status={m.status} label={m.status_label} />
       </div>
-      <div className="text-sm font-semibold leading-snug">{m.title}</div>
-      <div className="text-base leading-snug font-medium text-neutral-900 dark:text-neutral-50">{m.value}</div>
-      <div className="mt-auto text-xs text-neutral-500">Target: {m.target}</div>
+      <div className="text-sm font-semibold leading-snug">{plain(m.title)}</div>
+      <div className="text-base leading-snug font-medium text-neutral-900 dark:text-neutral-50">{plain(m.value)}</div>
+      <div className="mt-auto text-xs text-neutral-500">Target: {plain(m.target)}</div>
     </a>
   );
 }
@@ -31,20 +32,20 @@ function ItemDetail({ m, compact = false }: { m: EvidenceItem; compact?: boolean
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold">
           <span className="mr-2 font-mono text-sm text-neutral-500">{m.id}</span>
-          {m.title}
+          {plain(m.title)}
         </h2>
         <StatusBadge status={m.status} label={m.status_label} />
       </div>
-      <p className="mt-1 text-sm text-neutral-600 italic dark:text-neutral-400">{m.question}</p>
+      <p className="mt-1 text-sm text-neutral-600 italic dark:text-neutral-400">{plain(m.question)}</p>
       <div className="mt-2 grid gap-1 text-sm sm:grid-cols-[8rem_1fr]">
         <div className="text-neutral-500">Value</div>
-        <div className="font-medium">{m.value}</div>
+        <div className="font-medium">{plain(m.value)}</div>
         <div className="text-neutral-500">Target</div>
-        <div>{m.target}</div>
+        <div>{plain(m.target)}</div>
         {m.note ? (
           <>
             <div className="text-neutral-500">Note</div>
-            <div>{m.note}</div>
+            <div>{plain(m.note)}</div>
           </>
         ) : null}
       </div>
@@ -53,7 +54,7 @@ function ItemDetail({ m, compact = false }: { m: EvidenceItem; compact?: boolean
           {m.figures.map((f) => (
             <div key={f.label} className="rounded border border-neutral-200 px-3 py-2 dark:border-neutral-800">
               <dt className="flex items-center justify-between gap-1 text-[11px] text-neutral-500">
-                <span>{f.label}</span>
+                <span>{plain(f.label)}</span>
                 {f.status ? <StatusBadge status={f.status} className="scale-90" /> : null}
               </dt>
               <dd className="mt-0.5 text-sm font-semibold tabular-nums">{fmtCell("", f.value)}</dd>
@@ -66,7 +67,7 @@ function ItemDetail({ m, compact = false }: { m: EvidenceItem; compact?: boolean
         <DataTable key={t.title} table={t} max={compact ? 12 : 40} />
       ))}
       <p className="mt-2 text-xs text-neutral-500">
-        <span className="font-semibold">How it is computed.</span> {m.method}
+        <span className="font-semibold">How it is computed.</span> {plain(m.method)}
       </p>
     </section>
   );
@@ -78,9 +79,9 @@ function MeasureRow({ m }: { m: EvidenceItem }) {
     <>
       <tr className="align-top">
         <td className="px-2 py-1.5 font-mono text-xs text-neutral-500">{m.id}</td>
-        <td className="px-2 py-1.5 font-medium">{m.title}</td>
-        <td className="px-2 py-1.5">{m.value}</td>
-        <td className="px-2 py-1.5 text-neutral-600 dark:text-neutral-400">{m.target}</td>
+        <td className="px-2 py-1.5 font-medium">{plain(m.title)}</td>
+        <td className="px-2 py-1.5">{plain(m.value)}</td>
+        <td className="px-2 py-1.5 text-neutral-600 dark:text-neutral-400">{plain(m.target)}</td>
         <td className="px-2 py-1.5">
           <StatusBadge status={m.status} label={m.status_label} />
         </td>
@@ -97,7 +98,7 @@ function MeasureRow({ m }: { m: EvidenceItem }) {
           {m.tables.map((t) => (
             <DataTable key={t.title} table={t} max={25} />
           ))}
-          <p className="mt-1 text-xs text-neutral-500">{m.method}</p>
+          <p className="mt-1 text-xs text-neutral-500">{plain(m.method)}</p>
         </td>
       </tr>
     </>
@@ -149,7 +150,7 @@ export default function EvidenceView() {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500">
-            <SimulatedBadge />
+            <DemoBadge />
             <span>Twist 1 · NSF SBIR Phase I</span>
             <span aria-hidden>·</span>
             <span>VoiceFlare</span>
@@ -157,9 +158,9 @@ export default function EvidenceView() {
           <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Phase I evidence — measured live from this run</h1>
           <p className="mt-1 max-w-3xl text-sm text-neutral-600 dark:text-neutral-400">
             The three milestones an NSF SBIR Phase I grant would pay for, and the safety bar on all three, computed from the holds,
-            canaries, intents, calls, registry and ledger of the run on the board. Every send is simulated; synthetic rows are
+            canaries, intents, calls, registry and ledger of the run on the board. Nothing reaches a real alert system; synthetic rows are
             labeled and real phones are counted separately. A bar is met only on real phones (M2: the full gold set); one met
-            only with simulated answers reads “Met in simulation” and does not count.
+            only with synthetic answers reads “Met in rehearsal” and does not count.
           </p>
           <p className="mt-1 text-xs text-neutral-500">
             {data ? (
@@ -206,7 +207,7 @@ export default function EvidenceView() {
                 {passed} of {milestones.length} Phase I bars met in this run, on real phones
                 {simOnly.length ? (
                   <span className="ml-2 font-normal tracking-normal normal-case">
-                    · {simOnly.join(", ")} met in simulation only (does not count)
+                    · {simOnly.join(", ")} met in rehearsal only (does not count)
                   </span>
                 ) : null}
               </h2>

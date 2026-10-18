@@ -7,7 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, type ReactNode } from "react";
 import { fmtInt, fmtPct, fmtUsd } from "@/lib/client/format";
-import { MODE_LABEL, WORDING } from "@/lib/client/labels";
+import { modeLabel, modeWords } from "@/lib/ui/display";
 import { Emoji } from "@/lib/ui/Emoji";
 import { hazardIcon, ICON } from "@/lib/ui/icons";
 import { BOARD_VIEWS, setBoardView, setDrawer, setRail, useBoardView, type BoardView } from "@/lib/ui/boardView";
@@ -63,16 +63,15 @@ function Brand({ rail }: { rail: boolean }) {
       </div>
       <span
         className={`inline-block rounded bg-amber-400 font-black tracking-widest text-slate-950 ${rail ? "px-1 py-0.5 text-[9px]" : "mt-2 px-2 py-0.5 text-xs"}`}
-        title="Every send is simulated. Residents are synthetic except the volunteer phones."
+        title="Hackathon demo. Residents are synthetic except the volunteer phones. Nothing reaches a real alert system."
       >
-        {rail ? "SIM" : "SIMULATED"}
-        {rail ? <span className="sr-only">ULATED</span> : null}
+        DEMO
       </span>
       {rail ? (
         <button
           type="button"
           onClick={() => setRail(false)}
-          title={`Scenario: ${MODE_LABEL[mode]}. Unfold the sidebar to switch.`}
+          title={`Scenario: ${modeLabel(mode)}. Unfold the sidebar to switch.`}
           className={`grid size-9 place-items-center rounded-md text-lg hover:bg-white/10 ${FOCUS}`}
         >
           <Emoji e={ICON.scenario} />
@@ -84,8 +83,8 @@ function Brand({ rail }: { rail: boolean }) {
             <Emoji e={ICON.scenario} /> Scenario
           </div>
           <ScenarioSwitcher current={snap.meta.scenario} />
-          <p className="truncate text-xs text-slate-400" title={MODE_LABEL[mode]}>
-            <Emoji e={hazardIcon(mode)} /> {MODE_LABEL[mode]}
+          <p className="truncate text-xs text-slate-400" title={modeLabel(mode)}>
+            <Emoji e={hazardIcon(mode)} /> {modeLabel(mode)}
           </p>
         </div>
       )}
@@ -172,7 +171,7 @@ function Stat({
 function Stats({ rail }: { rail: boolean }) {
   const { snap } = useBoard();
   const m = snap.metrics;
-  const words = WORDING[snap.meta.mode];
+  const words = modeWords(snap.meta.mode);
   const now = Date.parse(snap.now);
   const devices = snap.households.filter((h) => h.has_device && h.device_label !== "Public line");
   const online = devices.filter((h) => h.presence_at && now - Date.parse(h.presence_at) < ONLINE_MS).length;
@@ -181,9 +180,7 @@ function Stats({ rail }: { rail: boolean }) {
   return (
     <section data-tour="metrics" aria-label="Live numbers" className={`border-t border-white/10 ${rail ? "px-1 py-2" : "px-3 py-2"}`}>
       {rail ? null : (
-        <h2 className="mb-0.5 flex items-baseline justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400">
-          Live numbers <span className="font-semibold normal-case tracking-normal text-slate-500">real phones only</span>
-        </h2>
+        <h2 className="mb-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Live numbers</h2>
       )}
       <ul className={rail ? "flex flex-col items-center gap-1" : "divide-y divide-white/5"}>
         <Stat rail={rail} icon={ICON.calls} label="Calls live / queued" value={`${m.calls_active}/${fmtInt(m.calls_queued)}`} note={`${m.calls_active} live · ${fmtInt(m.calls_queued)} queued`} />
@@ -203,13 +200,13 @@ function Stats({ rail }: { rail: boolean }) {
           rail={rail}
           icon={ICON.cost}
           label="Cost (estimate)"
-          value={rail ? fmtUsd(m.cost_usd).replace(/\.\d\d$/, "") : fmtUsd(m.cost_usd)}
+          value={rail && m.cost_usd >= 10 ? fmtUsd(m.cost_usd).replace(/\.\d\d$/, "") : fmtUsd(m.cost_usd)}
           note={`${m.cost_minutes.toFixed(1)} call minutes · estimate`}
         />
         <Stat
           rail={rail}
           icon={ICON.phone}
-          label="Phones online"
+          label="Real phones online"
           value={`${online}/${devices.length}`}
           note={`${m.real_accounted} of ${realResidents} accounted`}
         />

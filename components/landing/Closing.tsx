@@ -65,7 +65,7 @@ export function Footer() {
           </div>
           <p className="mt-4 text-sm leading-relaxed text-vf-smoke">
             Built at the USC x InnovateLA Dual-Use Hackathon, Resilience Comms track, October 2026. Residents are synthetic except
-            the volunteer phones, and every send is simulated.
+            the volunteer phones, and nothing reaches a real alert system.
           </p>
         </div>
         <nav aria-label="More pages">

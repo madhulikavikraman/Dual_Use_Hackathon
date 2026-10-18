@@ -34,7 +34,6 @@ export function Hero() {
       <Container className="pb-20 pt-5 sm:pb-24 lg:pb-28">
         <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3">
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-vf-smoke">
-            <span className="rounded-[3px] bg-amber-400 px-1.5 py-0.5 text-[11px] font-black tracking-[0.12em] text-vf-ink">SIMULATED</span>
             <span>Synthetic residents and 6 volunteer phones. Nothing reaches a real alert system.</span>
           </p>
           <nav aria-label="On this page" className="hidden lg:block">
@@ -109,7 +108,7 @@ export function Hero() {
               </Cta>
             </div>
             <p className="vf-rise mt-4 text-sm text-vf-smoke" style={delay(300)}>
-              Play the full fire runs the whole simulated fire on the real board in about 4 minutes. The tour explains each part of the screen.
+              Play the full fire runs the whole demo fire on the real board in about 4 minutes. The tour explains each part of the screen.
             </p>
 
             {proof || story ? (

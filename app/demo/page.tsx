@@ -3,7 +3,7 @@ import DemoConsole from "@/components/data/DemoConsole";
 
 export const metadata: Metadata = {
   title: "Demo console",
-  description: "Reset scenarios, drive the simulator, run the models, copy the ArcGIS feeds.",
+  description: "Reset scenarios, fire demo events, run the models, copy the ArcGIS feeds.",
 };
 
 // The feed token goes to the operator's console so the ArcGIS URLs can be copied. The console itself can

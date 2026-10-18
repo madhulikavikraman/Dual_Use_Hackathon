@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     if (b.wrong_polygon !== undefined) patch.wrong_polygon = b.wrong_polygon;
     if (Object.keys(patch).length) {
       await setMeta(patch);
-      await ledger({ actor: "demo operator", action: `simulator: ${Object.entries(patch).map(([k, v]) => `${k}=${v}`).join(", ")}`, kind: "system" });
+      await ledger({ actor: "demo operator", action: `demo settings: ${Object.entries(patch).map(([k, v]) => `${k}=${v}`).join(", ")}`, kind: "system" });
     }
     let detail: string | null = null;
     switch (b.event) {
@@ -60,12 +60,12 @@ export async function POST(req: Request) {
         break;
       case "dark_zone":
         await setMeta({ sim_preset: "dark_zone" });
-        detail = "every simulated sentinel is silent: the next hold reads dark zone and still sends at 0:00";
+        detail = "every demo sentinel is silent: the next hold reads dark zone and still sends at 0:00";
         break;
     }
     if (b.event) {
-      await ledger({ actor: "demo operator", action: `simulated event: ${b.event.replace("_", " ")}`, kind: "system", reason: detail });
-      await feed({ kind: "info", title: `Simulated event: ${b.event.replace("_", " ")}`, detail });
+      await ledger({ actor: "demo operator", action: `demo event: ${b.event.replace("_", " ")}`, kind: "system", reason: detail });
+      await feed({ kind: "info", title: `Demo event: ${b.event.replace("_", " ")}`, detail });
     }
     return json({ ok: true, meta: await getMeta(), detail });
   });

@@ -10,6 +10,7 @@ import type { HelperUpdateBody, HelperView } from "@/lib/contracts";
 import { NEED_LABEL, PRIORITY_COLOR, PRIORITY_LABEL } from "@/lib/client/labels";
 import type { DispatchStatus } from "@/lib/types";
 import { getHelper, LinkError, postHelper } from "@/components/locate/api";
+import { displayActor } from "@/lib/ui/display";
 
 const HelperMap = dynamic(() => import("./HelperMap"), {
   ssr: false,
@@ -172,7 +173,7 @@ export function HelperClient({ token }: { token: string }) {
         <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
           <p className="font-display text-lg font-semibold">VoiceFlare · Helper</p>
           <span className="rounded bg-amber-400 px-2 py-0.5 text-xs font-black tracking-widest text-slate-950">
-            {p.synthetic ? "SIMULATED" : "DEMO"}
+            {p.synthetic ? "DEMO · SYNTHETIC" : "DEMO"}
           </span>
         </div>
       </header>
@@ -180,7 +181,7 @@ export function HelperClient({ token }: { token: string }) {
       <div className="mx-auto flex max-w-xl flex-col gap-4 px-4 py-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
         <section aria-labelledby="who" className="rounded-xl bg-white p-4 ring-1 ring-slate-300">
           <p className="text-sm text-slate-600">
-            {view.helper_label} · sent by {view.dispatched_by}: {view.reason}
+            {displayActor(view.helper_label)} · sent by {displayActor(view.dispatched_by)}: {view.reason}
           </p>
           <p role="status" className="mt-1 text-lg font-bold">
             {STATUS_TEXT[view.status]}

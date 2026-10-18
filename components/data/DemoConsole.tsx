@@ -6,7 +6,8 @@ import type { BoardSnapshot } from "@/lib/contracts";
 import { HEAT_STATE_SHORT, STATE_COLOR, STATE_SHORT } from "@/lib/directives";
 import { HEAT_THRESHOLDS, HEAT_THRESHOLD_NOTE, SOURCES, deg, localClock } from "@/lib/scenarios/heatLadder";
 import type { Mode, SimPreset, Zone, ZoneState } from "@/lib/types";
-import { Button, SimulatedBadge, clock } from "./ui";
+import { plain } from "@/lib/ui/display";
+import { Button, DemoBadge, clock } from "./ui";
 
 // The operator's console for the demo and rehearsals (backlog item 5): reset a scenario, drive the simulator,
 // run the models, copy the ArcGIS feed URLs, download exports, and keep an eye on the run.
@@ -16,10 +17,10 @@ const SCENARIOS = [
   {
     id: "heat",
     label: "Heat wave: senior check-ins",
-    hint: "The ordinary Tuesday: six Valley zones by live weather (a labeled simulated heat wave when it is mild), older residents who opted in",
+    hint: "The ordinary Tuesday: six Valley zones by live weather (a labeled demo heat wave when it is mild), older residents who opted in",
   },
   { id: "altadena", label: "West Altadena (Eaton framing)", hint: "One-zone fallback for the problem slide" },
-  { id: "norte", label: "Norte Fire, San Clemente (live)", hint: "The real fire on demo weekend: live CAL FIRE status and NWS alerts in the feed; zones and residents simulated" },
+  { id: "norte", label: "Norte Fire, San Clemente (live)", hint: "The real fire on demo weekend: live CAL FIRE status and NWS alerts in the feed; zones and residents are demo data" },
   { id: "chongqing", label: "Chongqing, China (Twist 2)", hint: "China's ladder, 119, grid-worker sentinels" },
 ] as const;
 
@@ -49,14 +50,14 @@ const EVENTS: {
   hint: string;
 }[] = [
   { id: "tower_down", label: "Tower down", hint: "The Palms block goes silent: a silence-cluster card" },
-  { id: "earthquake", label: "Earthquake", hint: "USGS M5.9 (simulated) and 20 reports in Mid-City" },
+  { id: "earthquake", label: "Earthquake", hint: "A seeded USGS-style M5.9 event and 20 reports in Mid-City" },
   { id: "hoax_flood", label: "Hoax flood", hint: "200 unverified reports in Koreatown: the hoax mirror" },
   { id: "fire_spreading", label: "Fire spreading", hint: "The envelope advances 1 h: new proposals" },
   { id: "mass_no_answer", label: "Mass no answer", hint: "70% of residents stop answering" },
   {
     id: "dark_zone",
     label: "Dark zone",
-    hint: "Simulated sentinels go silent (volunteer phones still ring unless on autopilot). The dark-zone card needs 3+ sentinels asked: on Westside, open the hold on Santa Monica, Venice, West LA or Mid-City. Sends at 0:00",
+    hint: "Demo sentinels go silent (volunteer phones still ring unless on autopilot). The dark-zone card needs 3+ sentinels asked: on Westside, open the hold on Santa Monica, Venice, West LA or Mid-City. Sends at 0:00",
   },
 ];
 
@@ -123,7 +124,7 @@ function Toggle({ label, hint, checked, onChange, disabled }: { label: string; h
   );
 }
 
-/** Heat line: one zone's reading, labeled live or SIMULATED, with source and time, and the level the table proposes. */
+/** Heat line: one zone's reading, labeled live or demo, with source and time, and the level the table proposes. */
 function HeatZoneRow({ z, busy, onCheckIn }: { z: Zone; busy: boolean; onCheckIn: () => void }) {
   const w = z.weather;
   return (
@@ -142,7 +143,7 @@ function HeatZoneRow({ z, busy, onCheckIn }: { z: Zone; busy: boolean; onCheckIn
             </span>
             {w.basis === "simulated" ? (
               <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-900 dark:bg-amber-950 dark:text-amber-200">
-                SIMULATED heat wave
+                DEMO heat wave
               </span>
             ) : (
               <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
@@ -286,7 +287,7 @@ export default function DemoConsole({ feedToken, defaultBase }: { feedToken: str
   };
 
   const sim = (label: string, payload: Record<string, unknown>) =>
-    post<{ detail?: string | null }>(label, "/api/demo/sim", payload, (j) => j.detail ?? "ok");
+    post<{ detail?: string | null }>(label, "/api/demo/sim", payload, (j) => plain(j.detail) ?? "ok");
 
   const runFire = async (advanceHours?: number) => {
     const j = await post<FireResult>(
@@ -300,7 +301,7 @@ export default function DemoConsole({ feedToken, defaultBase }: { feedToken: str
 
   const runHeat = () =>
     post<{ basis?: string; live_ok?: boolean; proposals?: unknown[] }>("Re-check live weather", "/api/heat", { actor: "Demo operator" }, (j) =>
-      `${j.live_ok ? "live reading in" : "live reading unavailable"}; ${j.basis === "live" ? "live drives the ladder" : "simulated heat wave in use"}; ${j.proposals?.length ?? 0} new proposal(s)`,
+      `${j.live_ok ? "live reading in" : "live reading unavailable"}; ${j.basis === "live" ? "live drives the ladder" : "demo heat wave in use"}; ${j.proposals?.length ?? 0} new proposal(s)`,
     );
 
   const heatCheckIn = (z: Zone) =>
@@ -346,14 +347,14 @@ export default function DemoConsole({ feedToken, defaultBase }: { feedToken: str
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500">
-            <SimulatedBadge />
+            <DemoBadge />
             <span>VoiceFlare · operator only</span>
           </div>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight">Demo console</h1>
           <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
             {meta ? (
               <>
-                Scenario <b>{meta.scenario}</b> ({meta.mode}) · simulator <b>{meta.sim_preset.replace("_", " ")}</b> · {board?.backend} store · Retell{" "}
+                Scenario <b>{meta.scenario}</b> ({meta.mode}) · answers <b>{meta.sim_preset.replace("_", " ")}</b> · {board?.backend} store · Retell{" "}
                 {board?.retell ? "on" : "off (browser phones)"} · updated {clock(board?.now)}
               </>
             ) : boardError ? (
@@ -454,7 +455,7 @@ export default function DemoConsole({ feedToken, defaultBase }: { feedToken: str
                 />
                 <Stat label="Reports" value={board.reports.length >= 200 ? "200+" : board.reports.length} />
                 <Stat label="Refusals / decisions" value={`${board.metrics.refusals} / ${board.metrics.human_decisions}`} />
-                <Stat label="Cost (simulated)" value={`${board.metrics.cost_minutes} min · $${board.metrics.cost_usd}`} />
+                <Stat label="Cost (estimate)" value={`${board.metrics.cost_minutes} min · $${board.metrics.cost_usd}`} />
               </div>
               {readout.openHolds.length ? (
                 <div className="flex flex-col gap-1">
@@ -509,7 +510,7 @@ export default function DemoConsole({ feedToken, defaultBase }: { feedToken: str
                 ))}
               </ul>
               <p className="mt-2 text-neutral-500">
-                The model proposes; a named human approves on the board. Cooling centers and residents are simulated. Sources:{" "}
+                The model proposes; a named human approves on the board. Cooling centers and residents are demo data. Sources:{" "}
                 {Object.values(SOURCES).map((s, i) => (
                   <span key={s.url}>
                     {i ? ", " : ""}
@@ -524,7 +525,7 @@ export default function DemoConsole({ feedToken, defaultBase }: { feedToken: str
           </Card>
         ) : null}
 
-        <Card title="Simulator">
+        <Card title="Demo answers">
           <div className="text-xs font-semibold text-neutral-500">Preset (how synthetic people answer from now on)</div>
           <div className="mt-1 flex flex-wrap gap-1.5">
             {PRESETS.map((p) => (
@@ -561,7 +562,7 @@ export default function DemoConsole({ feedToken, defaultBase }: { feedToken: str
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             <Toggle
               label="Autopilot devices"
-              hint="The simulator answers for the six device phones (rehearse without volunteers)."
+              hint="The board answers for the six device phones itself (rehearse without volunteers)."
               checked={Boolean(meta?.autopilot_devices)}
               disabled={!meta || Boolean(busy)}
               onChange={(v) => void sim(`Autopilot devices ${v ? "on" : "off"}`, { autopilot_devices: v })}
@@ -614,7 +615,7 @@ export default function DemoConsole({ feedToken, defaultBase }: { feedToken: str
               {fire.proposals?.length ? (
                 <ul className="mt-1 list-disc pl-5">
                   {fire.proposals.map((p) => (
-                    <li key={`${p.zone_id}-${p.proposed_state}`}>{p.reason}</li>
+                    <li key={`${p.zone_id}-${p.proposed_state}`}>{plain(p.reason)}</li>
                   ))}
                 </ul>
               ) : (

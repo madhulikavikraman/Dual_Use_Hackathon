@@ -6,6 +6,7 @@ import { FEED_KIND_LABEL, SEVERITY_TONE, type Tone } from "@/lib/client/labels";
 import type { AlertItem } from "@/lib/types";
 import { Emoji } from "@/lib/ui/Emoji";
 import { FEED_ICON, ICON } from "@/lib/ui/icons";
+import { plain } from "@/lib/ui/display";
 import { Chip } from "@/components/ui/Chip";
 import { useBoard } from "./BoardContext";
 
@@ -24,7 +25,7 @@ function FeedCard({ item, now, onDismiss, compact = false }: { item: AlertItem; 
       <header className="flex items-center gap-2">
         <Chip tone={tone}>
           <Emoji e={FEED_ICON[item.kind] ?? ICON.feed} />
-          {FEED_KIND_LABEL[item.kind] ?? item.kind}
+          {plain(FEED_KIND_LABEL[item.kind] ?? item.kind)}
         </Chip>
         {item.zone_id ? <span className="font-mono text-xs text-slate-500">{item.zone_id}</span> : null}
         <time className="ml-auto text-xs text-slate-500" dateTime={item.created_at} title={fmtTime(item.created_at)}>
@@ -36,7 +37,7 @@ function FeedCard({ item, now, onDismiss, compact = false }: { item: AlertItem; 
           </button>
         ) : null}
       </header>
-      <h3 className={`mt-1 font-semibold leading-snug text-slate-900 ${compact ? "line-clamp-2 text-sm" : "text-[15px]"}`}>{item.title}</h3>
+      <h3 className={`mt-1 font-semibold leading-snug text-slate-900 ${compact ? "line-clamp-2 text-sm" : "text-[15px]"}`}>{plain(item.title)}</h3>
       {item.detail ? (
         <p className={`mt-0.5 leading-snug text-slate-700 ${compact ? "line-clamp-2 text-[13px]" : "text-sm"}`} title={compact ? item.detail : undefined}>
           {item.detail}

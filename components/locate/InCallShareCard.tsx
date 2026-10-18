@@ -22,7 +22,7 @@ export function InCallShareCard({ token }: { token: string }) {
       aria-labelledby={`share-${token.slice(0, 6)}`}
       className="mx-4 mb-2 rounded-2xl bg-slate-900 p-4 ring-2 ring-sky-500/60"
     >
-      <p className="text-xs font-semibold uppercase tracking-wider text-sky-300">Text message (simulated) · response team</p>
+      <p className="text-xs font-semibold uppercase tracking-wider text-sky-300">Demo text message · response team</p>
       <h2 id={`share-${token.slice(0, 6)}`} className="mt-1 text-lg font-semibold leading-snug">
         Share live location with the response team?
       </h2>

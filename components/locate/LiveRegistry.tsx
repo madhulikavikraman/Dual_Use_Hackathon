@@ -19,6 +19,7 @@ import { ICON, NEED_ICON } from "@/lib/ui/icons";
 import { Button } from "@/components/ui/Button";
 import { Chip, ColorChip } from "@/components/ui/Chip";
 import { Field, inputClass } from "@/components/ui/Field";
+import { displayActor } from "@/lib/ui/display";
 import { sendHelper } from "./api";
 import { useLiveRegistry } from "./LiveRegistryContext";
 
@@ -126,7 +127,7 @@ const VIA: Record<string, string> = {
   twilio: "by text",
   retell: "by text (Retell)",
   browser_phone: "on the browser phone",
-  simulated: "simulated text",
+  simulated: "demo text, not sent",
 };
 
 function LinkState({ share }: { share: ShareSummary }) {
@@ -163,7 +164,7 @@ function DispatchLine({ d }: { d: DispatchSummary }) {
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5 text-xs text-slate-600">
       <span className="font-semibold text-slate-800">
-        <Emoji e={ICON.helper} /> Helper: {d.helper_label}
+        <Emoji e={ICON.helper} /> Helper: {displayActor(d.helper_label)}
       </span>
       <Chip tone={DISPATCH_TONE[d.status]}>{DISPATCH_TEXT[d.status]}</Chip>
       <span>sent by {d.dispatched_by}</span>
@@ -221,7 +222,7 @@ export function SendHelperButton({ row }: { row: HelpRequest }) {
               Sends one helper to {SOURCE_TEXT[row.last_source]}
               {row.last_accuracy_m !== null ? ` (about ${Math.round(row.last_accuracy_m)} m)` : ""}. They get a link with the
               person&apos;s location (live while the person shares it), their needs, and status buttons.{" "}
-              {live?.sms === "simulated" ? "The text is simulated: no text-message provider is set." : "The link is texted if you give a number."} Never
+              {live?.sms === "simulated" ? "No text is sent in this demo: no text-message provider is set." : "The link is texted if you give a number."} Never
               give the person an arrival time.
             </>
           }
@@ -232,7 +233,7 @@ export function SendHelperButton({ row }: { row: HelpRequest }) {
             const helper = chosen ? { helper_id: chosen.id } : { helper_label: other.trim() };
             await act(
               () => sendHelper(row.id, { ...helper, helper_phone: phone.trim() || null, actor, reason }),
-              (r) => `${chosen?.label ?? other.trim()} sent to ${label} (${r.via})`,
+              (r) => `${chosen?.label ?? other.trim()} sent to ${label} (${VIA[r.via] ?? r.via})`,
             );
             refresh();
           }}
@@ -248,7 +249,7 @@ export function SendHelperButton({ row }: { row: HelpRequest }) {
                   <input type="radio" name="helper" className="mt-1" checked={pick === h.id} onChange={() => setPick(h.id)} />
                   <span>
                     <span className="block text-sm font-semibold text-slate-900">{h.label}</span>
-                    <span className="block text-xs text-slate-600">{h.note} · simulated</span>
+                    <span className="block text-xs text-slate-600">{h.note} · demo team</span>
                   </span>
                 </label>
               ))}

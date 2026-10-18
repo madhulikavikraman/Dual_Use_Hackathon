@@ -592,7 +592,7 @@ export default function PhoneClient() {
         <div className="flex shrink-0 flex-col items-end gap-1">
           {(phone?.simulated ?? true) && (
             <span className="rounded-full bg-amber-400/15 px-2.5 py-0.5 text-xs font-semibold text-amber-300 ring-1 ring-amber-400/40">
-              Simulated call
+              Demo call
             </span>
           )}
           <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs text-slate-300">

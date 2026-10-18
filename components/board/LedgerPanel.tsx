@@ -4,6 +4,7 @@ import { fmtTime } from "@/lib/client/format";
 import type { LedgerEntry } from "@/lib/types";
 import { Emoji } from "@/lib/ui/Emoji";
 import { ICON } from "@/lib/ui/icons";
+import { displayActor, plain } from "@/lib/ui/display";
 import { Chip } from "@/components/ui/Chip";
 import { useBoard } from "./BoardContext";
 
@@ -86,18 +87,18 @@ function LedgerRow({ entry }: { entry: LedgerEntry }) {
             </Chip>
           ) : kind === "simulated" ? (
             <Chip title="Signed by a stand-in (seed data or autoplay), not counted as a human decision">
-              <Emoji e={ICON.sim} /> {entry.actor.includes("(seed)") ? "seed decision" : "simulated decision"}
+              <Emoji e={ICON.sim} /> {entry.actor.includes("(seed)") ? "seed decision" : "stand-in decision"}
             </Chip>
           ) : (
             <Chip>{entry.kind}</Chip>
           )}
           {kind === "machine" && entry.actor === entry.kind ? null : (
-            <b className={kind === "machine" || kind === "simulated" ? "font-semibold" : "text-slate-900"}>{entry.actor}</b>
+            <b className={kind === "machine" || kind === "simulated" ? "font-semibold" : "text-slate-900"}>{displayActor(entry.actor)}</b>
           )}
-          <span className={kind === "refusal" ? "font-semibold text-amber-950" : ""}>{entry.action}</span>
+          <span className={kind === "refusal" ? "font-semibold text-amber-950" : ""}>{plain(entry.action)}</span>
           {entry.target ? <span className="text-slate-500">· {entry.target}</span> : null}
         </div>
-        {entry.reason ? <div className="text-[13px] text-slate-600">“{entry.reason}”</div> : null}
+        {entry.reason ? <div className="text-[13px] text-slate-600">“{plain(entry.reason)}”</div> : null}
       </div>
     </li>
   );

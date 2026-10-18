@@ -10,6 +10,7 @@ import type { Hold, Mode, Status, Zone, ZoneState, ZoneWeather } from "@/lib/typ
 import { Emoji, People } from "@/lib/ui/Emoji";
 import { ICON, STATE_ICON } from "@/lib/ui/icons";
 import { selectZone, useBoardView } from "@/lib/ui/boardView";
+import { displayActor, plain } from "@/lib/ui/display";
 import { Button } from "@/components/ui/Button";
 import { Chip, ColorChip } from "@/components/ui/Chip";
 import { ApproveZoneDialog } from "./ApproveZoneDialog";
@@ -110,7 +111,7 @@ function ZoneRow({ zone, selected, hold }: { zone: Zone; selected: boolean; hold
               <>
                 {" · "}
                 <Emoji e="🌡️" /> feels {deg(zone.weather.feels_like_high_f)}
-                {zone.weather.basis === "simulated" ? " (sim)" : ""}
+                {zone.weather.basis === "simulated" ? " (demo)" : ""}
               </>
             ) : null}
           </span>
@@ -128,7 +129,7 @@ function ZoneRow({ zone, selected, hold }: { zone: Zone; selected: boolean; hold
   );
 }
 
-/** Heat mode: the reading the threshold table used, labeled live or SIMULATED, with the live reading and NWS beside it. */
+/** Heat mode: the reading the threshold table used, labeled live or demo, with the live reading and NWS beside it. */
 function ZoneWeatherLine({ w }: { w: ZoneWeather }) {
   const sim = w.basis === "simulated";
   return (
@@ -138,7 +139,7 @@ function ZoneWeatherLine({ w }: { w: ZoneWeather }) {
         <span
           className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${sim ? "bg-amber-200 text-amber-950" : "bg-emerald-100 text-emerald-900"}`}
         >
-          {sim ? "SIMULATED heat wave" : "LIVE forecast"}
+          {sim ? "DEMO heat wave" : "LIVE forecast"}
         </span>
       </p>
       <p className="mt-0.5">
@@ -190,12 +191,12 @@ function ZoneDetail({ zone, onAction }: { zone: Zone; onAction: (p: Pending) => 
       {campaign ? (
         <p className="mt-1 text-xs text-slate-600">
           <Emoji e={ICON.wave} /> <b className="text-slate-800">{campaignLabel(campaign)}</b>{" "}
-          {campaign.status === "running" ? "running" : campaign.status} since {fmtTime(campaign.created_at)}, started by {campaign.started_by}
+          {campaign.status === "running" ? "running" : campaign.status} since {fmtTime(campaign.created_at)}, started by {displayActor(campaign.started_by)}
         </p>
       ) : null}
       {zone.approved_by ? (
         <p className="mt-0.5 text-xs text-slate-500">
-          <Emoji e={ICON.human} /> Approved by {zone.approved_by} at {fmtTime(zone.approved_at)}
+          <Emoji e={ICON.human} /> Approved by {displayActor(zone.approved_by ?? "")} at {fmtTime(zone.approved_at)}
         </p>
       ) : null}
       {zone.weather ? <ZoneWeatherLine w={zone.weather} /> : null}

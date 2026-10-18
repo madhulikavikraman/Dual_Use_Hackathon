@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { EXPORT_CSV_URL, getBoard } from "@/lib/client/api";
-import { HELP_STATUS_LABEL, PRIORITY_COLOR, scenarioLabel, WORDING } from "@/lib/client/labels";
+import { HELP_STATUS_LABEL, PRIORITY_COLOR, scenarioLabel } from "@/lib/client/labels";
+import { modeWords } from "@/lib/ui/display";
 import { OperatorContext } from "@/lib/client/supervisor";
 import { usePoll } from "@/lib/client/usePoll";
 import type { HelpStatus } from "@/lib/types";
@@ -67,10 +68,10 @@ function QrtLayout({ error, receivedAt }: { error: string | null; receivedAt: nu
             <Image src="/brand/voiceflare-mark.png" alt="" width={26} height={26} className="size-[26px]" loading="eager" />
             VoiceFlare
           </span>
-          <span className="rounded bg-amber-400 px-2 py-0.5 text-xs font-black tracking-widest text-slate-950">SIMULATED</span>
+          <span className="rounded bg-amber-400 px-2 py-0.5 text-xs font-black tracking-widest text-slate-950">DEMO</span>
           <h1 className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold">
             <Emoji e={ICON.qrt} />
-            <span className="truncate">Quick response team · {WORDING[snap.meta.mode].registry}</span>
+            <span className="truncate">Quick response team · {modeWords(snap.meta.mode).registry}</span>
           </h1>
           <span className="hidden min-w-0 truncate text-sm text-slate-400 xl:inline">
             <Emoji e={ICON.scenario} /> {scenarioLabel(snap.meta.scenario)}

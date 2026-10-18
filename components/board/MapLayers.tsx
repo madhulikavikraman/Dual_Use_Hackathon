@@ -26,6 +26,7 @@ import {
   statusLabel,
 } from "@/lib/client/labels";
 import type { Canary, Cluster, EvacPlan, HelpRequest, Hold, Mode, Proposal, Report, Zone, ZoneState } from "@/lib/types";
+import { plain } from "@/lib/ui/display";
 import { useBoard } from "./BoardContext";
 import { BLOCK_COLOR, BLOCK_EMOJI, BLOCK_FILL, BLOCK_LABEL, fmtN, loadColor, shownWave } from "./blockLabels";
 import { usePlans, useZonePlan } from "./usePlans";
@@ -196,7 +197,7 @@ export function ZoneLabels({ zones, proposals, mode }: { zones: Zone[]; proposal
       color: STATE_COLOR[z.state],
       text: STATE_TEXT[z.state],
       proposal: p
-        ? { state: stateLabel(p.proposed_state, mode), color: STATE_COLOR[p.proposed_state], reason: p.reason, more: mine.length - 1 }
+        ? { state: stateLabel(p.proposed_state, mode), color: STATE_COLOR[p.proposed_state], reason: plain(p.reason), more: mine.length - 1 }
         : null,
       plan: plan ? planLine(plan) : null,
     });
@@ -316,11 +317,15 @@ export function HoldLabel({ hold }: { hold: Hold }) {
   // The dose keeps the zone total; a block plan adds how many move in wave 1 (only when the hold's polygon is the zone's).
   const plan = useZonePlan(hold.zone_id);
   const { zoneById } = useBoard();
-  const w1 = plan && hold.polygon_label === zoneById.get(hold.zone_id)?.name ? firstWave(plan) : null;
+  // A rejected or closed plan moves no one; a proposed one moves wave 1 only once a named human approves it.
+  const live = plan && plan.status !== "rejected" && plan.status !== "closed" ? plan : null;
+  const w1 = live && hold.polygon_label === zoneById.get(hold.zone_id)?.name ? firstWave(live) : null;
+  const waveLine = w1 ? `wave ${w1.wave} now: ${fmtPeople(w1.people)}` : null;
+  const waveNote = live?.status === "proposed" ? "if the block plan is approved" : null;
   return (
     <Marker
       position={[top[1], top[0]]}
-      icon={icon(holdLabelHtml(hold.polygon_label, `~${fmtPeople(hold.population_est)}`, w1 ? `wave ${w1.wave} now: ${fmtPeople(w1.people)}` : null))}
+      icon={icon(holdLabelHtml(hold.polygon_label, `~${fmtPeople(hold.population_est)}`, waveLine, waveNote))}
       interactive={false}
       keyboard={false}
     />

@@ -58,8 +58,8 @@ const SETUP: { label: string; text: Pair }[] = [
   {
     label: "The demo",
     text: {
-      fire: "Simulated: Westside LA, or the Norte Fire in San Clemente at its live location. Synthetic residents.",
-      tuesday: "Simulated: San Fernando Valley demo zones. Synthetic residents.",
+      fire: "Westside LA, or the Norte Fire in San Clemente at its live location. Synthetic residents.",
+      tuesday: "San Fernando Valley demo zones. Synthetic residents.",
     },
   },
 ];
@@ -85,7 +85,7 @@ const RUNGS: { word: string; tone: string; text: Pair }[] = [
     word: "Slow",
     tone: "#ff8a3d",
     text: {
-      fire: "Calls go edge-first, in waves. The evacuation moves block by block, about 10 to 12 city blocks per timed wave, on assigned exit roads, so the roads don’t jam.",
+      fire: "Calls go edge-first, in waves. The evacuation moves block by block: patches about half a mile (800 m) on a side, several per wave, on assigned exit roads, so the roads don’t jam.",
       tuesday: "Calls go in priority order, not all at once. A named person approves the heat message and the cooling-center list.",
     },
   },
@@ -239,7 +239,7 @@ export function DualUse() {
                   Play the full fire
                 </Cta>
               </div>
-              <p className="mt-3 text-sm leading-relaxed text-vf-smoke">The simulated Westside fire plays on the board by itself, with captions.</p>
+              <p className="mt-3 text-sm leading-relaxed text-vf-smoke">The Westside fire plays on the board by itself, with captions.</p>
             </div>
             <div className="lg:col-start-4 lg:px-5">
               <p className="text-sm font-semibold text-vf-bone">
@@ -254,7 +254,7 @@ export function DualUse() {
                 </Cta>
               </div>
               <p className="mt-3 text-sm leading-relaxed text-vf-smoke">
-                Opens <Route>/demo</Route>, where you load the simulated heat scenario.
+                Opens <Route>/demo</Route>, where you load the heat scenario.
               </p>
             </div>
           </div>

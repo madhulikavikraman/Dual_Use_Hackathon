@@ -2,7 +2,8 @@
 
 // The supervisor board's tour, one step per region of the screen. Every sentence describes what the
 // board shows (components/board/*); the targets are the data-tour attributes on those components.
-import { PRIORITY_LABEL, stateShort, WORDING } from "@/lib/client/labels";
+import { PRIORITY_LABEL, stateShort } from "@/lib/client/labels";
+import { modeWords } from "@/lib/ui/display";
 import type { Mode } from "@/lib/types";
 import { captureView, getSelectedZoneId, revealSidebar, scrollIntoColumn, selectZone, setBoardView, type BoardView } from "@/lib/ui/boardView";
 import type { TourStep } from "./types";
@@ -101,14 +102,14 @@ function pickPlanZone(zoneId: string | null) {
  * `planZoneId`: a zone with a block-by-block plan, if any (the blocks step opens its detail).
  */
 export function boardSteps(mode: Mode, holdOpen: boolean, warningZoneId: string | null = null, planZoneId: string | null = null): TourStep[] {
-  const registry = WORDING[mode].registry;
+  const registry = modeWords(mode).registry;
   return [
     {
       id: "welcome",
       placement: "center",
       hero: true,
       title: "The supervisor board",
-      body: "One screen for the person on the overnight desk: zones, calls, the hold before an alert, and who needs help. Everything is simulated: residents are synthetic except 6 volunteer phones, and nothing reaches a real alert system.",
+      body: "One screen for the person on the overnight desk: zones, calls, the hold before an alert, and who needs help. It is a demo: residents are synthetic except 6 volunteer phones, and nothing reaches a real alert system.",
     },
     {
       id: "scenario",
@@ -117,7 +118,7 @@ export function boardSteps(mode: Mode, holdOpen: boolean, warningZoneId: string 
       padding: 4,
       onEnter: revealSidebar,
       title: "Scenario and mode",
-      body: "The sidebar starts with the scenario. Switching one resets the run on this screen. The mode sets the words the board uses, and the SIMULATED badge never goes away.",
+      body: "The sidebar starts with the scenario. Switching one resets the run on this screen. The mode sets the words the board uses, and the DEMO badge never goes away.",
     },
     {
       id: "nav",
@@ -141,7 +142,7 @@ export function boardSteps(mode: Mode, holdOpen: boolean, warningZoneId: string 
       target: '[data-tour="header"]',
       placement: "bottom",
       title: "Your name, the clock and autoplay",
-      body: "Type your name once: every decision dialog uses it, and the ledger records it (on a phone it is in the menu). Retell shows whether real phone calls are on. Play the full fire runs the whole simulated event with captions.",
+      body: "Type your name once: every decision dialog uses it, and the ledger records it (on a phone it is in the menu). Retell shows whether real phone calls are on. Play the full fire runs the whole demo event with captions.",
     },
     {
       id: "map",
@@ -227,9 +228,9 @@ export function boardSteps(mode: Mode, holdOpen: boolean, warningZoneId: string 
             padding: 6,
             onEnter: pickPlanZone(planZoneId),
             title: "Block by block, not the whole city",
-            body: "An Order covers the whole zone, but people leave in waves, one patch of about 10 to 12 city blocks at a time, nearest the fire first, each on its own exit road, so no road takes more cars than it carries. A named person approves the plan and can start the next wave, hold it, or send everyone now. On the map, red patches go now, orange go next and yellow get ready.",
+            body: "An Order covers the whole zone, but people leave in waves of several patches, each about half a mile (800 m) on a side, nearest the fire first, each on its own exit road, so no road takes more cars than it carries. A named person approves the plan and can start the next wave, hold it, or send everyone now. On the map, red patches go now, orange go next and yellow get ready.",
             bodyWhenMissing:
-              "When an Order is composed for a zone with exit roads set up, a block plan is proposed: waves of patches of about 10 to 12 city blocks, nearest the fire first, each on its own road. A named person approves it; until then every call reads the full Order.",
+              "When an Order is composed for a zone with exit roads set up, a block plan is proposed: waves of several patches, each about half a mile (800 m) on a side, nearest the fire first, each on its own road. A named person approves it; until then every call reads the full Order.",
           },
         ]),
     {

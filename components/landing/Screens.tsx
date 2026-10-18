@@ -33,7 +33,7 @@ const SMALL: { href: string; name: string; what: string; who: string; art: React
   {
     href: "/demo",
     name: "Operator console",
-    what: "Resets a scenario (Westside LA, the heat wave, Altadena, Norte or Chongqing) and fires simulator events.",
+    what: "Resets a scenario (Westside LA, the heat wave, Altadena, Norte or Chongqing) and fires demo events.",
     who: "The operator’s laptop.",
     art: <LaptopMini />,
   },
@@ -172,7 +172,7 @@ export function Screens() {
             ))}
           </ol>
           <p className="mt-6 text-[15px] leading-relaxed text-vf-smoke">
-            Rehearsing without volunteers? Turn on autopilot in <Route>/demo</Route> and the simulator answers for all 6 phones.
+            Rehearsing without volunteers? Turn on autopilot in <Route>/demo</Route> and it answers for all 6 phones.
           </p>
         </div>
         <div className="flex flex-col justify-center border-t border-white/10 pt-8 lg:col-span-5 lg:border-l lg:border-t-0 lg:pl-12 lg:pt-0">

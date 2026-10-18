@@ -12,6 +12,7 @@ import { useBoard } from "@/components/board/BoardContext";
 import { DOCK_BELOW, holeFor, useTargetBox, useViewport } from "@/components/tour/geometry";
 import { motionTokens, NO_MOTION, springs } from "@/components/tour/motion";
 import { BEATS, RUNGS, VISIBLE_BEATS, type Beat, type Rung } from "@/lib/autoplay/script";
+import { plain } from "@/lib/ui/display";
 import { autoplay, exitOnPageHide, useAutoplay, type AutoplayState } from "./controller";
 
 const FOCUS_RING = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vf-ember";
@@ -100,7 +101,7 @@ function useDockStyle(): CSSProperties | null {
 function Badge() {
   return (
     <span className="shrink-0 rounded bg-amber-400 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-slate-950">
-      Simulated · autoplay
+      Demo · autoplay
     </span>
   );
 }
@@ -212,9 +213,9 @@ function Dock({ s, beat }: { s: AutoplayState; beat: Beat | null }) {
               transition={reduce ? NO_MOTION : { duration: motionTokens.duration.fast, ease: motionTokens.easing.smooth }}
             >
               <h2 id={titleId} className="mt-3 font-display text-[19px] font-semibold leading-tight text-vf-bone">
-                {beat?.title ?? "Starting the run"}
+                {plain(beat?.title) ?? "Starting the run"}
               </h2>
-              <p className="mt-1.5 text-[14px] leading-relaxed text-vf-bone/80">{beat?.caption ?? "Resetting the Westside Fire scenario."}</p>
+              <p className="mt-1.5 text-[14px] leading-relaxed text-vf-bone/80">{plain(beat?.caption) ?? "Resetting the Westside Fire scenario."}</p>
             </motion.div>
           </AnimatePresence>
           <StatusLine s={s} />
@@ -249,7 +250,7 @@ function Intro({ titleId }: { titleId: string }) {
       </h2>
       <p className="mt-1.5 text-[14px] leading-relaxed text-vf-bone/80">
         Resets the Westside Fire and plays the whole run on this board in about 4 minutes, with captions. Autopilot answers
-        for the six volunteer phones. Everything is simulated, and autoplay&apos;s decisions are not counted as human ones.
+        for the six volunteer phones. Nothing reaches a real alert system, and autoplay&apos;s decisions are not counted as human ones.
       </p>
       <p className="mt-2 text-[13px] leading-relaxed text-vf-smoke">This wipes the current run. The twist log is kept.</p>
       <div className="mt-4 flex flex-wrap gap-2">
@@ -268,10 +269,10 @@ function StatusLine({ s }: { s: AutoplayState }) {
   let text: ReactNode = null;
   let tone = "text-vf-smoke";
   if (s.paused) {
-    text = "Paused. The simulation keeps running on the server, so a hold still sends on time.";
+    text = "Paused. The run keeps going on the server, so a hold still sends on time.";
     tone = "text-amber-300";
   } else if (s.line) {
-    text = s.line.text;
+    text = plain(s.line.text);
     tone =
       s.line.kind === "outcome" ? "text-vf-bone" : s.line.kind === "timeout" ? "text-amber-300" : s.line.kind === "error" ? "text-red-300" : "text-vf-smoke";
   } else if (s.waiting) {
@@ -306,7 +307,7 @@ function Controls({ s }: { s: AutoplayState }) {
             type="button"
             aria-pressed={s.speed === v}
             onClick={() => autoplay.setSpeed(v)}
-            title={v === 2 ? "Half the reading time; the simulation itself runs in real time" : "Normal reading time"}
+            title={v === 2 ? "Half the reading time; the run itself goes in real time" : "Normal reading time"}
             className={`h-8 min-w-10 rounded-full px-2.5 text-[13px] font-semibold tabular-nums transition-colors ${FOCUS_RING} ${
               s.speed === v ? "bg-vf-bone text-vf-ink" : "text-vf-bone/80 hover:bg-white/10"
             }`}
@@ -328,7 +329,7 @@ function LiveRegion({ s, beat }: { s: AutoplayState; beat: Beat | null }) {
   return (
     <>
       <p className="sr-only" aria-live="polite" aria-atomic="true">
-        {beat ? `${beat.title}. ${beat.caption}` : ""}
+        {beat ? plain(`${beat.title}. ${beat.caption}`) : ""}
       </p>
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {s.paused ? "Paused." : result}
@@ -385,12 +386,12 @@ function EndCard({ s }: { s: AutoplayState }) {
           {RUNGS.map((r) => (
             <li key={r.id} className="grid grid-cols-[8.5rem_1fr] items-baseline gap-3 max-[420px]:grid-cols-1 max-[420px]:gap-0.5">
               <span className="font-display text-[15px] font-semibold text-vf-ember">{r.label}</span>
-              <span className="text-[14px] leading-relaxed text-vf-bone/85">{lines[r.id]}</span>
+              <span className="text-[14px] leading-relaxed text-vf-bone/85">{plain(lines[r.id])}</span>
             </li>
           ))}
         </ol>
         <p className="mt-4 text-[13px] leading-relaxed text-vf-smoke">
-          Autoplay signed its decisions as a simulated supervisor; the board counts none of them as human decisions.
+          Autoplay signed its decisions as a stand-in supervisor; the board counts none of them as human decisions.
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-2">
           <button ref={replayRef} type="button" className={PRIMARY} onClick={() => autoplay.start()}>

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { getBoard } from "@/lib/client/api";
 import { fmtClock } from "@/lib/client/format";
-import { WORDING } from "@/lib/client/labels";
+import { modeWords } from "@/lib/ui/display";
 import { usePoll } from "@/lib/client/usePoll";
 import { Emoji } from "@/lib/ui/Emoji";
 import { ICON } from "@/lib/ui/icons";
@@ -37,7 +37,6 @@ export function BoardWaiting({ error }: { error: string | null }) {
           <Image src="/brand/voiceflare-mark.png" alt="" width={32} height={32} className="size-8" loading="eager" />
           VoiceFlare
         </div>
-        <span className="mt-2 inline-block rounded bg-amber-400 px-2 py-0.5 text-xs font-black tracking-widest text-slate-950">SIMULATED</span>
         {error ? (
           <p className="mt-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
             Cannot reach the board: {error}. Retrying every second.
@@ -105,7 +104,7 @@ function Panel({ icon, title, aside, tour = "side-panel", children }: { icon: st
 function ViewColumn({ view }: { view: BoardView }) {
   const { snap } = useBoard();
   const m = snap.metrics;
-  const words = WORDING[snap.meta.mode];
+  const words = modeWords(snap.meta.mode);
   return (
     <>
       {view === "map" ? (

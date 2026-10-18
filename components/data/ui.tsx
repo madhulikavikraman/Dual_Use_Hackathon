@@ -3,10 +3,11 @@
 // Small shared UI for the data pages (/evidence, /twists, /demo). Client-only, no server imports.
 import type { ReactNode } from "react";
 import type { Cell, EvidenceStatus, EvidenceTable } from "@/lib/engine/evidence";
+import { plain } from "@/lib/ui/display";
 
 export const STATUS_TEXT: Record<EvidenceStatus, string> = {
   pass: "Pass",
-  simulated: "Met in simulation",
+  simulated: "Met in rehearsal",
   not_yet: "Not yet",
   no_data: "No data",
   info: "Measured",
@@ -27,15 +28,15 @@ export function StatusBadge({ status, label, className = "" }: { status: Evidenc
     <span
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap ring-1 ring-inset print:ring-neutral-400 ${STATUS_CLASS[status]} ${className}`}
     >
-      {label ?? STATUS_TEXT[status]}
+      {label ? plain(label) : STATUS_TEXT[status]}
     </span>
   );
 }
 
-export function SimulatedBadge() {
+export function DemoBadge() {
   return (
     <span className="inline-flex items-center rounded bg-amber-400 px-1.5 py-0.5 text-[11px] font-bold tracking-wider text-black uppercase">
-      Simulated
+      Demo
     </span>
   );
 }
@@ -59,7 +60,8 @@ export function fmtCell(key: string, v: Cell | undefined): ReactNode {
   if (typeof v === "string" && key.endsWith("_at")) return <span title={v}>{clock(v)}</span>;
   if (typeof v === "number" && !Number.isInteger(v)) return v.toFixed(key.includes("confidence") ? 2 : 1);
   if (typeof v === "number" && v >= 10_000) return v.toLocaleString();
-  return String(v);
+  // Words that were said or approved stay exactly as they are; other engine text loses "simulated".
+  return typeof v === "string" && !/text|line|directive|transcript|said|quote/i.test(key) ? plain(v) : String(v);
 }
 
 export function DataTable({ table, max }: { table: EvidenceTable; max?: number }) {
@@ -67,11 +69,11 @@ export function DataTable({ table, max }: { table: EvidenceTable; max?: number }
   return (
     <div className="mt-3">
       <div className="mb-1 text-xs font-semibold tracking-wide text-neutral-500 uppercase">
-        {table.title} <span className="font-normal normal-case">({table.rows.length} row{table.rows.length === 1 ? "" : "s"})</span>
+        {plain(table.title)} <span className="font-normal normal-case">({table.rows.length} row{table.rows.length === 1 ? "" : "s"})</span>
       </div>
       {table.rows.length === 0 ? (
         <p className="rounded border border-dashed border-neutral-300 px-3 py-2 text-sm text-neutral-500 dark:border-neutral-700">
-          {table.empty}
+          {plain(table.empty)}
         </p>
       ) : (
         <div className="overflow-x-auto rounded border border-neutral-200 dark:border-neutral-800 print:overflow-visible">
@@ -80,7 +82,7 @@ export function DataTable({ table, max }: { table: EvidenceTable; max?: number }
               <tr>
                 {table.columns.map((c) => (
                   <th key={c.key} className="px-2 py-1.5 font-semibold whitespace-nowrap">
-                    {c.label}
+                    {plain(c.label)}
                   </th>
                 ))}
               </tr>

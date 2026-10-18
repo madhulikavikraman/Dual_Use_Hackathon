@@ -4,7 +4,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { useNow } from "@/lib/client/clock";
 import { fmtCountdown } from "@/lib/client/format";
-import { WORDING } from "@/lib/client/labels";
+import { modeWords } from "@/lib/ui/display";
 import { Emoji } from "@/lib/ui/Emoji";
 import { ICON } from "@/lib/ui/icons";
 import { BOARD_VIEWS, setBoardView, setDrawer, useBoardView } from "@/lib/ui/boardView";
@@ -59,7 +59,7 @@ export function BoardHeader() {
   const { snap, hold } = useBoard();
   const { view, drawer } = useBoardView();
   const def = BOARD_VIEWS.find((v) => v.id === view) ?? BOARD_VIEWS[0];
-  const title = view === "help" ? WORDING[snap.meta.mode].registry : viewLabel(view, snap.meta.mode);
+  const title = view === "help" ? modeWords(snap.meta.mode).registry : viewLabel(view, snap.meta.mode);
   return (
     <header data-tour="header" className="flex h-14 shrink-0 items-center gap-2 bg-slate-900 px-3 text-white sm:gap-3 sm:px-4">
       <button

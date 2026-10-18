@@ -59,7 +59,7 @@ export function LocateClient({ token }: { token: string }) {
         <header className="flex items-center justify-between gap-3">
           <p className="font-display text-lg font-semibold tracking-tight">VoiceFlare</p>
           <span className="rounded-full bg-amber-400/15 px-3 py-1 text-sm font-semibold text-amber-200 ring-1 ring-amber-400/40">
-            {v?.synthetic ? "Simulated" : "Hackathon demo"}
+            {v?.synthetic ? "Demo · synthetic resident" : "Hackathon demo"}
           </span>
         </header>
 

@@ -6,12 +6,13 @@ import { approveZone, decideProposal, type Signed } from "@/lib/client/api";
 import { fmtArea } from "@/lib/client/format";
 import { Emoji, People } from "@/lib/ui/Emoji";
 import { ICON, STATE_ICON } from "@/lib/ui/icons";
-import { campaignLabel, MODEL_LABEL, stateLabel, STATE_TEXT } from "@/lib/client/labels";
+import { campaignLabel, MODEL_LABEL, stateLabel, stateShort, STATE_TEXT } from "@/lib/client/labels";
 import { STATE_COLOR, STATE_RUNG } from "@/lib/directives";
 import { ZONE_STATES, type Proposal, type Zone, type ZoneState } from "@/lib/types";
 import { ColorChip } from "@/components/ui/Chip";
 import { Field, inputClass } from "@/components/ui/Field";
 import { useAct, useBoard } from "./BoardContext";
+import { plain } from "@/lib/ui/display";
 import { DecisionDialog } from "./DecisionDialog";
 import { useZoneTexts } from "./useZoneTexts";
 import { useZoneMoved, ZoneMovedNotice } from "./ZoneMoved";
@@ -23,9 +24,18 @@ const WHAT_HAPPENS: Record<ZoneState, string> = {
   watch: "The sentinel roster is warmed. No resident is called unless you start a call.",
   warning:
     "Starts Stage 1: calls sweep the zone from the edge nearest the hazard inward, about 200 m per ring; people with access and functional needs ring first in each ring.",
-  order: "Opens a 90-second hold with sentinels before the send (simulated). On Send, Stage 3 relays the Order.",
+  order: "Opens a 90-second hold with sentinels before the send. On Send, Stage 3 relays the Order.",
   shelter_in_place: "Earthquake, hazmat or active-threat mode. The registry puts trapped or injured people first.",
   lifted: "A human-only word: the agent never says a zone is clear.",
+};
+
+/** The heat check-in line has no hazard edge: it calls people who live alone or have no air conditioning first. */
+const HEAT_WHAT_HAPPENS: Record<ZoneState, string> = {
+  ...WHAT_HAPPENS,
+  watch: "Starts check-in calls to the older residents who live alone. Nobody else is called.",
+  warning: "Calls every registered older resident. It calls people who live alone or have no air conditioning first.",
+  order: "Opens a 90-second hold with sentinels before the send. On Send, everyone in the zone is called again.",
+  shelter_in_place: "Calls the zone to stay indoors in the coolest room.",
 };
 
 function resultMessage(zone: Zone, label: string, r: ApproveZoneResult | null | undefined): string {
@@ -106,11 +116,15 @@ export function ApproveZoneDialog({ zone, proposal, onClose }: { zone: Zone; pro
       canSubmit={!moved && texts !== null && (state === "monitor" || texts.directive_text.trim().length > 0)}
       reasonPlaceholder={proposal ? "Why you agree with the model" : "Why this zone, why now"}
       reasonSuggestions={
-        state === "warning"
-          ? ["Fire envelope reaches the zone's edge", "Duty officer requested a Warning"]
-          : state === "order"
-            ? ["Duty officer requests an Order", "Envelope reached the zone edge"]
-            : []
+        mode === "heat"
+          ? state === "monitor" || state === "lifted"
+            ? []
+            : ["The heat thresholds propose this level", `Duty officer requests ${stateShort(state, mode)}`]
+          : state === "warning"
+            ? ["Fire envelope reaches the zone's edge", "Duty officer requested a Warning"]
+            : state === "order"
+              ? ["Duty officer requests an Order", "Envelope reached the zone edge"]
+              : []
       }
       onConfirm={confirm}
       onClose={onClose}
@@ -121,13 +135,13 @@ export function ApproveZoneDialog({ zone, proposal, onClose }: { zone: Zone; pro
           <div className="text-xs font-black uppercase tracking-wide text-amber-800">
             <Emoji e={ICON.model} /> Proposed by model — needs a human
           </div>
-          <div className="mt-0.5 text-slate-800">{proposal.reason}</div>
+          <div className="mt-0.5 text-slate-800">{plain(proposal.reason)}</div>
           <div className="mt-0.5 text-xs text-slate-500">
             {MODEL_LABEL[proposal.model]} · score {proposal.score.toFixed(2)}
           </div>
         </div>
       ) : null}
-      <Field label="State on the ladder" hint={`Rung: ${STATE_RUNG[state]}. ${WHAT_HAPPENS[state]}`}>
+      <Field label="State on the ladder" hint={`Rung: ${STATE_RUNG[state]}. ${(mode === "heat" ? HEAT_WHAT_HAPPENS : WHAT_HAPPENS)[state]}`}>
         <select
           className={inputClass}
           value={state}
@@ -150,7 +164,7 @@ export function ApproveZoneDialog({ zone, proposal, onClose }: { zone: Zone; pro
           <p className="font-semibold">
             <Emoji e={ICON.hold} /> Opens a 90-second hold with sentinels <Emoji e={ICON.sentinel} /> before the send.
           </p>
-          <p className="mt-0.5">The machine can delay an alert, never stop one: at 0:00 it sends on time (simulated).</p>
+          <p className="mt-0.5">The machine can delay an alert, never stop one: at 0:00 it sends on time.</p>
           {proposal ? null : (
             <label className="mt-2 flex items-center gap-2 font-semibold">
               <input type="checkbox" checked={bypass} onChange={(e) => setBypass(e.target.checked)} className="size-4 accent-red-700" />

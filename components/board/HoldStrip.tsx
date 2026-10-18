@@ -20,6 +20,7 @@ import { STATE_COLOR } from "@/lib/directives";
 import { Emoji, People } from "@/lib/ui/Emoji";
 import { HoldWaveDose } from "./BlockPlanPanel";
 import { ICON, STATE_ICON } from "@/lib/ui/icons";
+import { displayActor, plain } from "@/lib/ui/display";
 import type { Hold, HoldDecision, HoldTally, SentinelAnswer, Zone } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Chip, ColorChip } from "@/components/ui/Chip";
@@ -34,9 +35,9 @@ const DECISIONS: Record<
 > = {
   send: {
     button: "Send now",
-    title: "Send now (simulated)",
+    title: "Send now",
     confirm: "Send now",
-    toast: "Sent (simulated). The canary outside the polygon rings next.",
+    toast: "Sent. The canary outside the polygon rings next.",
     suggestions: ["Quorum: two edge reads confirm the hazard", "Incident commander wants it out now"],
     describe: (h) => (
       <>
@@ -202,7 +203,7 @@ function OpenHold({ hold, others, onSelect }: { hold: Hold; others: Hold[]; onSe
       {hold.handed_off_by ? (
         // A hand-off escalates, it never stops the alert: the hold stays open and every button still works.
         <p role="status" className="mx-3 mt-2 shrink-0 rounded-md bg-amber-100 px-2 py-1 text-[13px] font-semibold leading-snug text-amber-950 ring-1 ring-inset ring-amber-300">
-          Handed to the duty officer by {hold.handed_off_by} at {fmtTime(hold.handed_off_at)} — still sends at 0:00
+          Handed to the duty officer by {displayActor(hold.handed_off_by ?? "")} at {fmtTime(hold.handed_off_at)} — still sends at 0:00
         </p>
       ) : null}
       {others.length > 1 ? (
@@ -306,10 +307,10 @@ function ClosedHold({ hold, onDismiss }: { hold: Hold; onDismiss: () => void }) 
           <Emoji e={ICON.hold} /> LAST HOLD
         </span>
         <div className="min-w-0 flex-1">
-          <b className="block text-[15px] leading-snug">{HOLD_OUTCOME[outcomeOf(hold)]}</b>
+          <b className="block text-[15px] leading-snug">{plain(HOLD_OUTCOME[outcomeOf(hold)])}</b>
           <span className="block truncate text-[13px] text-slate-600">
             {zone?.name ?? hold.zone_id} · {fmtTime(hold.sent_at ?? hold.decided_at)}
-            {hold.decided_by ? ` · ${hold.decided_by}` : ""}
+            {hold.decided_by ? ` · ${displayActor(hold.decided_by)}` : ""}
             {hold.reason ? ` · “${hold.reason}”` : ""}
           </span>
         </div>
@@ -326,7 +327,7 @@ function ClosedHold({ hold, onDismiss }: { hold: Hold; onDismiss: () => void }) 
         ) : null}
         {hold.handed_off_by ? (
           <p className="text-[13px] text-slate-700">
-            Handed to the duty officer by {hold.handed_off_by} at {fmtTime(hold.handed_off_at)}.
+            Handed to the duty officer by {displayActor(hold.handed_off_by ?? "")} at {fmtTime(hold.handed_off_at)}.
           </p>
         ) : null}
         {sent && !canaries.length ? (

@@ -8,6 +8,7 @@ import { STATE_COLOR } from "@/lib/directives";
 import type { Mode, Proposal, Zone } from "@/lib/types";
 import { Emoji } from "@/lib/ui/Emoji";
 import { ICON, STATE_ICON } from "@/lib/ui/icons";
+import { displayActor, plain } from "@/lib/ui/display";
 import { Button } from "@/components/ui/Button";
 import { ColorChip } from "@/components/ui/Chip";
 import { ApproveZoneDialog } from "./ApproveZoneDialog";
@@ -50,8 +51,8 @@ function ProposalCard({
         </ColorChip>
       </div>
       <div className="mt-1 flex items-end gap-2">
-        <p className="line-clamp-2 min-w-0 flex-1 text-sm leading-snug text-slate-700" title={proposal.reason}>
-          {proposal.reason}
+        <p className="line-clamp-2 min-w-0 flex-1 text-sm leading-snug text-slate-700" title={plain(proposal.reason)}>
+          {plain(proposal.reason)}
         </p>
         <Button size="sm" variant="primary" onClick={() => onDecide("approve")}>
           Approve…
@@ -107,7 +108,7 @@ export function ProposalsPanel() {
         <ul className="mt-2 space-y-0.5 text-xs text-slate-600">
           {decided.map((p) => (
             <li key={p.id}>
-              <b className="text-slate-800">{p.status === "rejected" ? "Rejected" : "Approved"}</b> by {p.decided_by ?? "—"}:{" "}
+              <b className="text-slate-800">{p.status === "rejected" ? "Rejected" : "Approved"}</b> by {p.decided_by ? displayActor(p.decided_by) : "—"}:{" "}
               {zoneById.get(p.zone_id)?.name ?? p.zone_id} → {stateLabel(p.proposed_state, mode)}
               {p.decision_reason ? ` · “${p.decision_reason}”` : ""}
             </li>
@@ -123,7 +124,7 @@ export function ProposalsPanel() {
           title={`Reject the proposal for ${pending.zone.name}`}
           description={
             <>
-              The model proposed <b>{stateLabel(pending.proposal.proposed_state, mode)}</b>: {pending.proposal.reason} Rejections
+              The model proposed <b>{stateLabel(pending.proposal.proposed_state, mode)}</b>: {plain(pending.proposal.reason)} Rejections
               are logged with your reason, so the model&apos;s record stays visible.
             </>
           }

@@ -21,7 +21,7 @@ const saira = Saira({
 export const metadata: Metadata = {
   title: { default: "VoiceFlare", template: "%s · VoiceFlare" },
   description:
-    "Before an automated system wakes a zone, VoiceFlare asks the people at its edge, shows how many phones it will wake, and relays only what a named human approved. Hackathon demo: synthetic residents, simulated sends.",
+    "Before an automated system wakes a zone, VoiceFlare asks the people at its edge, shows how many phones it will wake, and relays only what a named human approved. Hackathon demo: synthetic residents; nothing reaches a real alert system.",
   applicationName: "VoiceFlare",
 };
 

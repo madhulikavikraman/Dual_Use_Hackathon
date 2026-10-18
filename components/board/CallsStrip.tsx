@@ -4,10 +4,11 @@
 import type { ReactNode } from "react";
 import type { CallView } from "@/lib/contracts";
 import { fmtInt, fmtPct, fmtSpan, fmtTime, fmtUsd } from "@/lib/client/format";
-import { campaignLabel, PURPOSE_LABEL, stateLabel, TRANSPORT_LABEL, WORDING } from "@/lib/client/labels";
+import { campaignLabel, PURPOSE_LABEL, stateLabel, TRANSPORT_LABEL } from "@/lib/client/labels";
 import type { CallPurpose, Campaign, Transport } from "@/lib/types";
 import { Emoji } from "@/lib/ui/Emoji";
 import { ICON } from "@/lib/ui/icons";
+import { displayActor, modeWords, plain } from "@/lib/ui/display";
 import { Chip } from "@/components/ui/Chip";
 import { useBoard } from "./BoardContext";
 
@@ -45,9 +46,8 @@ function CallCard({ call, now }: { call: CallView; now: string }) {
         </span>
       </header>
       <div className="mt-0.5 truncate text-xs text-slate-600">
-        {PURPOSE_LABEL[call.purpose]} · {call.language} · <Emoji e={TRANSPORT_ICON[call.transport]} /> {TRANSPORT_LABEL[call.transport]}
+        {PURPOSE_LABEL[call.purpose]} · {call.language} · <Emoji e={TRANSPORT_ICON[call.transport]} /> {plain(TRANSPORT_LABEL[call.transport] ?? call.transport)}
         {call.attempt > 1 ? ` · attempt ${call.attempt}` : ""}
-        {call.simulated ? " · simulated" : ""}
       </div>
       <p className="mt-1 line-clamp-2 text-[13px] italic leading-snug text-slate-800">
         {call.last_line ? `“${call.last_line}”` : <span className="not-italic text-slate-400">…</span>}
@@ -82,7 +82,7 @@ export function CallsPanel() {
       <dl className="grid grid-cols-2 gap-2">
         {[
           { icon: ICON.calls, label: "Live now", value: fmtInt(m.calls_active), note: `${fmtInt(m.calls_queued)} queued` },
-          { icon: ICON.reached, label: WORDING[mode].reached, value: fmtInt(m.reached), note: `of ${fmtInt(m.in_campaigns)} called` },
+          { icon: ICON.reached, label: modeWords(mode).reached, value: fmtInt(m.reached), note: `of ${fmtInt(m.in_campaigns)} called` },
           { icon: ICON.understood, label: "Understood", value: fmtPct(m.understood_pct), note: "repeated the plan" },
           { icon: ICON.cost, label: "Cost", value: fmtUsd(m.cost_usd), note: `${m.cost_minutes.toFixed(1)} min · estimate` },
         ].map((s) => (
@@ -105,12 +105,14 @@ export function CallsPanel() {
           </div>
         ) : (
           <p className="rounded-md bg-slate-50 px-3 py-4 text-center text-sm text-slate-500">
-            No call is ringing right now. Approving a zone to {stateLabel("warning", mode)} starts Stage 1 from the edge nearest the hazard.
+            {mode === "heat"
+              ? `No call is ringing right now. Approving a zone to ${stateLabel("warning", mode)} starts check-in calls: it calls people who live alone or have no air conditioning first.`
+              : `No call is ringing right now. Approving a zone to ${stateLabel("warning", mode)} starts Stage 1 from the edge nearest the hazard.`}
           </p>
         )}
       </Section>
 
-      <Section icon={ICON.wave} title="Call waves" aside="edge first, then inward">
+      <Section icon={ICON.wave} title="Call waves" aside={mode === "heat" ? "people alone or without AC first" : "edge first, then inward"}>
         {waves.length ? (
           <ul className="divide-y divide-slate-100 overflow-hidden rounded-md border border-slate-200 bg-white">
             {waves.map((c) => (
@@ -121,7 +123,7 @@ export function CallsPanel() {
                   {c.status}
                 </Chip>
                 <span className="w-full text-xs text-slate-500">
-                  <Emoji e={ICON.human} /> {c.started_by} · {fmtTime(c.created_at)}
+                  <Emoji e={ICON.human} /> {displayActor(c.started_by)} · {fmtTime(c.created_at)}
                 </span>
               </li>
             ))}

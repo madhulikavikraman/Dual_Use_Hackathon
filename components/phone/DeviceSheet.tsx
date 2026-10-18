@@ -184,7 +184,7 @@ export default function DeviceSheet() {
       )}
       {board?.meta.autopilot_devices && (
         <p className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-200 print:hidden">
-          <strong>Autopilot is on:</strong> the simulator answers for these phones, so their pages will not ring. Turn
+          <strong>Autopilot is on:</strong> the board answers for these phones itself, so their pages will not ring. Turn
           off <em>Autopilot devices</em> on <Link href="/demo" className="font-medium underline underline-offset-2">/demo</Link>{" "}
           before the volunteers&apos; run.
         </p>
@@ -308,8 +308,8 @@ export default function DeviceSheet() {
         <div className="min-w-0 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
           <h2 className="font-semibold">Open any household&apos;s phone (testing)</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Only device households and public-line callers ring in the browser. The simulator answers every call to a
-            synthetic household, so its page only waits.
+            Only device households and public-line callers ring in the browser. The board answers every call to a
+            synthetic household itself, so its page only waits.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <select
@@ -323,7 +323,7 @@ export default function DeviceSheet() {
                 <option key={h.id} value={h.id}>
                   {h.has_device ? `${h.device_label} · ` : ""}
                   {h.name} · {h.language} · {h.zone_id ?? "no zone"}
-                  {h.synthetic ? " · simulator answers" : ""}
+                  {h.synthetic ? " · auto-answers" : ""}
                 </option>
               ))}
             </select>

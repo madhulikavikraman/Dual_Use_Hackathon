@@ -7,7 +7,7 @@ import PhoneClient from "@/components/phone/PhoneClient";
 
 export const metadata: Metadata = {
   title: "Phone · VoiceFlare",
-  description: "Browser phone for the VoiceFlare emergency information line (simulated demo).",
+  description: "Browser phone for the VoiceFlare emergency information line (hackathon demo).",
 };
 
 export const viewport: Viewport = {

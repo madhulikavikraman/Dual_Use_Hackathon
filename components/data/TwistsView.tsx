@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ChangeEvent, type ReactNode } from "react";
 import type { TwistEntry } from "@/lib/types";
-import { Button, Linkify, SimulatedBadge, clock } from "./ui";
+import { Button, Linkify, DemoBadge, clock } from "./ui";
 
 const REPO = "https://github.com/madhulikavikraman/Dual_Use_Hackathon";
 const SCHEDULE: Record<number, string> = { 1: "Fri 11:30 PM", 2: "Sat 4:30 AM", 3: "Sat 7:00 AM" };
@@ -180,7 +180,7 @@ export default function TwistsView() {
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6">
       <header>
         <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500">
-          <SimulatedBadge />
+          <DemoBadge />
           <span>VoiceFlare · Best Shift Adapter</span>
         </div>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Twist log</h1>

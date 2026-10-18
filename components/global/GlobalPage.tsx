@@ -196,7 +196,7 @@ function Footer() {
           <Image src="/brand/voiceflare-mark.png" alt="" width={822} height={822} className="h-7 w-7 shrink-0" />
           <p className="text-sm leading-relaxed text-vf-smoke">
             Directive wording outside California is a demo paraphrase, never an official text. Residents are synthetic except six
-            volunteer phones, and every send is simulated: nothing reaches a real alert system. USC x InnovateLA Dual-Use
+            volunteer phones, and nothing reaches a real alert system. USC x InnovateLA Dual-Use
             Hackathon, Resilience Comms track.
           </p>
         </div>

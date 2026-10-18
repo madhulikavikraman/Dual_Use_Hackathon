@@ -229,6 +229,10 @@
   text-align: center;
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.3);
 }
+.sk-hold-note {
+  font-weight: 600;
+  font-size: 11px;
+}
 
 /* Tooltips */
 .leaflet-tooltip.sk-tip {

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { openHold, type Signed } from "@/lib/client/api";
 import { fmtArea, fmtPeople } from "@/lib/client/format";
 import { People } from "@/lib/ui/Emoji";
-import { stateLabel } from "@/lib/client/labels";
+import { stateLabel, stateShort } from "@/lib/client/labels";
 import type { Zone } from "@/lib/types";
 import { Field, inputClass } from "@/components/ui/Field";
 import { useAct, useBoard } from "./BoardContext";
@@ -58,7 +58,11 @@ export function ComposeOrderDialog({ zone, onClose }: { zone: Zone; onClose: () 
       confirmLabel="Open the hold"
       canSubmit={!moved && texts !== null && texts.directive_text.trim().length > 0}
       reasonPlaceholder="Who asked for this, and why"
-      reasonSuggestions={["Duty officer requests an Order", "Envelope reached the zone edge"]}
+      reasonSuggestions={
+        mode === "heat"
+          ? ["The heat thresholds propose this level", `Duty officer requests ${stateShort(state, mode)}`]
+          : ["Duty officer requests an Order", "Envelope reached the zone edge"]
+      }
       onConfirm={confirm}
       onClose={onClose}
     >
@@ -89,8 +93,9 @@ export function ComposeOrderDialog({ zone, onClose }: { zone: Zone; onClose: () 
         </fieldset>
       </div>
       <p className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-700">
-        Four to five sentinels ring in parallel: three at the polygon&apos;s far edges, one or two near the hazard. Quorum is two
-        answers; silence is an abstention, never a No. At 0:00 the alert sends on time (simulated).
+        {mode === "heat"
+          ? "Four to five sentinels ring in parallel across the zone. Quorum is two answers; silence is an abstention, never a No. At 0:00 the alert sends on time."
+          : "Four to five sentinels ring in parallel: three at the polygon’s far edges, one or two near the hazard. Quorum is two answers; silence is an abstention, never a No. At 0:00 the alert sends on time."}
       </p>
       <ZoneTextFields texts={texts} fromServer={fromServer} onEdit={edit} />
     </DecisionDialog>

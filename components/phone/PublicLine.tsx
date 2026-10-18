@@ -51,7 +51,7 @@ export default function PublicLine() {
           Choose your language · Elija su idioma · 언어를 선택하세요 · 选择语言 · अपनी भाषा चुनें · Choisissez votre langue
         </p>
         <span className="mt-3 w-fit rounded-full bg-amber-400/15 px-3 py-1 text-xs font-semibold text-amber-300 ring-1 ring-amber-400/40">
-          Simulated call for a hackathon demonstration
+          Demo call for a hackathon
         </span>
 
         <div className="mt-6 grid grid-cols-2 gap-3">

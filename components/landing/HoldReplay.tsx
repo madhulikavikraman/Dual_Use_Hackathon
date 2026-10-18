@@ -64,7 +64,7 @@ const KEYS = [
 const SUMMARY =
   "What the replay shows: the hold opens on a countywide polygon that would wake about 9,800,000 people, 239 times the zone. " +
   "The sentinel in Long Beach answers “nothing here”. The supervisor edits the polygon to Culver City and Palms, about 41,000 people. " +
-  "Two sentinels on Culver City’s edge answer “yes, smoke to the west”. The supervisor sends with 58 seconds left (simulated). " +
+  "Two sentinels on Culver City’s edge answer “yes, smoke to the west”. The supervisor sends with 58 seconds left. " +
   "The canary phone in Westchester, outside the zone, did not get the alert, so delivery is clear. " +
   "If nobody had decided, the order would have sent on time at 0:00.";
 
@@ -298,7 +298,7 @@ function Status({ sent }: { sent: boolean }) {
         ),
         sent: (
           <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-green-500/15 px-2.5 py-1 text-[12px] font-semibold text-green-300">
-            Sent (simulated)
+            Sent
           </span>
         ),
       }}

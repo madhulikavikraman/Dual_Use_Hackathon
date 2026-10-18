@@ -81,7 +81,7 @@ export function DoorKnockSheet({ printed }: { printed: boolean }) {
         <p className={printed ? "" : "text-xs text-slate-500"}>
           {rows.length} {rows.length === 1 ? "person" : "people"} unreached or to check later · {clusters.length} silence{" "}
           {clusters.length === 1 ? "cluster" : "clusters"}
-          {printed ? ` · printed ${fmtTime(snap.now)} · SIMULATED: residents are synthetic except the volunteer phones` : ""}
+          {printed ? ` · printed ${fmtTime(snap.now)} · DEMO: residents are synthetic except the volunteer phones` : ""}
         </p>
       </header>
 
