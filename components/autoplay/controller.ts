@@ -18,7 +18,7 @@ export type AutoplayStatus = "closed" | "intro" | "running" | "end";
 export interface AutoplayState {
   status: AutoplayStatus;
   paused: boolean;
-  speed: 1 | 2;
+  speed: 1 | 2 | 4;
   collapsed: boolean;
   /** The beat on screen (index into BEATS), or null before the first one shows. */
   shown: number | null;
@@ -228,7 +228,7 @@ export const autoplay = {
     skipPressed = true;
     if (state.paused) set({ paused: false });
   },
-  setSpeed(speed: 1 | 2) {
+  setSpeed(speed: 1 | 2 | 4) {
     set({ speed });
   },
   setCollapsed(collapsed: boolean) {

@@ -301,13 +301,13 @@ function Controls({ s }: { s: AutoplayState }) {
         Skip
       </button>
       <div role="group" aria-label="Speed" className="flex items-center rounded-full ring-1 ring-inset ring-white/15">
-        {([1, 2] as const).map((v) => (
+        {([1, 2, 4] as const).map((v) => (
           <button
             key={v}
             type="button"
             aria-pressed={s.speed === v}
             onClick={() => autoplay.setSpeed(v)}
-            title={v === 2 ? "Half the reading time; the run itself goes in real time" : "Normal reading time"}
+            title={v === 4 ? "Quarter the reading time; the run itself goes in real time" : v === 2 ? "Half the reading time; the run itself goes in real time" : "Normal reading time"}
             className={`h-8 min-w-10 rounded-full px-2.5 text-[13px] font-semibold tabular-nums transition-colors ${FOCUS_RING} ${
               s.speed === v ? "bg-vf-bone text-vf-ink" : "text-vf-bone/80 hover:bg-white/10"
             }`}
