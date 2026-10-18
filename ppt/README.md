@@ -23,4 +23,7 @@ Open `voiceflare_pitch.html` in Chrome, from disk or from a copy of this folder.
 
 The 16:9 frames use `object-fit: contain`, so a screenshot of any shape shows in full.
 
+Wording: the deck does not say "simulated". It says it plainly: synthetic residents except 6 volunteer phones;
+nothing reaches a real alert system (decision D-54). Re-capture any screenshot that still shows an old board label.
+
 The fonts (Saira, Geist) load from Google Fonts. Local copies in `assets/fonts/` cover offline use.

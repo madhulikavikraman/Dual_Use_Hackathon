@@ -1,6 +1,6 @@
 # VoiceFlare: Product Requirements Document
 
-**Version 1.2.** Saturday, October 17, 2026, 10:20 AM PDT: renamed VoiceFlare (formerly Second Key, D-36); adds the Twist 2 response (section 17.2, make it global). **Version 1.1.** Saturday, October 17, 2026, 12:45 AM PDT: adds the Twist 1 response (section 17.1, the federal funding pathway) and the `/evidence` page. Version 1.0: Friday, October 16, 2026, 10:30 PM PDT. USC Viterbi x InnovateLA Dual-Use Hackathon, Resilience Comms track (sponsor Retell AI). Team of four (P1 backend and data, P2 AI and Retell, P3 frontend and demo, P4 product, twists and pitch).
+**Version 1.3.** Saturday, October 17, 2026, 6:30 PM PDT: the heat check-in line for older residents replaces the earlier Tuesday customer (sections 2 and 16.3, D-46); block-by-block evacuation with its safety rules (section 8.6, D-48); live location with consent and helpers sent to the spot, item 61 built (section 11.1, D-43); eight agent tools; judge feedback and what we built (section 18); "simulated" leaves what people see (D-54). **Version 1.2.** Saturday, October 17, 2026, 10:20 AM PDT: renamed VoiceFlare (formerly Second Key, D-36); adds the Twist 2 response (section 17.2, make it global). **Version 1.1.** Saturday, October 17, 2026, 12:45 AM PDT: adds the Twist 1 response (section 17.1, the federal funding pathway) and the `/evidence` page. Version 1.0: Friday, October 16, 2026, 10:30 PM PDT. USC Viterbi x InnovateLA Dual-Use Hackathon, Resilience Comms track (sponsor Retell AI). Team of four (P1 backend and data, P2 AI and Retell, P3 frontend and demo, P4 product, twists and pitch).
 
 "VoiceFlare" is the working name. The name is decision D-01 in `decisions.md`; the alternates are "Lookout" and keeping "AllClear". Nothing in this document depends on the name.
 
@@ -30,7 +30,7 @@ A sixth part, AllFound (shelter intake that works offline and a reunification ca
 | --- | --- |
 | Keep | Next.js App Router on Vercel, Supabase (Postgres, Realtime, presence), the Claude agent loop (Haiku in call, Sonnet after), the 45-item backlog and its P0 order, the synthetic seed and simulator presets, teach-back and % understood, household memory, calm mode, linked-contact fallback, pickup runs, silence clusters, the hazard layer, base mode, text mode, NWS alert polygons, the twist log, the verification phrase and callback number |
 | Add | A `zones` table with states and directives, approvals and a ledger; model proposals (fire envelope, call pattern); Retell AI as the phone-network transport with the same tools; staged edge calls (Ready Check becomes Stage 1 of 3) with edge-first ordering; the hold with sentinels, the dose preview and the canary; an `intents` table with reconciliation; a cross-campaign help registry with last-seen locations; GeoJSON feeds and an ArcGIS web map; a Westside seed preset |
-| Change | The agent may tell a resident to leave, prepare, stay indoors or move, but only by reading the directive a named human approved for that zone (the Project Document's "never asks a resident to stay or go look" becomes "never says anything a human did not approve for that zone, and never asks anyone to move toward a hazard"); campaigns reference a zone; the seat is the overnight supervisor, on the coordinator's screen; the demo geography moves to the Westside with the Altadena preset kept; USC DPS is the Tuesday customer on stage, with senior-living and home-health operators in the business slide |
+| Change | The agent may tell a resident to leave, prepare, stay indoors or move, but only by reading the directive a named human approved for that zone (the Project Document's "never asks a resident to stay or go look" becomes "never says anything a human did not approve for that zone, and never asks anyone to move toward a hazard"); campaigns reference a zone; the seat is the overnight supervisor, on the coordinator's screen; the demo geography moves to the Westside with the Altadena preset kept; the Tuesday customer is a heat check-in line for older residents (D-46) |
 
 ## 2. Problem, seat and moment
 
@@ -40,7 +40,7 @@ A sixth part, AllFound (shelter intake that works offline and a reunification ca
 
 **The moment.** A zone is about to change state. The supervisor must decide, within minutes, whether the change is right, who inside the zone needs a person now, what to tell everyone else, and what to do about the people who did not pick up.
 
-**The second customer (an ordinary Tuesday).** USC's Department of Public Safety before a TrojansAlert. Campus zones are buildings and quads; sentinels are resident assistants and officers already on post; the directive vocabulary is "avoid the area," "shelter in place," "all clear"; a monthly test call keeps the roster alive. The same shape fits a hospital's night nursing supervisor before a ward page.
+**The second customer (an ordinary hot Tuesday).** A city or county heat check-in line for older residents. Zones are neighborhoods; the live temperature and National Weather Service heat alerts propose a heat level, and a named person approves it and the words; calls go to older residents who opted in, people who live alone or have no air conditioning first; the help is a ride to a cooling center, a wellness visit, or 911 for heat-stroke warning signs. Calling the same roster on every hot day keeps it alive for the fire night. Section 16.3 and D-46. The same shape fits a hospital's night nursing supervisor before a ward page.
 
 **The defense customer.** An installation command post before a base-wide lockdown: zones are housing areas, gates and the flight line; sentinels are gate posts and housing phones; the registry uses the personnel-accountability vocabulary of ADPAAS, NFAAS and AFPAAS.
 
@@ -57,7 +57,7 @@ A sixth part, AllFound (shelter intake that works offline and a reunification ca
 
 ### Non-goals
 
-- Replacing 911, Wireless Emergency Alerts (WEA), IPAWS, or the county's alert-origination system. Our broadcast "send" is simulated and labeled.
+- Replacing 911, Wireless Emergency Alerts (WEA), IPAWS, or the county's alert-origination system. Our broadcast send is a demo send: it reaches no real alert system, and the screen says so.
 - Real resident data. The roster is synthetic and labeled, plus four to six volunteer phones.
 - Deciding anything. The model proposes, the agent relays, the human decides.
 - Dispatching responders. The registry is a list for humans to act on.
@@ -72,7 +72,7 @@ A sixth part, AllFound (shelter intake that works offline and a reunification ca
 | Call ended to intent classified and registry row visible | under 15 s |
 | Scripted calls classified with the right intent and need | 9 of 10, across 3 languages |
 | "Needs help now" calls surfaced to the registry | 10 of 10, regardless of classifier confidence |
-| Simulated send to canary phone ringing | under 20 s |
+| Demo send to canary phone ringing | under 20 s |
 | Cluster from seeded reports visible in the ArcGIS web map | within one refresh interval (60 s) |
 | Volunteer phones accounted for after Stage 1 | all, within 3 min; synthetic rows labeled and excluded from the count |
 | Ledger | every human decision and every refused action listed with a timestamp |
@@ -87,15 +87,16 @@ A sixth part, AllFound (shelter intake that works offline and a reunification ca
 | Linked contacts (relatives, caregivers) | Called when a resident cannot be reached | A short call: "Have you heard from your mother? Is she leaving?" |
 | EOC planning / GIS analyst | Consumes the pattern feed and zone layer | ArcGIS web map and dashboard fed by our GeoJSON |
 | Residents in a zone | Receive staged calls in their language; can call the public line | A phone call that reads the approved directive and asks fixed questions |
-| Sentinels | Enrolled residents, RAs, officers, nurses at the polygon's edges | A 30-second call: "does this match what you see?" |
+| Sentinels | Enrolled residents and staff already on shift at the polygon's edges | A 30-second call: "does this match what you see?" |
 | Canary | One or two enrolled phones just outside the polygon | A 15-second call: "did you just receive an alert?" |
+| Helpers (a QRT unit, a pickup van, a wellness volunteer) | Sent by a named human to a person's exact spot | The helper page (`/helper/<token>`): the spot, the needs, Navigate, and status buttons that update the registry |
 | Shelter intake volunteer and the out-of-state relative (AllFound lane) | Register evacuees offline; get a callback when a match is confirmed | Offline intake PWA; a Retell callback |
 
 ## 5. The demo scenario: Westside Fire (synthetic)
 
 The geography is stylized for the demo. The mechanics do not depend on it; any zone set with directives works.
 
-**Story.** 3:40 AM, Tuesday. A wind-driven fire is burning in Santa Monica with offshore winds pushing it east along the I-10 corridor toward Downtown Los Angeles. Santa Monica is under an Evacuation Order. The prediction model projects the three-hour envelope into Venice, Mar Vista, West LA, Palms and Culver City and proposes Near-Crisis (Evacuation Warning) for them; the supervisor approves Culver City and Palms first. Staged calls sweep Culver City from its north-west edge inward, relaying the Warning and the evacuation point. A resident in Palms says her husband uses a wheelchair and they have no car: a red pin appears in the registry at her stated location, with her number. Forty minutes later the envelope reaches Culver City's edge; the duty officer requests an Order. VoiceFlare holds 90 seconds, rings four sentinels at Culver City's edges, shows "wakes 41,000" (not 9.8 million), gets two "yes, I see smoke to the west" reads, and the supervisor clicks Send (simulated). Fifteen seconds later a canary phone in Westchester is asked "did you just receive an evacuation order?" and says no, correctly. Stage 3 calls relay the Order to Culver City; a resident who says he cannot leave goes to the top of the registry.
+**Story.** 3:40 AM, Tuesday. A wind-driven fire is burning in Santa Monica with offshore winds pushing it east along the I-10 corridor toward Downtown Los Angeles. Santa Monica is under an Evacuation Order. The prediction model projects the three-hour envelope into Venice, Mar Vista, West LA, Palms and Culver City and proposes Near-Crisis (Evacuation Warning) for them; the supervisor approves Culver City and Palms first. Staged calls sweep Culver City from its north-west edge inward, relaying the Warning and the evacuation point. A resident in Palms says her husband uses a wheelchair and they have no car: a red pin appears in the registry at her stated location, with her number. Forty minutes later the envelope reaches Culver City's edge; the duty officer requests an Order. VoiceFlare holds 90 seconds, rings four sentinels at Culver City's edges, shows "wakes 41,000" (not 9.8 million), gets two "yes, I see smoke to the west" reads, and the supervisor clicks Send (a demo send). Fifteen seconds later a canary phone in Westchester is asked "did you just receive an evacuation order?" and says no, correctly. Stage 3 calls relay the Order to Culver City; a resident who says he cannot leave goes to the top of the registry. Culver City and Palms move out block by block: the blocks nearest the fire go first, each on its own exit road, and everyone else hears when to get ready and to leave at once if they feel unsafe. The Palms resident agrees to share her live location, and a helper goes to her exact spot.
 
 ### Zone set for the demo
 
@@ -166,13 +167,13 @@ A proposal never calls anyone. The human may approve, edit, or reject it. Reject
 | --- | --- | --- |
 | Watch | Clusters geo-tagged reports and help calls; the fire model projects the envelope; nothing calls anyone | Pattern watch (section 12), model proposals (6.2), ArcGIS feed |
 | Ask | Rings the people who can see: sentinels at the polygon's edges; asks residents in a Warning zone what they need | Hold (8.1), staged edge calls (8.2), intent pipeline (10) |
-| Slow | Edge-first sweep instead of a blast; the dose preview before any ring; staged calls instead of one | Edge-first ordering (8.2), dose preview (6.3) |
+| Slow | Edge-first sweep instead of a blast; the dose preview before any ring; staged calls instead of one; under an Order, blocks leave in waves on roads sized to capacity | Edge-first ordering (8.2), dose preview (6.3), block-by-block evacuation (8.6) |
 | Hold | A 90-second timer before the Order broadcast, capped at 120 s, that defaults to sending on time | Hold strip (8.1) |
 | Hand to a person | Every exit is a named human: approve a zone, click Send, take the hand-off card, work the registry | Approval flow (6.1), decider buttons (9), registry (11), ledger (9) |
 
 ## 8. Call programs
 
-**Two transports, one agent contract.** Retell AI carries calls over the phone network: batch outbound with per-call dynamic variables, inbound on a public number, custom functions as HTTPS routes with signature verification, webhooks, post-call analysis, one agent configuration per language (English, Spanish, Korean, Mandarin, Hindi and French; Armenian and Tagalog by SMS or an Azure-backed agent where voice recognition is thin; Hindi and French added Saturday 1:05 AM, D-30). The browser phone page from the Project Document (`/phone/[id]`: ringing, push-to-talk, per-language speech synthesis, presence, text mode) is the fallback transport and the path for deaf or hard-of-hearing residents and noisy rooms. Both call the same tool endpoints and write the same rows; the board tells them apart only by a `transport` field. The in-call brain is Retell's LLM on the phone transport and Claude Haiku on the browser transport, with the same system prompt, the same tools and the same post-call Claude pass (decision D-05). Every agent has the same tool allowlist (section 9). Variables carried into every call: `zone_name`, `zone_state`, `directive_text`, `move_text`, `evac_point`, `stage`, `language`, `callback_number`, `verification_phrase`, `memory_note`, `simulated` (always "true" in the demo and said out loud).
+**Two transports, one agent contract.** Retell AI carries calls over the phone network: batch outbound with per-call dynamic variables, inbound on a public number, custom functions as HTTPS routes with signature verification, webhooks, post-call analysis, one agent configuration per language (English, Spanish, Korean, Mandarin, Hindi and French; Armenian and Tagalog by SMS or an Azure-backed agent where voice recognition is thin; Hindi and French added Saturday 1:05 AM, D-30). The browser phone page from the Project Document (`/phone/[id]`: ringing, push-to-talk, per-language speech synthesis, presence, text mode) is the fallback transport and the path for deaf or hard-of-hearing residents and noisy rooms. Both call the same tool endpoints and write the same rows; the board tells them apart only by a `transport` field. The in-call brain is Retell's LLM on the phone transport and Claude Haiku on the browser transport, with the same system prompt, the same tools and the same post-call Claude pass (decision D-05). Every agent has the same tool allowlist (section 9). Variables carried into every call: `zone_name`, `zone_state`, `directive_text`, `move_text`, `evac_point`, `stage`, `language`, `callback_number`, `verification_phrase`, `memory_note`, `simulated` (always "true" in the demo; the call's opening then says it is a demonstration call, not a real alert).
 
 ### 8.1 Hold: edge verification before the Order (the second key: VoiceFlare's core)
 
@@ -185,12 +186,12 @@ A proposal never calls anyone. The human may approve, edit, or reject it. Reject
 3. The sentinel agent reads the alert text verbatim and asks one question: "Does this match what you see? Yes, no, or not sure. What do you see, and in which direction?"
 4. The tally updates live: yes / no / unsure / silent. Quorum is two answers. Silence is an abstention, never a No; the next-nearest sentinel rings.
 5. Buttons for the supervisor: **Send now**, **Hold once** (+60 s, once), **Edit polygon**, **Cancel**, **Hand to authority**. Each requires a name and a reason and lands in the ledger.
-6. At 0:00 with no decision, the alert sends on time (simulated). The machine can delay an alert; it can never stop one.
+6. At 0:00 with no decision, the alert sends on time (in the demo it reaches no real alert system). The machine can delay an alert; it can never stop one.
 7. After the send: the **canary**. One or two enrolled phones just outside the polygon ring: "Did you receive an evacuation order in the last minute? Yes or no." A "yes" outside the polygon, or a "no" from a phone inside, is a transport failure and goes to the authority as a flag, not a stop. This is the only mechanism here that would have caught January 9, 2025.
 
 **Tools.** `read_observation(zone_id, sees: yes|no|unsure, what, direction)`, `received_alert(yes|no)`, `request_human(reason, urgency)`, `end_call`.
 
-**Sentinel roster.** Enrolled people with phone, language, channel (voice, SMS, landline), zone, on-post flag, last heard, reliability. The Tuesday roster is people already on shift (RAs, officers, nurses). In a surge, callers who just reported are live sensors at a known address: they are asked to look again and labeled non-independent; enrolled sentinels supply independence.
+**Sentinel roster.** Enrolled people with phone, language, channel (voice, SMS, landline), zone, on-post flag, last heard, reliability. The Tuesday roster is people already on shift and the heat line's opted-in residents and volunteers. In a surge, callers who just reported are live sensors at a known address: they are asked to look again and labeled non-independent; enrolled sentinels supply independence.
 
 ### 8.2 Staged edge calls to residents (Near-Crisis zones)
 
@@ -211,7 +212,7 @@ A proposal never calls anyone. The human may approve, edit, or reject it. Reject
 
 **Stage 1 script (English; the directive and move text are variables, read verbatim).**
 
-> "This is the Los Angeles emergency information line, verification phrase [phrase]. This is a simulated call for a hackathon demonstration. Culver City is under an Evacuation Warning: potential threat to life and property. Those who need additional time to evacuate, and those with pets and livestock, should leave now. If you leave, head south via Sepulveda Boulevard or La Cienega Boulevard toward the evacuation point at Westchester Recreation Center. Three quick questions. Are you planning to leave, stay, or have you already left? Does anyone at your address need help to leave? Where are you right now?"
+> "This is the Los Angeles emergency information line, verification phrase [phrase]. This is a demonstration call for a hackathon, not a real alert. Culver City is under an Evacuation Warning: potential threat to life and property. Those who need additional time to evacuate, and those with pets and livestock, should leave now. If you leave, head south via Sepulveda Boulevard or La Cienega Boulevard toward the evacuation point at Westchester Recreation Center. Three quick questions. Are you planning to leave, stay, or have you already left? Does anyone at your address need help to leave? Where are you right now?"
 
 The agent opens with the household memory note where one exists ("Last week you mentioned your oxygen concentrator; is it charged?"), confirms each answer back before writing it ("I heard you need help leaving because your husband uses a wheelchair, is that right?"), calls `record_status`, ends with the teach-back ("Where will you go, and by when?") which sets the understood flag, and if the person reports a medical emergency, says "Hang up and call 911 now" and calls `request_human` with reason `medical_emergency`. In calm mode (distress detected) it slows to one instruction at a time and offers a person. Calls are under 90 seconds.
 
@@ -229,7 +230,30 @@ For Crisis zones after Stage 3: call households not yet heard from; record safe,
 
 ### 8.5 Monthly test call (the Tuesday product)
 
-Every sentinel and every USC DPS roster member gets a 20-second test call once a month: "This is the VoiceFlare test. Press or say 1 if you can hear this." It keeps the roster alive, trains the reliability score, and is the everyday use that makes the roster exist on the night it is needed. Three silent tests replace a sentinel.
+Every sentinel and every heat-line roster member gets a 20-second test call once a month: "This is the VoiceFlare test. Press or say 1 if you can hear this." It keeps the roster alive, trains the reliability score, and is the everyday use that makes the roster exist on the night it is needed. Three silent tests replace a sentinel.
+
+### 8.6 Block-by-block evacuation (D-48)
+
+**Why.** An Order that tells a whole zone to leave at once jams its exit roads. The gentlest response that still works applies to movement too: the people nearest the fire leave first, on roads that can carry them, and nobody is ever held back.
+
+**The plan.** When a hold opens on an Order, the block planner proposes a plan for the zone (`lib/engine/blocks.ts`, pure functions):
+
+1. **Blocks.** A square grid of about 800 m cells (about half a mile on a side) is clipped to the zone polygon; slivers under 15% of a cell merge into a neighbor. Each block gets an id from the zone's short code and its rank from the hazard edge (SM-01 is nearest), using the same edge distance as the call sweep.
+2. **Roads.** Each zone has named exit roads with outbound lane counts (OpenStreetMap). Capacity is a planning assumption shown on screen: 950 cars per outbound lane per hour (half the Highway Capacity Manual's base saturation flow), 2.5 people and 1 car per household.
+3. **Waves.** Blocks are placed nearest-to-hazard first. Each takes the earliest wave on its nearest exit road with room (or a road within 1.5 km of it); no road gets more cars in a wave than it carries in the wave's length, and on every road a nearer block never goes after a farther one. The wave length starts at 10 minutes and rises in 5-minute steps until every block fits. Several blocks leave in each wave. In the demo, Culver City and Palms make 42 blocks; wave 1 is about 4,540 people in 7 blocks, shown in the hold's dose.
+4. **Approval and the clock.** A named human approves the plan (it stands by until the Order is sent). After the send, the wave clock starts the next wave every wave length unless a human holds it; **Start next wave**, **Hold next wave** and **Release** are buttons with a name and a reason, and the ledger records each.
+5. **The words.** The approved templates: "go now" for the blocks whose wave is running, "get ready" for later blocks ("Your block, CC-06, is in wave 2, planned for about 5:48 PM, by Overland Avenue south. Get ready now. We will call you again when your wave starts."), and "everyone go now". When a wave starts, everyone in its blocks gets a "leave now" call on their block's road.
+
+**Safety rules (non-negotiable).**
+
+- **The Order is never delayed for people in danger.** The zone's legal Order is sent as usual and read on every call; the plan only orders the calls and the route advice.
+- **Leave right away if unsafe.** Every "get ready" message must carry: "If you see fire or smoke, or feel unsafe, leave right away. Do not wait for your wave." The server refuses a template without it.
+- **Only sooner, never later.** The fire model or a person can pull a block forward to "go now" at any time; later waves reflow. A pull-forward always wins over road capacity.
+- **Everyone go now** is always one click for the named human, and logged.
+- **People who need extra time first.** Inside each wave, calls go edge-first in rings of about 200 m, and people with access and functional needs ring first within a ring; the Warning before the Order already tells those who need additional time to leave now.
+- Without migration 005 on Supabase, plan reads come back empty and every Order call reads the full Order.
+
+**Proof.** `scripts/blocks-check.ts` checks block sizes, road capacity in every wave, nearest-first order, the pull-forward and reflow, the hold's dose with wave 1, the wave clock with a human hold, Everyone go now, the call words, and the refusal of a get-ready message without the leave-right-away line.
 
 ## 9. What the agent can and cannot do
 
@@ -248,9 +272,10 @@ The allowlist is the user interface: it is printed on the supervisor's screen, a
 | Say it cannot answer and promise a human | `request_human(reason: cannot_answer, confusion, distress, refusal, doubts_call)` |
 | Answer questions from the alert text and the zone fact sheet | Fact sheet is a per-zone document approved with the zone: evacuation point address, pets policy, road closures |
 | Ask where the person is and whether their location may be shared with the response team | `location_text` and `location_consent` on `record_status`; consent is stored with the location |
+| Offer to share their live location with the response team | Asked once, only when the person needs help or is staying under an Order: "Can I text you a link that shares your phone's live location with the response team? It stays on only until help reaches you." On a clear yes, `share_live_location(consent_quote)` records their words and sends the link (section 11.1). Never on a no, a maybe or silence |
 | End the call | `end_call` |
 
-Seven tools in total: the Project Document's four (`record_status`, `report_hazard`, `request_human`, `end_call`) with a few added fields, plus `lookup_zone`, `read_observation` and `received_alert`.
+Eight tools in total: the Project Document's four (`record_status`, `report_hazard`, `request_human`, `end_call`) with a few added fields, plus `lookup_zone`, `read_observation`, `received_alert` and `share_live_location` (D-43).
 
 ### The agent cannot
 
@@ -294,7 +319,7 @@ Every connected call produces one intent record from two layers, reconciled.
 
 Flags (any number): medical, mobility, oxygen, no_car, children, pets, language_mismatch, hostile, duplicate.
 
-**Evaluation.** A gold set of 20 scripted transcripts (English, Spanish, Korean) with expected intents and needs, run against the classifier every few hours; target 18 of 20. Keep the three worst in the pitch appendix.
+**Evaluation.** A gold set of scripted transcripts with expected intents and needs, run against the classifier (`scripts/gold-set/run.ts`); target 90% correct and 100% recall on needs-help-now. The set grew to 24 transcripts in five languages (English, Spanish, Korean, Hindi, French); the latest full run (Oct 17) got 23 of 24 right and caught 6 of 6 needs-help-now calls, shown on `/evidence`. Keep the worst in the pitch appendix.
 
 ## 11. The help registry (last seen)
 
@@ -317,13 +342,13 @@ The registry is the list the quick response team works from. One row per person 
 
 ### Last known location
 
-Precedence: a shared GPS fix from an SMS link (stretch) beats a location stated in the call and geocoded, which beats the enrolled address, which beats the zone centroid (flagged low precision). Each row shows the age of the fix (fresh under 15 min, stale after) and the source. Geocoding uses the ArcGIS World Geocoding service, which handles intersections ("Venice and Sepulveda") better than Nominatim; Nominatim is the fallback. Every call that reaches a person refreshes the location, so Stage 2 and roll call double as location updates.
+Precedence: a fresh GPS fix from the consented live-location link (section 11.1) beats a location stated in the call and geocoded, which beats the enrolled address, which beats the zone centroid (flagged low precision). Each row shows the age of the fix (fresh under 15 min, stale after) and the source. Geocoding uses the ArcGIS World Geocoding service, which handles intersections ("Venice and Sepulveda") better than Nominatim; Nominatim is the fallback. Every call that reaches a person refreshes the location, so Stage 2 and roll call double as location updates.
 
 ### QRT view
 
 - Map with pins colored by priority and ringed by age; list sorted by priority then age; filters by zone and status.
 - Pickup runs (backlog items 14 and 41) are built from registry rows: cluster by location and need, order by device battery hours then distance to the hazard, nearest-neighbor route; wheelchair, oxygen and bedbound needs always go to official vans, and neighbor matching (item 39) only fills car-only needs with pre-registered drivers.
-- Buttons: **Call back** (a Retell outbound call with the QRT script, logged), **Assign**, **Reached**, **Close**, **Ping location** (stretch: sends an SMS link to a one-page site that asks the browser for its position; needs an SMS provider since Retell is voice).
+- Buttons: **Call back** (a Retell outbound call with the QRT script, logged), **Assign**, **Reached**, **Close**, **Send helper** (a named human picks a helper and gives a reason; the helper's link shows the person's live location; section 11.1).
 - Export: CSV for the field, GeoJSON for the ArcGIS feed (phone numbers excluded from the feed; see section 12).
 
 ### Privacy rules for the registry
@@ -332,6 +357,18 @@ Precedence: a shared GPS fix from an SMS link (stretch) beats a location stated 
 - Visible to the QRT view only; never read back by the agent to any caller.
 - Purged 72 hours after the incident is closed by a human; the ledger keeps counts, not rows.
 - In the demo every row is synthetic except the volunteer phones, labeled on screen and said out loud.
+
+### 11.1 Live location with consent, and helpers sent to the spot (item 61, built; D-43)
+
+A corner someone names on a call is not a door. With consent, the response team gets the person's live location and sends a helper to the exact spot.
+
+1. **Ask once.** Only when the person needs help or is staying under an Order, the agent asks exactly: "Can I text you a link that shares your phone's live location with the response team? It stays on only until help reaches you." On a clear yes it calls `share_live_location` with the person's own words. Never on a no, a maybe or silence; at most once per person across calls. A yes heard only in the post-call pass also counts, once.
+2. **One tap.** The link (`/l/<token>`, 192 random bits) is texted; on the six demo devices it appears on the browser phone. The person taps Share; each GPS fix (at most every 5 s, sooner after 25 m) lands in `locations` with source `gps_link` and consent true, and refreshes their registry row. Impossible coordinates are rejected, and fixes too close together are rate-limited.
+3. **The exact spot.** The registry row shows a Live GPS badge and the age and accuracy of the fix; a later stated location does not override a fresh GPS fix.
+4. **Send helper.** A named human picks a helper and gives a reason. The helper's page (`/helper/<token>`) shows the person's needs, the live spot, a Navigate button, and status buttons (en route, reached) that update the registry row. The person's page says a responder has their location.
+5. **Then it stops.** Sharing stops when help reaches the person, when they tap Stop, or 4 hours after consent. Later fixes are refused.
+
+**Privacy.** The exact point is for the response team only. Public feeds keep the hex cell, the registry CSV carries no exact live point, and feed cards carry no names. The consent, the link, the helper sent and the stop are in the ledger. Tables: `location_shares` and `dispatches` (migration 003). Code: `lib/engine/locate.ts`, `components/locate`.
 
 ## 12. Pattern watch and the ArcGIS feed (earthquake mode)
 
@@ -444,7 +481,7 @@ All timestamps are ISO 8601 UTC (`timestamptz`). Every demo row carries `synthet
 | `POST /api/campaigns` | Start a wave, roll call, test or QRT callback for a zone; computes edge-first order; creates the Retell batch call with per-call variables, or broadcasts ring events to browser phones |
 | `POST /api/holds`, `POST /api/holds/[id]/decision` | Open a hold (selects sentinels, sets the deadline); Send now, Hold once, Edit polygon, Cancel, Hand to authority |
 | `POST /api/retell/webhook` | `call_started`, `call_ended`, `call_analyzed`; signature verified; `call_analyzed` runs the post-call pass |
-| `POST /api/retell/tools/[name]` | The seven tools for the phone transport; each verifies the Retell signature, validates enums, writes rows, and writes a `ledger` line when refusing |
+| `POST /api/retell/tools/[name]` | The eight tools for the phone transport; each verifies the Retell signature, validates enums, writes rows, and writes a `ledger` line when refusing |
 | `POST /api/agent/turn` | The browser-transport turn loop (Haiku, tools, conversation persistence), the Project Document's item 27 |
 | `GET /api/registry`, `PATCH /api/registry/[id]`, `POST /api/registry/[id]/callback` | QRT view, status changes, callback call |
 | `GET /api/feeds/[name].geojson`, `GET /api/export.csv`, `GET /api/export.cap`, `POST /api/arcgis/push` | Feeds for ArcGIS; exports; hosted-layer push (P2) |
@@ -452,9 +489,9 @@ All timestamps are ISO 8601 UTC (`timestamptz`). Every demo row carries `synthet
 | `POST /api/tick` | Advances deadlines: hold expiry, retries, Stage 2 timers, simulator plans (called by the board and by Vercel Cron) |
 | `GET /api/health` | Existing |
 
-### Simulation mode
+### Demo mode (what is synthetic)
 
-A `SIMULATED` badge is always on in the demo. The broadcast send writes a `zone_events` row and starts the canary; it reaches no real alert system. Population counts are labeled estimates. Seeded reports and synthetic households are labeled on the map. The simulator presets (`normal`, `tower_down`, `fire_spreading`) gain `mass_no_answer` and `earthquake`. The script says all of this out loud.
+A demo label is always on, in plain words: residents are synthetic except the volunteer phones, and nothing reaches a real alert system (D-54: the word "simulated" left what people see; the rule did not change). The broadcast send writes a `zone_events` row and starts the canary; it reaches no real alert system. Population counts are labeled estimates. Seeded reports and synthetic households are labeled on the map. The simulator presets (`normal`, `tower_down`, `fire_spreading`) gain `mass_no_answer` and `earthquake`. The script says all of this out loud.
 
 ### Security basics
 
@@ -465,7 +502,7 @@ Retell signature verification on every webhook and tool call; secrets in environ
 | Mode | Decider | Zones | Directive vocabulary | Sentinels | Registry | Everyday use |
 | --- | --- | --- | --- | --- | --- | --- |
 | City under strain (LA) | Overnight supervisor of the county or city information line; duty officer approves | Neighborhood polygons: Santa Monica, Culver City, Mid-City... or an NWS alert polygon | Cal OES standard: Evacuation Warning, Evacuation Order, Shelter in Place, Lifted | Enrolled residents at polygon edges | Help registry and pickup runs for the QRT | Heat-day and power-shutoff check-ins for opted-in residents; monthly test calls |
-| Ordinary Tuesday (USC DPS on stage; senior-living and home-health operators in the business slide) | DPS watch commander before a TrojansAlert; an operations director running daily check-ins | Buildings and quads: Leavey, Doheny, USC Village, Residential West; a facility's floors | Avoid the area, Shelter in Place, All clear; check-in scripts | RAs and officers on post; shift nurses | Students or residents needing assistance | Monthly test call; daily multilingual check-ins that build the memory note; drill accountability |
+| Ordinary hot Tuesday (the heat check-in line, section 16.3) | A named person at a city or county heat check-in line for older residents | Neighborhoods (six San Fernando Valley demo zones) | Heat watch, Heat Advisory, Extreme Heat Warning, Stay indoors; the approved heat message and cooling-center list | Opted-in residents at the zone's edges | Rides to a cooling center, wellness visits, 911 for heat-stroke warning signs, door knocks after silence | Every hot day; check-ins that build the memory note |
 | Defense (installation) | Command post before a base-wide lockdown | Housing areas, gates, flight line | Lockdown, Shelter in Place, Avoid, All clear | Gate posts, housing phones, duty desks | Personnel accountability in ADPAAS, NFAAS, AFPAAS vocabulary (base mode, item 18); NEO processing for AllFound | Recall drills; monthly test call |
 
 The grounding events for each column are real: Los Angeles, January 9, 2025 (ten million phones for a three-city warning) and the late warnings in west Altadena the day before; Hawaii, January 13, 2018 (a false missile alert, and a two-person rule as the fix); Wright-Patterson AFB, August 2, 2018 (one 911 call during a drill, an hours-long lockdown with about 50 armed responders). VoiceFlare is the two-person rule with the second person at a window.
@@ -484,7 +521,7 @@ Headline numbers:
 - **40 to 90 minutes** passed between the first homes burning and the first alert, for some Palisades residents.
 - **2 of 66** notified survey respondents were told by a phone call (FSRI, convenience sample).
 
-The live `norte` scenario places the board on the Norte Fire's real ignition point and neighborhoods. A reset pulls CAL FIRE's live status and the NWS alerts into the feed. Zone states, routes and residents are simulated and labeled so (`lib/scenarios/norte.ts`, `lib/engine/live.ts`).
+The live `norte` scenario places the board on the Norte Fire's real ignition point and neighborhoods. A reset pulls CAL FIRE's live status and the NWS alerts into the feed. Zone states, routes and residents are demo data and labeled so (`lib/scenarios/norte.ts`, `lib/engine/live.ts`).
 
 ### 16.2 Collections line (D-42)
 
@@ -503,6 +540,22 @@ The live `norte` scenario places the board on the Norte Fire's real ignition poi
 - Two artists went back into the flames for 11 paintings.
 
 **Pune.** The July 2026 Pimpri-Chinchwad floods (a week of rain, 268 mm in 24 hours at Chinchwad, more than 1,500 people trapped) are confirmed. No report naming a library that lost historic books was found, so none is claimed; Kerala's 2018 floods hit more than 225 public libraries.
+
+### 16.3 Heat check-in line: the ordinary hot Tuesday (D-46)
+
+The everyday customer is a city or county heat check-in line for older residents (mode `heat`, scenario "Heat wave: senior check-ins"). It runs the same five rungs as the fire night, with the same rules: a named person decides, the agent reads only approved words, never an ETA, never "you are safe," and silence is never safe.
+
+| Rung | On a hot Tuesday |
+| --- | --- |
+| Watch | Six San Fernando Valley demo zones (Woodland Hills, Canoga Park, Reseda, Van Nuys, North Hollywood, Sylmar). At reset each zone's current reading and today's highs come from Open-Meteo, and any active alert at the zone's center from the NWS API. A threshold table (a demo setting) proposes a level: Heat watch, Heat Advisory, Extreme Heat Warning. When live conditions are below the thresholds, a clearly labeled demo heat wave drives the run; demo temperatures are never shown as live |
+| Ask | Calls to older residents who opted in, in their language: can you stay cool? Do you need water, a ride to a cooling center, or a visit? People who live alone or have no air conditioning are called first (`households.heat_profile`: age band, lives alone, no air conditioning; never a diagnosis) |
+| Slow | Heat watch checks on seniors who live alone; Heat Advisory calls every registered senior; Extreme Heat Warning calls everyone again, including people who said earlier they were home and cool |
+| Hold | Nothing goes out until a named person approves the level, the heat message and the cooling-center list. An Extreme Heat Warning opens the same hold, with its dose and edge reads |
+| Hand to a person | A ride to a cooling center or a wellness visit through the same registry and helper flow as the fire night; heat-stroke warning signs mean "hang up and call 911 now" and a P1 row; no answer twice means the linked contact, then a door-knock card for people who live alone |
+
+**Why it is the second customer.** A heat line calls its roster on every hot day, so the roster, the consent and the habit exist on the night of a fire. Heat is also the everyday risk for the same older residents who need help leaving in a fire.
+
+**Proof.** `scripts/heat-check.ts` runs the whole heat path with the network switched off (so reset must fall back to the labeled demo heat wave), then prints the live Open-Meteo and NWS readings when the network is back.
 
 ## 17. Twists
 
@@ -547,9 +600,9 @@ Three twists drop: Friday 11:30 PM, Saturday 4:30 AM, Saturday 7:00 AM, with six
 | When | Step |
 | --- | --- |
 | Week of Oct 19, 2026 | Form the company (US-owned small business, under 500 employees, as SBIR requires). Start SAM.gov registration for a UEI (it can take weeks), then Research.gov |
-| By Oct 30, 2026 | Submit the NSF Project Pitch: the technical risk, the team, the USC DPS pilot ask |
+| By Oct 30, 2026 | Submit the NSF Project Pitch: the technical risk, the team, the heat check-in line pilot ask |
 | On invitation | Full Phase I proposal for **Mar 4, 2027**, or Nov 4, 2026 if the invitation and SAM registration both land in time |
-| Phase I (6 to 18 months, up to $305K) | Three milestones, each measured by the product itself on the `/evidence` page: (1) hold opened to a quorum read in under 90 s in at least 80% of drills, with sentinel reads checked against ground truth; (2) 18 of 20 gold-set calls classified correctly across English, Spanish and Korean, and 100% recall on `needs_help_now`; (3) the delivery canary flags a seeded wrong-polygon or no-delivery failure within 60 s of the send, in every drill. A safety bar on all three: zero instructions read that a human did not approve, across adversarial test calls. Pilot: USC DPS monthly test calls (a letter of support is the ask) and one tabletop with a Westside city emergency manager |
+| Phase I (6 to 18 months, up to $305K) | Three milestones, each measured by the product itself on the `/evidence` page: (1) hold opened to a quorum read in under 90 s in at least 80% of drills, with sentinel reads checked against ground truth; (2) 18 of 20 gold-set calls classified correctly across English, Spanish and Korean, and 100% recall on `needs_help_now`; (3) the delivery canary flags a seeded wrong-polygon or no-delivery failure within 60 s of the send, in every drill. A safety bar on all three: zero instructions read that a human did not approve, across adversarial test calls. Pilot: a city or county heat check-in line for older residents (a letter of support is the ask) and one tabletop with a Westside city emergency manager |
 | Phase II (up to $1.25M) | A county or city pilot on live rosters; IPAWS-compatible CAP output; the first paid contract budgeted from the customer's next UASI or EMPG cycle |
 | After Phase I | DoD SBIR topic or DIU solution brief for installation warning; later, the 2026 Act's Phase II "strategic breakthrough" awards (up to $30M over 48 months, a prior Phase I or II award and a 100% match required) |
 
@@ -574,7 +627,7 @@ Three twists drop: Friday 11:30 PM, Saturday 4:30 AM, Saturday 7:00 AM, with six
 - **Number:** the agent says 119.
 - **Dose:** counted from 12379 and carrier SMS audiences.
 - **Sentinels:** the grid workers China already asks to acknowledge (叫应).
-- **Model:** a CAC-filed domestic model behind the same seven tools, because Claude is not offered in mainland China.
+- **Model:** a CAC-filed domestic model behind the same eight tools, because Claude is not offered in mainland China.
 - **Data and maps:** PIPL consent and GCJ-02 maps.
 
 Decisions D-37 to D-41.
@@ -597,7 +650,7 @@ Decisions D-37 to D-41.
 | Emergency number in every call | 911 | 119 (fire), 120 (ambulance), 110 (police); no single number |
 | Public channel and dose | WEA through IPAWS; dose from the population in the polygon | The national early-warning release system (CAP-based): 12379 SMS, WeChat, village loudspeakers. Dose = carrier targeted-SMS audience by base-station area; one canary phone per carrier (China Mobile, Telecom, Unicom, Broadcast Network) |
 | Sentinels | Enrolled residents, CERT, block captains | The existing call-and-respond practice (叫应): the village relocation leads (转移责任人) and grid workers (网格员) must acknowledge |
-| Voice and AI model | Retell AI over the phone network; Claude in the call | A registered, number-authenticated government line through a domestic carrier. Every call opens with an AI-voice disclosure (CAC labeling measures; GB 45438-2025). A CAC-filed domestic model, hosted in-country, sits behind the same seven tools and the same verbatim rule |
+| Voice and AI model | Retell AI over the phone network; Claude in the call | A registered, number-authenticated government line through a domestic carrier. Every call opens with an AI-voice disclosure (CAC labeling measures; GB 45438-2025). A CAC-filed domestic model, hosted in-country, sits behind the same eight tools and the same verbatim rule |
 | Privacy | California law; TCPA emergency-purpose exemption | PIPL: locations and health needs are sensitive data (Art. 28) needing separate consent (Art. 29) unless the emergency basis applies (Art. 13(4)); hosted in-country. Vulnerable residents are pre-registered with a named helper (Chongqing 2026 regulation, Art. 8), which is our linked contact |
 | Maps | Esri and OpenStreetMap, WGS-84 | Approved basemaps use GCJ-02, where raw GPS lands about 100 to 700 m off. VoiceFlare stores WGS-84 and converts only to draw; public maps need an approval number (审图号) |
 | Languages | English, Spanish, Korean, Mandarin, Hindi, French, Armenian, Filipino | Mandarin, plus Sichuanese/Chongqing dialect and Cantonese where needed |
@@ -650,43 +703,57 @@ Six volunteer devices, as in the seed: phones 1 and 2 are residents, 3 and 4 are
 
 | Time | On screen | Who |
 | --- | --- | --- |
-| 0:00 | The map: Santa Monica red, five zones orange or dashed (model proposals), Downtown grey. Say out loud: synthetic roster, six real phones, the send is simulated. | P4 narrates |
+| 0:00 | The map: Santa Monica red, five zones orange or dashed (model proposals), Downtown grey. Say out loud: synthetic residents except six volunteer phones; nothing reaches a real alert system. | P4 narrates |
 | 0:15 | Approve Culver City to Near-Crisis: the dialog shows the Warning text, the route and Westchester as the evacuation point; type a name and a reason. The polygon starts filling from the north-west edge. | P3 drives |
 | 0:30 | Phone 1 rings (Spanish): "leaving with the kids to Westchester." Teach-back: "Westchester Recreation Center, by 4:30." Pin turns amber; the Understood counter ticks. | Phone 1 on speaker |
-| 0:55 | Phone 2 rings (English): "my husband uses a wheelchair, we have no car, we're at Venice and Sepulveda." Red pin at the intersection; registry row with the number, "wheelchair, no car, 2 people," last seen 10 seconds ago. | Phone 2 on speaker |
+| 0:55 | Phone 2 rings (English): "my husband uses a wheelchair, we have no car, we're at Venice and Sepulveda." Red pin at the intersection; registry row with the number, "wheelchair, no car, 2 people," last seen 10 seconds ago. She agrees to share her live location and taps Share: the pin turns to Live GPS. | Phone 2 on speaker |
 | 1:15 | A synthetic household on phone 1's street does not answer; the agent calls phone 1 as the linked contact: "Have you heard from Mr. Hale?" "He's leaving with me." Pin reads Leaving (via linked contact). | Phone 1 |
 | 1:35 | The model moves the envelope; the duty officer requests an Order. Hold opens: "wakes 41,000," timer 90 s, four sentinels ringing. | P3 drives |
 | 1:50 | The judge holds phone 5 (Long Beach). It rings: "Does this match what you see?" "Nothing here." Tally: 1 no. Click Edit polygon; the preview had read "wakes 9.8 million" on the wrong polygon. | Judge's phone |
-| 2:05 | Phones 3 and 4 (Culver City edges): "yes, smoke to the west." Quorum. Send (simulated), name and reason typed. Fifteen seconds later phone 6 (Westchester canary) rings: "did you just receive an evacuation order?" "No." Canary clear. | Phones 3, 4, 6 |
-| 2:35 | Stage 3 relay to Culver City: phone 2 hears the Order and says "we can't leave." Row jumps to priority 1 with "Hang up and call 911" logged; Assign creates "Accessible van A: 2 stops." | Phone 2 |
+| 2:05 | Phones 3 and 4 (Culver City edges): "yes, smoke to the west." Quorum. Send now, name and reason typed. Fifteen seconds later phone 6 (Westchester canary) rings: "did you just receive an evacuation order?" "No." Canary clear. | Phones 3, 4, 6 |
+| 2:20 | Approve the block plan: the blocks nearest the fire go now, each on its own road; later blocks hear "get ready" and "leave right away if you feel unsafe." Everyone go now stays one click. | P3 drives |
+| 2:35 | Stage 3 relay to Culver City: phone 2 hears the Order and says "we can't leave." Row jumps to priority 1 with "Hang up and call 911" logged; Send helper goes to her live location; pickup runs create "Accessible van A: 2 stops." | Phone 2 |
 | 2:55 | Simulator: tower-down on the Palms block. Ten pins turn purple; a silence-cluster card appears: possible tower loss, recommend a door-knock team. "Nobody told us the tower went down. The silence told us." | P3 drives |
 | 3:10 | Ledger: 2 approvals, 1 send, 5 asked, 2 yes, 1 no, 2 silent, 1 canary clear, 3 refusals ("asked for an ETA," "asked if it was safe to stay," "asked where a neighbor went"). The allowlist printed beside it. | P3 drives |
-| 3:25 | Flip to USC DPS mode: the same screen with Leavey Library and RAs on post. One line on base mode. | P4 closes |
+| 3:25 | Switch to the heat scenario: the same board on an ordinary hot Tuesday (six Valley zones by live temperature, older residents who opted in). One line on base mode. | P4 closes |
 
-If the slot is three minutes, cut the linked-contact beat. Keep one phone on speaker at a time; other calls update the board silently. Record a backup video of this exact path by 5:00 PM Saturday. If Retell fails on stage, the same six devices open the browser phone page and the script does not change.
+If the slot is three minutes, cut the linked-contact beat. Keep one phone on speaker at a time; other calls update the board silently. Record a backup video of this exact path by 5:00 PM Saturday. If Retell fails on stage, the same six devices open the browser phone page and the script does not change. With no volunteers, `/board?autoplay=1` plays this path on the real board with captions (D-44).
 
 ### Five-minute pitch skeleton (finals format: 0:30 problem, working thing first, twist, next)
 
 1. 0:00 The opening sentence (section 1). One slide: ten million phones, three cities; the west Altadena warnings that came hours late the day before.
 2. 0:30 The demo above, live.
 3. 3:30 The twist: what changed in the build, why, proof. Thirty seconds.
-4. 4:00 Who pays on Tuesday (USC DPS with a monthly test call; senior-living and home-health operators with daily check-ins that build the memory note), who it is for at 3 AM (the supervisor and the QRT), where it goes (the county's alert desk, a hospital, an installation). Who funds the launch: NSF SBIR Phase I (up to $305K, no equity), counties buying with UASI and EMPG grants, DoD SBIR and DIU for installations (section 17.1). What is simulated and what is not.
-5. 4:40 The weakness, said first: the roster. Five awake, consenting people per zone at 3:40 AM is the whole product, which is why the Tuesday customer is a campus already on shift, and why callers bootstrap the panel in a surge.
+4. 4:00 Who uses it on Tuesday (a city or county heat check-in line for older residents, calling its roster on every hot day), who it is for at 3 AM (the supervisor and the QRT), where it goes (the county's alert desk, a hospital, an installation). Who funds the launch: NSF SBIR Phase I (up to $305K, no equity), counties buying with UASI and EMPG grants, DoD SBIR and DIU for installations (section 17.1). What is synthetic and what is not.
+5. 4:40 The weakness, said first: the roster. Five awake, consenting people per zone at 3:40 AM is the whole product, which is why the Tuesday customer is a heat line that calls its roster on every hot day, and why callers bootstrap the panel in a surge.
 
 **The second sentence of the pitch (the "isn't this just Everbridge" answer).** Everbridge, Genasys and AtHoc send and collect replies; the 911-AI companies answer inbound. None of them hold the send, ask the edge, count the dose, check delivery, or show the supervisor what the machine refused to do. Conversational two-way is a closing gap (Everbridge 360 AI shipped in September 2026), not our moat. The hold, the canary and the ledger are.
+
+### Judge feedback (Saturday) and what we built
+
+The professor's asks, and the answer to each:
+
+| Ask | What we built |
+| --- | --- |
+| A crisp presentation | A 13-slide, 3-minute deck (`ppt/voiceflare_pitch.html`, speaker notes with a time per slide) |
+| An end-to-end demo of a fire, start to finish | Play the full fire (`/board?autoplay=1`): the whole Westside run on the real board, with captions, about four minutes, no volunteers needed (D-44); the live run in this section stays the main demo |
+| Novelty and usefulness | The deck's "What is new" and "Useful, and measured" slides: asks before it alerts, the dose, block-by-block evacuation (8.6), the canary, silence as a signal, live location to a helper (11.1), and the measured gold set |
+| Adaptation (dual use) | The heat check-in line for older residents as the everyday customer (16.3), shown beside the fire night on the landing page's dual-use section and the deck's dual-use slide (D-46, D-49) |
+
+A pool idea for the everyday customer was considered and dropped by the user (D-50).
 
 ## 19. Risks and mitigations
 
 | Risk | Mitigation |
 | --- | --- |
-| Retell credits run out or number purchase is blocked | Pool the team's credits; calls under 90 s; the browser transport is the same demo with no telephony |
+| Retell credits run out or number purchase is blocked | Share the team's credits; calls under 90 s; the browser transport is the same demo with no telephony |
 | Retell cannot reach the tool routes | Vercel gives a public HTTPS URL from the first deploy; test one real call before midnight |
 | New number shows "Spam Likely," or phones have Silence Unknown Callers on | Volunteers save the number as a contact tonight; test every phone; register the number with the Free Caller Registry if time |
 | Browser speech recognition varies by language and device | Text mode; pick devices that handle Spanish and Korean well; Retell carries the languages the browser cannot |
 | Non-English voice quality varies | Test Spanish, Korean, Mandarin before 1 AM; pick the two that sound best for the demo; SMS for Armenian and Tagalog |
 | Noise in the hall | One phone on speaker at a time; the others update the board silently |
 | Serverless has no long-lived timers | Deadlines in the database advanced by the board's tick and Vercel Cron (the `sim_runs` pattern); the hold's "sends at 0:00" is enforced server-side on the next tick, within 5 s |
-| Classifier mislabels a need | Fixed enums plus a confirm-back turn in the call; the post-call pass is the second layer, not the first; gold set of 20 run every few hours; "needs help now" always surfaces |
+| Classifier mislabels a need | Fixed enums plus a confirm-back turn in the call; the post-call pass is the second layer, not the first; the gold set (24 transcripts, five languages) is re-run after prompt changes; "needs help now" always surfaces |
 | Geocoding fails on a stated location | ArcGIS geocoder first, Nominatim second, enrolled address third, zone centroid flagged low precision |
 | ArcGIS layer does not refresh or blocks the URL (CORS, token) | Permissive CORS on the feed routes; token as a query parameter; test the GeoJSON-by-URL path by 8 AM; CSV export as the fallback |
 | Model proposes the wrong zone | Proposals are advisory, drawn dashed, need a name and a reason; rejections logged; the demo includes rejecting one |
@@ -694,8 +761,10 @@ If the slot is three minutes, cut the linked-contact beat. Keep one phone on spe
 | Relaying "leave" to the wrong people | The directive belongs to a zone a named human approved; `lookup_zone` for people who are elsewhere; no zone, no instruction |
 | Roster cold start | Admit it first; the Tuesday customer's roster is already on shift; callers bootstrap the panel in a surge, labeled non-independent |
 | Scope: zones, Retell and the registry on top of a 45-item backlog | The merged backlog below marks what moves to P0 and what waits; AllFound is P2 behind a hard gate |
-| The 80% metric sounds odd with synthetic rows | Count real phones only; label simulated rows on screen and out loud |
-| A judge asks "who sits inside IPAWS?" | Nobody at this table; the send is simulated; the hand-off card is what goes to the real desk |
+| The 80% metric sounds odd with synthetic rows | Count real phones only; label synthetic rows on screen and out loud |
+| A judge asks "who sits inside IPAWS?" | Nobody at this table; the demo send reaches no real alert system; the hand-off card is what goes to the real desk |
+| A phased evacuation holds someone in danger back | The Order is never delayed and is read on every call; every wait message says leave right away if unsafe (the server refuses a template without it); blocks only move sooner; Everyone go now is one click (section 8.6) |
+| Live location is misused or kept too long | Consent first, asked once; the response team only; it stops at handoff, when the person stops it, or after 4 hours; public feeds keep only a hex cell (section 11.1) |
 
 ## 20. Privacy, safety and legal
 
@@ -708,7 +777,8 @@ If the slot is three minutes, cut the linked-contact beat. Keep one phone on spe
 
 **Responsible-use note for Devpost (two lines).**
 
-> Misuse: a wrong or compromised zone directive would be relayed to everyone in it, a colluding sentinel panel could delay a real warning, and the registry is a list of real people at real locations. Limits: the agent reads only the directive a named human approved for the zone the phone is in and can change nothing else; the hold is capped at two minutes and never blocks a send; every refusal and every human decision is in a ledger; the registry stores phone, zone, needs and last location, is visible only to the response team, and is purged 72 hours after the incident closes.
+> Misuse: a wrong or compromised zone directive would be relayed to everyone in it, a colluding sentinel panel could delay a real warning, and the registry and live locations describe real people at real places.
+> Limits: the agent reads only the words a named human approved and can change nothing; the hold is capped at two minutes and never blocks a send; live location is shared only with consent, only with the response team, stops at handoff or after 4 hours and never appears in public feeds; phased evacuation never makes anyone in danger wait (leave right away if unsafe; "Everyone go now" is one click); every decision is in the ledger, and the registry is purged 72 hours after the incident closes.
 
 ## 21. Scope and build plan
 
@@ -722,7 +792,7 @@ The Project Document's 45 items keep their numbers. Priorities are the Project D
 | 2 | Supabase schema + migrations | P0 | Done; migration 002 is item 46 |
 | 3 | Realtime layer: ring broadcast, row changes, presence | P0 | Add `zones`, `holds`, `help_requests`, `ledger` to the publication |
 | 4 | Synthetic roster seeder | P0 | Done; `westside` preset is item 71 |
-| 5 | /demo page: reset, presets, simulated events | P0 | Add `mass_no_answer` and `earthquake` presets |
+| 5 | /demo page: reset, presets, demo events | P0 | Add `mass_no_answer` and `earthquake` presets |
 | 6 | Concurrency-limited call dispatch queue, risk-ordered | P1 to P0 | Edge-first ordering (item 50) lives here |
 | 7 | Leaflet map with draw-polygon zone picker and pins | P0 | Zones layer with state colors (item 49) |
 | 8 | NWS active-alerts fetch, adopt as zone | P1 | Adopts into a `zones` row |
@@ -746,7 +816,7 @@ The Project Document's 45 items keep their numbers. Priorities are the Project D
 | 26 | Verification phrase and callback number opening | P1 to P0 | In every script |
 | 27 | Agent endpoint: Haiku turn loop, tool execution | P0 | Unchanged |
 | 28 | Stage- and language-specific prompts | P0 | Add the directive-relay rule and the zone variables |
-| 29 | Four tools | P0 | Plus three new tools (item 52) |
+| 29 | Four tools | P0 | Plus four new tools (items 52 and 61): eight in all |
 | 30 | Confirm-back turn | P0 | Unchanged |
 | 31 | Teach-back, understood flag | P0 | Unchanged |
 | 32 | Ready Check at warning stage | P1 to P0 | Is Stage 1 (item 51) |
@@ -762,14 +832,14 @@ The Project Document's 45 items keep their numbers. Priorities are the Project D
 | 42 | Hazard clustering | P2 | Part of pattern watch (item 62) |
 | 43 | Metrics service | P1 to P0 | Add hold-to-read, call-to-registry, canary times; shaped as the NSF Phase I milestones (Twist 1, item 72) |
 | 44 | Simulator presets | P0 | Unchanged |
-| 45 | Scripted test harness | P1 | Gold set of 20 covers intents |
+| 45 | Scripted test harness | P1 | Gold set (24 transcripts, five languages) covers intents |
 | 46 | Migration 002: new tables and columns (section 15) | P0 | New, P1 |
 | 47 | Zone import (GeoJSON), Westside and Altadena zone sets | P0 | New, P1 and P4 |
 | 48 | Zone approve route and dialog with ledger write | P0 | New, P1 and P3 |
 | 49 | Zones layer: state colors, dashed proposals, approve or reject | P0 | New, P3 |
 | 50 | Edge-first ordering and ring-sweep animation | P0 | New, P1 and P3 |
 | 51 | Staged waves 1, 2, 3 with database deadlines and `/api/tick` | P0 for waves 1 and 3, P1 for wave 2 | New, P1 |
-| 52 | Retell transport: account, number, EN and ES agents, prompts mirroring item 28, seven tools as routes with signature verification, webhook route, batch-call client | P0 | New, P2 |
+| 52 | Retell transport: account, number, EN and ES agents, prompts mirroring item 28, the tools (eight with item 61) as routes with signature verification, webhook route, batch-call client | P0 | New, P2 |
 | 53 | Retell post-call analysis fields and `call_analyzed` into the intent pipeline | P0 | New, P2 |
 | 54 | `lookup_zone`: geocode, point-in-polygon, approved directive | P1 | New, P1 |
 | 55 | Hold: sentinel selection at polygon extremes, parallel ring, tally, deadline, five decision buttons, send-on-timer, dark-zone rule | P0 | New, P1 and P3 |
@@ -778,18 +848,23 @@ The Project Document's 45 items keep their numbers. Priorities are the Project D
 | 58 | Ledger table and panel; allowlist printed on screen | P0 | New, P3 |
 | 59 | Intent pipeline: strict-schema post-call pass, `intents`, reconciliation, review queue | P0 | New, P2 |
 | 60 | Help registry: `help_requests`, `locations`, QRT view, last-seen precedence, export | P0 | New, P1 and P3 |
-| 61 | Stated-location geocoding with consent; SMS location link | P1; link P2 | New, P1 |
+| 61 | Stated-location geocoding with consent; live-location link and helper dispatch | P1; link P2 | Built (D-43): `share_live_location`, `/l/[token]`, `/helper/[token]`, migration 003 |
 | 62 | Pattern watch: `reports`, hex bins, cluster rules, hoax mirror, proposals | P1 | New, P1 |
 | 63 | GeoJSON feeds with CORS; ArcGIS Online web map and Dashboard | P1 | New, P1 and P4 |
 | 64 | ArcGIS hosted layer push (`applyEdits`) | P2 | New, P1 |
 | 65 | Fire envelope model: seeded perimeter plus NWS wind, 1/3/6 h ellipses, proposals | P1 | New, P1 |
 | 66 | Earthquake mode: USGS trigger, Shelter in Place vocabulary, seeded reports, preset | P1 | New, P1 and P4 |
-| 67 | USC DPS mode: campus zone file, vocabulary, roster skin | P1 | New, P4 and P3 |
+| 67 | Heat mode: the heat check-in line (six Valley demo zones, live Open-Meteo and NWS readings, older residents' heat profile) | P1 | Built (D-46); replaces the earlier Tuesday mode |
 | 68 | Cost counter | P1 | New, P3 |
 | 69 | Monthly test call (`checkin` kind) and reliability score | P2 | New, P2 |
 | 70 | AllFound lane | P2, gate 11:00 AM | From the earlier plan |
 | 71 | Westside seed preset: households across Culver City and Palms, devices at the edges | P0 | New, P4 |
 | 72 | `/evidence` page and `GET /api/evidence` (JSON and CSV): the three Phase I milestones and the safety bar computed from the run | P0 | New (Twist 1), P1 and P3 |
+| 73 | Block-by-block evacuation: block grid, exit roads sized to capacity, waves and wave clock, pull-forward, Everyone go now | P1 | Built (D-48), migration 005 |
+| 74 | Play the full fire (`/board?autoplay=1`) | P1 | Built (D-44) |
+| 75 | Board sidebar with six views and emoji; guided tour | P1 | Built (D-47) |
+| 76 | Retell kit: export, conversation flow setup, copy-by-hand page | P1 | Built (D-45) |
+| 77 | Twist 2 flood page (`/global/flood`) | P2 | In progress (D-51) |
 
 ### Cut line
 
@@ -803,7 +878,7 @@ Now Friday 10:45 PM; team lock extended to 11:59 PM. Freeze Saturday 7:00 PM; De
 | --- | --- | --- | --- | --- |
 | Skeleton (10:45 PM to 12:00 AM) | 46, 47; Vercel deploy green | 52: account, number, EN agent, one real call to a teammate's phone hitting the tool route | 49 shell on top of 7 and 9; approve dialog shell (10) | Lock the team; 71 (Westside seed); directive texts per zone; volunteers save the number; Twist 1 at 11:30 |
 | Core 1 (12:00 to 4:30 AM) | 48, 6 and 50, 51 wave 1, 60 tables and routes, 61 (sleep 1:00 to 4:15; P2 covers) | 27 to 31, 36; 52 ES agent and tools; 53 and 59; gold set | 3, 12, 13 as registry (60), 58 ledger panel, ring sweep (50) | Twist 1 response by 2:00; `/twists` (20); wave 1 to 3 scripts in EN and ES; demo script v1 (sleep 1:00 to 4:15) |
-| Core 2 (4:30 to 8:00 AM) | 55, 56, 57 server side; 51 waves 2 and 3; 38; 63 feeds | Handoff at 4:30; sleep 4:45 to 8:00 | Handoff at 4:30; sleep 4:45 to 8:00 | Twist 2 plan by 5:00; Twist 1 proof filed; population numbers (56); USC zone file (67) |
+| Core 2 (4:30 to 8:00 AM) | 55, 56, 57 server side; 51 waves 2 and 3; 38; 63 feeds | Handoff at 4:30; sleep 4:45 to 8:00 | Handoff at 4:30; sleep 4:45 to 8:00 | Twist 2 plan by 5:00; Twist 1 proof filed; population numbers (56); heat zones (67) |
 | Feature complete (8:00 AM to 1:00 PM) | 62, 65, 66, 54, 8, 40 and 41, 43 | 52 Korean or Mandarin agent; 33, 35, 37; classifier accuracy pass; 10:30 Retell session | 55 hold strip UI, 57 canary card, 49 proposals, 14, 15, 16, 18, 24, 26, 67, 68; 70 only if the gate passes | Twist 2 by 10:30, Twist 3 by 1:00; 9:00 mentor desk; Devpost draft; ask three attendees about their last emergency alert |
 | Harden and rehearse (1:00 to 7:00 PM) | Twenty concurrent calls; error states; feed tokens; 19 | 45 gold set run; ten scripted calls across three languages; fix the worst three | 44 presets on the judge path; polish; backup video by 5:00 PM | Pitch v1 at five minutes; two timed rehearsals; responsible-use note; screenshots |
 | Freeze and ship (7:00 to 10:00 PM) | Code freeze 7:00 PM; README with setup and architecture | Write up every sponsor tool used and how | Final demo video; Devpost media | Submit Devpost by 9:00 PM; two more rehearsals |
@@ -821,7 +896,7 @@ Check-ins (10 minutes each): 12:00 AM, 1:00 AM, 4:30 AM handoff, 8:00 AM, 12:00 
 
 ## 22. Open decisions
 
-Each is logged with a recommendation in `decisions.md`: the name (D-01); directive relay (D-02, decided here); AllFound as P2 (D-04); the transport split and whether to attempt Retell's custom-LLM path (D-05); the demo geography (D-06); the Tuesday customer on stage (D-07); who holds the six phones (D-14); which two non-English languages go on stage (D-15); whether the ArcGIS beat is in the live demo or only in the twist response (D-16); whether to use real NWS wind or seeded wind in the model (D-17).
+Each is logged with a recommendation in `decisions.md`: the name (D-01); directive relay (D-02, decided here); AllFound as P2 (D-04); the transport split and whether to attempt Retell's custom-LLM path (D-05); the demo geography (D-06); the Tuesday customer on stage (D-07, now the heat check-in line, D-46); who holds the six phones (D-14); which two non-English languages go on stage (D-15); whether the ArcGIS beat is in the live demo or only in the twist response (D-16); whether to use real NWS wind or seeded wind in the model (D-17).
 
 ## 23. Sources
 
@@ -839,7 +914,8 @@ Each is logged with a recommendation in `decisions.md`: the name (D-01); directi
 - U.S. Census QuickFacts, Los Angeles County, language other than English at home: https://www.census.gov/quickfacts/fact/csv/losangelescountycalifornia/POP815224
 - Cal OES standardized evacuation terminology (May 2020): https://www.malibucity.org/DocumentCenter/View/26770/05_28_2020_CALOES_EvacuationTerminology_PressRelease and https://www.calalerts.org/evacuations.html
 - Dayton Daily News, Wright-Patterson false active-shooter timeline (Aug 2, 2018): https://daytondailynews.com/news/local/timeline-how-the-chaotic-active-shooter-response-unfolded-wright-patt/8WRXac0skFXSKz5chyjvSM
-- USC Department of Public Safety, TrojansAlert: https://dps.usc.edu/services/trojans-alerts/
+- Open-Meteo forecast API (no key; the heat line's live readings): https://open-meteo.com/en/docs
+- National Weather Service API (active alerts at a point): https://www.weather.gov/documentation/services-web-api
 - Retell AI docs: batch calls https://docs.retellai.com/api-references/create-batch-call ; post-call analysis https://docs.retellai.com/features/post-call-analysis-overview ; language support https://docs.retellai.com/build/language-support
 - NASA FIRMS API (area CSV endpoint, MAP_KEY): https://firms.modaps.eosdis.nasa.gov/api/ and the Microsoft connector reference https://learn.microsoft.com/en-us/connectors/nasafirms
 - ArcGIS Online auto-updating CSV and GeoJSON layers by URL: https://www.esri.com/arcgis-blog/products/arcgis-online/mapping/auto-update-csv-geojson-georss

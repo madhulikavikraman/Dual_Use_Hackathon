@@ -1,6 +1,7 @@
 // The Demo Day poster (Twist 3), 24 x 36 in portrait = 2304 x 3456 CSS px. Real incidents come from lib/stories.ts
 // and country profiles from lib/jurisdictions.ts, so the poster updates when the research lands; empty parts hide.
-// Product facts and measured results are the team's own (scripts/e2e.ts). Everything in the demo is simulated.
+// Product facts and measured results are the team's own (scripts/e2e.ts, scripts/blocks-check.ts). In the demo the
+// residents are synthetic except six volunteer phones, and nothing reaches a real alert system.
 import Image from "next/image";
 import { FIRES, HERITAGE, LIVE, STATS, type FireStory, type LiveIncident, type Stat } from "@/lib/stories";
 import { JURISDICTIONS } from "@/lib/jurisdictions";
@@ -94,6 +95,10 @@ function Header() {
         <p className="mt-[14px] text-[34px] leading-[1.26] text-vf-bone/90">
           Before an automated alert wakes a zone, VoiceFlare asks the people at its edge, shows how many phones it will
           wake, holds it for a named human, then calls every resident in their own language.
+        </p>
+        <p className="mt-[8px] text-[32px] leading-[1.26]">
+          <span className="font-semibold text-vf-flare">One system, two days:</span> the fire night, and an ordinary hot
+          Tuesday, when the same board runs a heat check-in line for older residents.
         </p>
       </div>
     </header>
@@ -242,11 +247,11 @@ function Ladder() {
 function Board() {
   return (
     <figure className="flex flex-col rounded-[26px] border border-vf-ash bg-vf-coal/85 px-[22px] pb-[18px] pt-[18px]">
-      <SectionHead n="03" title="The supervisor's board" kicker="Demo · simulated" />
+      <SectionHead n="03" title="The supervisor's board" kicker="Demo" />
       <div className="relative overflow-hidden rounded-[14px] border-2 border-vf-ash">
         <Image
           src="/poster/board.png"
-          alt="The VoiceFlare supervisor's board during the simulated Westside fire: the hold on Culver City and Palms, with its dose and sentinels"
+          alt="The VoiceFlare supervisor's board during the Westside Fire demo: the hold on Culver City and Palms, with its dose and sentinels"
           width={3840}
           height={2160}
           unoptimized
@@ -254,7 +259,7 @@ function Board() {
           className="block h-auto w-full"
         />
         <span className="absolute bottom-[1.1%] left-[0.6%] rounded-[8px] bg-vf-ink px-[12px] py-[4px] font-mono text-[18px] uppercase tracking-[0.12em] text-vf-ember">
-          Simulated · synthetic residents
+          Demo · synthetic residents
         </span>
       </div>
       <figcaption className="mt-[12px] text-[30px] leading-[1.26] text-vf-bone/85">
@@ -271,7 +276,7 @@ const LANGS = ["English", "Español", "한국어", "普通话", "हिन्द
 
 function Call() {
   return (
-    <Section n="04" title="One call, any language" kicker="Retell AI + Claude">
+    <Section n="04" title="One call, any language" kicker="8 languages">
       <p className="text-[30px] leading-[1.26] text-vf-bone/90">
         Retell AI carries the voice on the phone network; Claude is the agent. It reads only the human-approved directive,
         route and shelter, in the person&apos;s language, and says it is an automated voice.
@@ -306,6 +311,8 @@ function FailsSafe() {
     { k: "Hold", v: "Capped at 90 s; it never blocks a send." },
     { k: "Canary", v: "A phone inside and one outside the polygon check delivery." },
     { k: "Silence", v: "No answer → retry → named linked contact → door-knock row." },
+    { k: "Blocks", v: "Patches about 800 m on a side leave in waves on roads sized to capacity. Feel unsafe? Leave now." },
+    { k: "Location", v: "With consent, live GPS goes to the response team and a helper to the spot; it stops at handoff or 4 h." },
   ];
   return (
     <Section n="05" title="Fails safe" kicker="Silence is a signal">
@@ -471,18 +478,19 @@ function WhoPays() {
 
 function Results() {
   const tiles = [
-    { big: "20/20", small: "end-to-end checks pass" },
+    { big: "38/38", small: "end-to-end checks pass" },
     { big: "9.8M→41K", small: "phones, after Edit polygon (8.4 sq mi)" },
-    { big: "46 s", small: "quorum read (target <90 s)" },
-    { big: "30 s", small: "canary clear" },
+    { big: "48 s", small: "quorum read (target <90 s)" },
+    { big: "26 s", small: "canary clear" },
   ];
   const checks = [
     "Rings went out edge-first",
     "The needs-help caller surfaced at priority 1",
     "An older man who did not answer was accounted for through his linked contact",
+    "36/36 block-plan checks: no road over capacity, nearest the fire first",
   ];
   return (
-    <Section n="09" title="Results" kicker="Measured · scripts/e2e.ts" className="flex-1">
+    <Section n="09" title="Results" kicker="One run, Oct 17 · scripts/e2e.ts" className="flex-1">
       <div className="grid grid-cols-[0.8fr_1.3fr_0.9fr_0.8fr] gap-[8px]">
         {tiles.map((t) => (
           <div key={t.big} className="rounded-[16px] border-2 border-vf-ash bg-vf-ink/80 px-[14px] py-[10px]">
@@ -519,8 +527,8 @@ function Footer() {
           after the incident closes.
         </p>
         <p className="mt-[8px] text-[23px] leading-[1.3] text-vf-smoke">
-          Built with Claude (Haiku 5.5 in call, Sonnet 5.5 post-call), Retell AI, Next.js, Leaflet · Everything in the
-          demo is simulated: residents are synthetic except six volunteer phones, and nothing reaches a real alert system.
+          Built with Claude (Haiku 5.5 in call, Sonnet 5.5 post-call), Retell AI, Next.js, Leaflet · In the demo,
+          residents are synthetic except six volunteer phones, and nothing reaches a real alert system.
         </p>
       </div>
       <div className="flex items-center gap-[20px]">

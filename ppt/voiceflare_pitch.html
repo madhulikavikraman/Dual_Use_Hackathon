@@ -139,7 +139,7 @@
   .foot .brand img { width: 24px; height: 24px; }
   .foot .num { font: 600 16px/1 var(--ff-display); letter-spacing: 0.08em; }
 
-  /* The amber SIMULATED chip, as on the landing page */
+  /* The amber demo chip: what is synthetic, said plainly */
   .sim {
     display: inline-flex; align-items: center; gap: 12px;
     font: 400 16px/1.2 var(--ff-body); color: var(--vf-smoke);
@@ -858,8 +858,8 @@
   <!-- ═══════════════ 7. THE END-TO-END RUN ═══════════════ -->
   <section class="slide" id="s7" data-title="The end-to-end demo" data-time="17">
     <div class="glow glow-a"></div>
-    <span class="sim sim-corner animate-in"><b>SIMULATED</b>Synthetic residents and 6 volunteer phones</span>
-    <p class="eyebrow animate-in">End-to-end demo &middot; a simulated fire</p>
+    <span class="sim sim-corner animate-in"><b>DEMO</b>Synthetic residents except 6 volunteer phones</span>
+    <p class="eyebrow animate-in">End-to-end demo &middot; one fire night, start to finish</p>
     <h2 class="h2 animate-in">Westside Fire, in 3.5 minutes.</h2>
     <ol class="beats">
       <li class="beat animate-in"><span class="t">0:15</span><span class="i">1</span><h3>Approve the Warning</h3><p>Santa Monica&rsquo;s blocks leave in waves, not all at once. Next, Culver City: a name, a reason, the exact words.</p></li>
@@ -873,24 +873,24 @@
     </ol>
     <div class="autoplay animate-in">
       <span class="cta"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>One click: <code>/board?autoplay=1</code></span>
-      <p>Runs the whole beat sheet hands-free. Every send is simulated.</p>
+      <p>Runs the whole beat sheet hands-free. Nothing reaches a real alert system.</p>
     </div>
     <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">07</span></div>
     <aside class="notes">
-      <p>Here is the end-to-end run on a simulated Westside Fire. Santa Monica&rsquo;s blocks move out in waves, not the whole city at once. Watch the hold: 9.8 million phones, down to 41,000 after one sentinel says &ldquo;nothing here.&rdquo;</p>
-      <p>One click, /board?autoplay=1, runs it hands-free. Say out loud: every send is simulated.</p>
+      <p>Here is the end-to-end run on the Westside Fire scenario. Santa Monica&rsquo;s blocks move out in waves, not the whole city at once. Watch the hold: 9.8 million phones, down to 41,000 after one sentinel says &ldquo;nothing here.&rdquo;</p>
+      <p>One click, /board?autoplay=1, runs it hands-free. Say out loud: the residents are synthetic except six volunteer phones, and nothing reaches a real alert system.</p>
     </aside>
   </section>
 
   <!-- ═══════════════ 8. DEMO VIDEO ═══════════════ -->
   <section class="slide" id="s8" data-title="Demo video" data-time="0" data-demo="1">
     <div class="video-wrap animate-in">
-      <video id="demo-video" src="assets/demo.mp4" controls preload="metadata" playsinline poster="assets/board.png" aria-label="VoiceFlare demo video: the simulated Westside Fire run" onerror="vfVid(this)"></video>
+      <video id="demo-video" src="assets/demo.mp4" controls preload="metadata" playsinline poster="assets/board.png" aria-label="VoiceFlare demo video: the Westside Fire run" onerror="vfVid(this)"></video>
       <div class="video-fallback">
         <figure class="shot" style="height:100%">
           <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span>/board?autoplay=1</span></div>
           <div class="view">
-            <img src="assets/shot-autoplay.png" data-fallback="assets/shot-board.png|assets/board.png" alt="The VoiceFlare board during the simulated Westside Fire run" onerror="vfImg(this)" />
+            <img src="assets/shot-autoplay.png" data-fallback="assets/shot-board.png|assets/board.png" alt="The VoiceFlare board during the Westside Fire demo run" onerror="vfImg(this)" />
             <div class="ph"><div class="cap"><b>The board, mid-run</b><br />Live: /board?autoplay=1</div></div>
           </div>
         </figure>
@@ -898,12 +898,12 @@
       </div>
     </div>
     <div class="video-cap animate-in">
-      <span class="sim"><b>SIMULATED</b></span>
-      <p>Westside Fire scenario. Synthetic residents, 6 volunteer phones, every send simulated. Live: <code>/board?autoplay=1</code></p>
+      <span class="sim"><b>DEMO</b></span>
+      <p>Westside Fire scenario. Synthetic residents except 6 volunteer phones. Nothing reaches a real alert system. Live: <code>/board?autoplay=1</code></p>
     </div>
     <aside class="notes">
       <p>Play the video, or switch to the live board at /board?autoplay=1.</p>
-      <p>Narrate the beats: approve, edge-first, registry, the hold, the canary, the pickup run, tower down, the ledger. Say every send is simulated.</p>
+      <p>Narrate the beats: approve, edge-first, registry, the hold, the canary, the block plan, the helper, tower down, the ledger. Say that nothing reaches a real alert system.</p>
     </aside>
   </section>
 
@@ -914,11 +914,11 @@
       <p class="eyebrow animate-in">New &middot; live location, with consent</p>
       <h2 class="h2 animate-in">From &ldquo;I can&rsquo;t leave&rdquo; to a helper at the door.</h2>
       <ol class="steps">
-        <li class="animate-in"><span class="n">1</span><h3>Ask on the call</h3><p><q>May we share your location with the response team?</q> The answer is stored with the call.</p></li>
-        <li class="animate-in"><span class="n">2</span><h3>One tap</h3><p>A text link streams the phone&rsquo;s GPS to the database.</p></li>
+        <li class="animate-in"><span class="n">1</span><h3>Ask once on the call</h3><p><q>Can I text you a link that shares your live location with the response team?</q> Their words are saved.</p></li>
+        <li class="animate-in"><span class="n">2</span><h3>One tap</h3><p>They tap Share on the link. Each GPS fix goes to the response team.</p></li>
         <li class="animate-in"><span class="n">3</span><h3>The exact spot</h3><p>The response team sees the live pin, not the zone&rsquo;s center.</p></li>
-        <li class="animate-in"><span class="n">4</span><h3>Send a helper</h3><p>Turn-by-turn directions to the door.</p></li>
-        <li class="stop animate-in"><span class="n">5</span><h3>Then it stops</h3><p>When help arrives, or after 4 hours. Never in public feeds.</p></li>
+        <li class="animate-in"><span class="n">4</span><h3>Send a helper</h3><p>The helper&rsquo;s page shows the spot, the needs and a Navigate button.</p></li>
+        <li class="stop animate-in"><span class="n">5</span><h3>Then it stops</h3><p>When help arrives, when they stop it, or after 4 hours. Never in public feeds.</p></li>
       </ol>
     </div>
     <div class="right">
@@ -955,12 +955,12 @@
           </div>
         </div>
       </figure>
-      <p class="shot-label label-phone animate-in">The helper&rsquo;s phone:<br />directions to the door.</p>
+      <p class="shot-label label-phone animate-in">The helper&rsquo;s phone:<br />the spot and Navigate.</p>
     </div>
     <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">09</span></div>
     <aside class="notes">
       <p>New today: when someone can&rsquo;t leave, the agent asks on the call whether they will share their location.</p>
-      <p>A one-tap text link streams GPS, and the response team sends a helper to the exact spot. Sharing stops when help arrives, or after 4 hours.</p>
+      <p>One tap on a text link shares GPS, and the response team sends a helper to the exact spot. Sharing stops when help arrives, when they stop it, or after 4 hours.</p>
     </aside>
   </section>
 
@@ -1022,12 +1022,12 @@
           </div>
         </div>
       </figure>
-      <p class="blocks-cap animate-in"><b>Block by block.</b> Groups of about 10&ndash;12 city blocks leave in timed waves on assigned exit roads, sized to road capacity. &ldquo;Everyone go now&rdquo; is always one click.</p>
+      <p class="blocks-cap animate-in"><b>Block by block.</b> Patches about half a mile (800&nbsp;m) on a side, several per wave, leave on assigned exit roads sized to road capacity. Anyone who feels unsafe leaves right away. &ldquo;Everyone go now&rdquo; is always one click.</p>
     </div>
     </div>
     <div class="foot"><span class="brand"><img src="assets/voiceflare-mark.png" alt="" />VoiceFlare</span><span class="num">10</span></div>
     <aside class="notes">
-      <p>What is new: it asks before it alerts and shows the dose first. It moves people block by block, in waves on assigned exit roads, so roads don&rsquo;t jam; &ldquo;everyone go now&rdquo; is always one click.</p>
+      <p>What is new: it asks before it alerts and shows the dose first. It moves people block by block: patches about half a mile on a side, several per wave, on assigned exit roads, so roads don&rsquo;t jam. Nearest the fire go first, anyone who feels unsafe leaves right away, and &ldquo;everyone go now&rdquo; is always one click.</p>
       <p>A canary confirms delivery, and silence is never &ldquo;safe&rdquo;.</p>
     </aside>
   </section>
@@ -1062,7 +1062,7 @@
       </div>
       <div class="duo-row animate-in" role="row">
         <div class="spine r3" role="rowheader"><span class="rg"><b>3</b>Slow</span></div>
-        <div class="side fire" role="cell">Edge-first calls. Groups of about 10&ndash;12 blocks leave in timed waves on assigned exit roads, so roads don&rsquo;t jam.</div>
+        <div class="side fire" role="cell">Edge-first calls. Patches about half a mile (800&nbsp;m) on a side leave in waves on assigned exit roads, so roads don&rsquo;t jam.</div>
         <div class="side heat" role="cell">A priority order, not everyone at once.</div>
       </div>
       <div class="duo-row animate-in" role="row">
@@ -1129,7 +1129,7 @@
     <div class="use">
       <ul class="cust">
         <li class="animate-in"><div class="mode">Help registry</div><h3>Priority 1 is life safety</h3><p>&ldquo;I can&rsquo;t leave&rdquo; becomes a row at the spot the caller named, for the response team.</p></li>
-        <li class="animate-in"><div class="mode">Pickup runs</div><h3>Accessible vans first</h3><p>Priority 1 and 2 rows become van routes for mobility and medical needs.</p></li>
+        <li class="animate-in"><div class="mode">Pickup runs</div><h3>Accessible vans first</h3><p>Priority 1 and 2 rows become pickup runs. Wheelchair, oxygen and bedbound needs go to accessible vans.</p></li>
         <li class="animate-in"><div class="mode">Live location</div><h3>Only with consent</h3><p>A helper goes to the exact spot. Sharing stops when help arrives, or after 4 hours.</p></li>
         <li class="animate-in"><div class="mode">Privacy</div><h3>Response team only</h3><p>Phone, zone, needs and last location. Purged 72 hours after the incident closes.</p></li>
       </ul>

@@ -127,7 +127,8 @@ at one shared database would make them collide and slow them down.
 
 Once the current builds are merged:
 
-1. If the block-evacuation or heat-wave work adds tables, run `supabase/migrations/004_*.sql` the same way as step 2.
+1. Run `supabase/migrations/004_heat_mode.sql` (the heat check-in line) and `005_evac_blocks.sql` (block-by-block
+   evacuation) the same way as step 2. Both are additive and safe to re-run.
 2. Set `STORAGE=auto` (or `STORAGE=supabase` to fail loudly when a key is missing). Restart the server.
 3. Load the scenario into the database: `npm run seed`
 4. Check `GET /api/health`: `checks.database.detail` should read `supabase store, <n> households`, not `local`.
