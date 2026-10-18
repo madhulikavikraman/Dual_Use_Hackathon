@@ -40,6 +40,7 @@
       "urgency"
     ]
   },
+  "args_at_root": false,
   "speak_during_execution": false,
   "speak_after_execution": true,
   "timeout_ms": 10000,

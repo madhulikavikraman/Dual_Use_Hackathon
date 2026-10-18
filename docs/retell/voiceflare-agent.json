@@ -16,7 +16,7 @@
     {
       "type": "enum",
       "name": "primary_intent",
-      "description": "The caller's main situation. needs_help_now: life safety (medical, trapped, fire at the house). needs_help_leaving: can leave only with help (wheelchair, oxygen, no car, children alone). leaving: will leave. staying: refuses or undecided. already_left: out of the zone. hazard_report: reports smoke, fire, damage or injury, or a sentinel says the alert matches what they see. no_hazard_seen: a sentinel sees nothing. info_request: only asked a question. wrong_number, not_in_zone, unclear, voicemail, silence: no usable answer. On the heat check-in line (mode heat): needs_help_now = heat-stroke warning signs or feeling unwell in the heat; needs_help_leaving = needs a ride to a cooling center; leaving = going to a cooling center or somewhere cool; already_left = at home and cool; staying = staying home and declining help (or wants a check-in visit).",
+      "description": "The caller's main situation. needs_help_now: life safety (medical, trapped, fire at the house). needs_help_leaving: can leave only with help (wheelchair, oxygen, no car, children alone). leaving: will leave. staying: refuses or undecided. already_left: out of the zone. hazard_report: reports smoke, fire, damage or injury, or a sentinel says the alert matches what they see. no_hazard_seen: a sentinel sees nothing. info_request: only asked a question. wrong_number, not_in_zone, unclear, voicemail, silence: no usable answer. On the heat check-in line (mode heat): needs_help_now = heat-stroke warning signs or feeling unwell in the heat; needs_help_leaving = needs a ride to a cooling center; leaving = going to a cooling center or somewhere cool; already_left = at home and cool; staying = staying home and declining help (or wants a check-in visit). Block-by-block evacuation: a resident told their block's wave is later who will go with it is leaving, not staying.",
       "choices": [
         "needs_help_now",
         "needs_help_leaving",
@@ -61,7 +61,7 @@
     {
       "type": "boolean",
       "name": "live_location_consent",
-      "description": "True only if the agent asked whether it may text a link that shares the person's live location with the response team and the person clearly said yes. False if they said no or were never asked clearly. A maybe is false.",
+      "description": "True only if the agent asked whether it may text a link that shares the person's live location with the response team and the person clearly said yes. False if they said no or were never asked clearly. A maybe is false. A yes to sharing the place they named (no text link) is false.",
       "required": false
     },
     {
@@ -79,7 +79,7 @@
   "voicemail_option": {
     "action": {
       "type": "prompt",
-      "text": "Leave a voicemail under 30 seconds in {{language}}. Say this is the emergency information line (if the mode {{mode}} is heat: the heat check-in line) and the verification phrase {{verification_phrase}}. If {{simulated}} is true, say this is a simulated call for a hackathon demonstration. If the purpose {{purpose}} is resident or linked_contact, read exactly, translated faithfully if needed and adding nothing: \"{{directive_text}}\" then \"{{move_text}}\" then the evacuation point \"{{evac_point}}\", skipping any that is (none). For any other purpose do not read an alert or a directive. End with the official callback number {{callback_number}}."
+      "text": "Leave a short voicemail in {{language}}; keep your own words brief. Say this is the emergency information line (if the mode {{mode}} is heat: the heat check-in line; if base: the installation's emergency line) and the verification phrase {{verification_phrase}}. If {{simulated}} is true, say this is a simulated call for a hackathon demonstration. If the purpose {{purpose}} is resident or linked_contact, read exactly and in full, translated faithfully if needed, adding nothing and cutting nothing, even if that makes the message long: \"{{directive_text}}\" then \"{{move_text}}\" then the evacuation point \"{{evac_point}}\", skipping any that is (none) and skipping the evacuation point if the route text already names it. For any other purpose do not read an alert or a directive. Never say anyone is safe and never give a time. End with the official callback number {{callback_number}}."
     }
   },
   "timezone": "America/Los_Angeles"

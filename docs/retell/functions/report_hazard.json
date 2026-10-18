@@ -43,7 +43,9 @@
       "type"
     ]
   },
+  "args_at_root": false,
   "speak_during_execution": false,
+  "enable_typing_sound": true,
   "speak_after_execution": true,
   "timeout_ms": 10000,
   "max_retry": 0

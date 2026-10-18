@@ -12,11 +12,13 @@
 //   npx tsx scripts/retell-export.ts                         uses APP_BASE_URL when it is a public https URL
 //   npx tsx scripts/retell-export.ts --base-url=https://...  or a URL you pass
 // With neither, URLs are written as {{APP_BASE_URL}}/... for you to replace (the kit page has a box that does it).
-// Reads only pure modules: lib/retell/config.ts, lib/retell/flow.ts, lib/agent/*, lib/directives.ts.
+// Reads only pure modules: lib/retell/config.ts, lib/retell/flow.ts, lib/agent/*, lib/directives.ts, lib/jurisdictions.ts
+// (and the scenario presets in lib/scenarios/ for sample values).
 import { config } from "dotenv";
 import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { directiveFor } from "../lib/directives";
+import { BLOCK_TEMPLATES, directiveFor, fillBlockTemplate } from "../lib/directives";
+import { jurisdictionFor, localDirective } from "../lib/jurisdictions";
 import { retellPromptTemplate } from "../lib/agent/prompt";
 import {
   buildAgentPayload,
@@ -94,23 +96,39 @@ const endCallTool = llm.general_tools.find((t): t is Extract<LlmTool, { type: "e
 const VAR_INFO: Record<string, string> = {
   mode: "The line: civilian or base (the emergency information line) or heat (the heat check-in line for older residents who signed up).",
   purpose: "Kind of call: resident, inbound (the public line), sentinel, canary, linked_contact, qrt_callback or test.",
-  stage: "Where the call sits on the ladder: 1 (warning), 2 (check-in), 3 (order), shelter, watch, hold (sentinel), canary, callback (response team) or inbound.",
+  stage:
+    "Where the call sits on the ladder: 1 (warning), 2 (check-in), 3 (order), shelter, watch, rollcall (we have not heard from them), " +
+    "all_clear (the order is lifted), test (the monthly line test), hold (sentinel), canary, callback (response team) or inbound.",
   language: "The call's language, by name. The agent speaks only this language unless the person answers in another.",
   person_name: "The enrolled person or household being called.",
   zone_name: "The zone the person is in.",
   zone_state: "The zone's state on the Cal OES ladder: monitor, watch, warning, order, shelter_in_place or lifted.",
   directive_text: "The directive a named human approved for the zone. Read word for word.",
-  move_text: "The approved route text. Read word for word.",
+  move_text:
+    "The approved route text. Read word for word. On Order relay calls with an approved block plan: the block's wave, exit road " +
+    "and evacuation point, including the leave-if-unsafe line.",
   evac_point: "The approved evacuation point.",
   alert_text: "The alert text. Sentinels hear it and say if it matches what they see; canaries never hear it.",
   verification_phrase: "Said at the start of every call so people can tell the call is real.",
   callback_number: "The official callback number.",
   emergency_number: "What \"Hang up and call ... now\" says in this place.",
+  medical_number: "Medical emergency number in this place, e.g. 120 in China; falls back to emergency_number.",
   memory_note: "One fact kept from an earlier call, if any.",
   collection_note: "Collections line only: what they hold and their grab list.",
   subject_name: "Linked-contact calls: the person we are asking about.",
   simulated: "\"true\" on demo calls: the agent says the call is simulated.",
 };
+
+async function chongqingSample(): Promise<{ move_text: string; evac_point: string }> {
+  try {
+    const { CHONGQING_PRESETS } = await import("../lib/scenarios/chongqing");
+    const p = CHONGQING_PRESETS["CQ-XM"]?.order;
+    if (p?.move_text) return { move_text: p.move_text, evac_point: p.evac_point ?? "(none)" };
+  } catch (e) {
+    console.warn(`! could not read the Chongqing scenario for sample values (${(e as Error).message}); using (none)`);
+  }
+  return { move_text: "(none)", evac_point: "(none)" };
+}
 
 async function scenarioSample(): Promise<{ move_text: string; evac_point: string; source: string }> {
   try {
@@ -149,13 +167,16 @@ function writeOut(rel: string, content: string) {
 
 // ---------- prompt.md ----------
 
-function promptMd(samples: { resident: Record<string, string>; inbound: Record<string, string>; sentinel: Record<string, string> }, sampleSource: string) {
+type Vars = Record<string, string>;
+type Sample = { key: string; title: string; vars: Vars };
+
+function promptMd(samples: Sample[], resident: Vars, sampleSource: string) {
   const placeholders = promptPlaceholders();
   const defaults = defaultDynamicVariables({ verificationPhrase, callbackNumber });
   const rows = placeholders.map((k) => {
     const info = VAR_INFO[k] ?? "New in the prompt: see lib/agent/prompt.ts.";
     const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\n/g, " ");
-    return `| \`{{${k}}}\` | ${cell(info)} | ${cell(samples.resident[k] ?? "(none)")} | ${cell(defaults[k] ?? "(none)")} |`;
+    return `| \`{{${k}}}\` | ${cell(info)} | ${cell(resident[k] ?? "(none)")} | ${cell(defaults[k] ?? "(none)")} |`;
   });
   return `# VoiceFlare agent prompt
 
@@ -189,24 +210,7 @@ Paste one block into the dashboard test panel's dynamic variables, then start a 
 linked to a VoiceFlare call, so the tools answer "Nothing was recorded: this call is not linked to the response system".
 That is expected. For a linked test, call the Retell number (inbound) or approve a zone on the board (outbound).
 
-### Resident, evacuation warning (stage 1)
-
-\`\`\`json
-${JSON.stringify(samples.resident, null, 2)}
-\`\`\`
-
-### Public line (inbound): the defaults
-
-\`\`\`json
-${JSON.stringify(samples.inbound, null, 2)}
-\`\`\`
-
-### Sentinel during a 90-second hold
-
-\`\`\`json
-${JSON.stringify(samples.sentinel, null, 2)}
-\`\`\`
-
+${samples.map((x) => `### ${x.title}\n\n\`\`\`json\n${JSON.stringify(x.vars, null, 2)}\n\`\`\`\n`).join("\n")}
 ## Conversation flow: the global prompt
 
 The flow agent uses the same rules. Its global prompt is the template above without "# Scripts by purpose" (each script
@@ -220,7 +224,7 @@ ${flow.global_prompt}
 
 // ---------- retell-kit.html ----------
 
-function kitHtml(samples: { resident: Record<string, string>; inbound: Record<string, string>; sentinel: Record<string, string> }) {
+function kitHtml(samples: Sample[]) {
   const blocks: Record<string, string> = {};
   let n = 0;
   const block = (label: string, text: string, big = false) => {
@@ -244,7 +248,8 @@ Everything is generated from the code (<code>lib/agent/prompt.ts</code>, <code>l
 <ul>
   <li>Retell must reach your server over public HTTPS. Start a tunnel: <code>npx cloudflared tunnel --url http://localhost:3000</code>.</li>
   <li>Use the Retell API key with the <b>webhook badge</b> as <code>RETELL_API_KEY</code>: only that key verifies the signatures on tool calls and webhooks.</li>
-  <li>The fastest path is the script, not this page: <code>npx tsx scripts/retell-setup.ts</code> creates the same agent through the API. See <code>docs/retell/README.md</code>.</li>
+  <li>Every function, webhook and inbound webhook URL must be your tunnel URL: type it in the box below, or export with <code>npx tsx scripts/retell-export.ts --base-url=https://&lt;tunnel&gt;</code>.</li>
+  <li>Building by hand here is the main path. <code>npx tsx scripts/retell-setup.ts</code> creates the same agent through the API if you prefer. See <code>docs/retell/README.md</code>.</li>
 </ul>
 <div class="urlbox">
   <label for="base-url">Your public HTTPS URL</label>
@@ -348,9 +353,7 @@ ${block(".env.local lines", [`RETELL_AGENT_ID_EN=agent_...`, `RETELL_FROM_NUMBER
 
   add("test", "🧪", "12. Test", `
 <p>Click <b>Test</b> for a web call. Put one of these in the test panel's dynamic variables first. A dashboard test call is not linked to a VoiceFlare call, so tools answer "Nothing was recorded: this call is not linked to the response system". That is expected. For a linked test, call the number (inbound) or approve a zone on the board (outbound).</p>
-${block("Resident, evacuation warning (synthetic sample)", JSON.stringify(samples.resident, null, 2), true)}
-${block("Public line, inbound (the defaults)", JSON.stringify(samples.inbound, null, 2), true)}
-${block("Sentinel during a 90-second hold (synthetic sample)", JSON.stringify(samples.sentinel, null, 2), true)}`);
+${samples.map((x) => block(`${x.title} (synthetic sample)`, JSON.stringify(x.vars, null, 2), true)).join("\n")}`);
 
   const byId = new Map(flow.nodes.map((nd) => [nd.id, nd]));
   const dest = (id?: string) => (id ? `${esc(byId.get(id)?.name ?? id)}` : "back to where the call was");
@@ -543,20 +546,78 @@ summary{cursor:pointer;font-weight:600;padding:6px 0}
 
 async function main() {
   const sample = await scenarioSample();
+  const cq = await chongqingSample();
   const zone = "Culver City and Palms";
+  const us = jurisdictionFor("US-CA");
+  const cn = jurisdictionFor("CN");
+  const civilian = { mode: "civilian", emergency_number: us.call_now, medical_number: us.emergency.medical, simulated: "true" };
   const resident = completeVars({
-    purpose: "resident", stage: "1", language: "English", person_name: "Marcus Bell", zone_name: zone, zone_state: "warning",
+    ...civilian, purpose: "resident", stage: "1", language: "English", person_name: "Marcus Bell", zone_name: zone, zone_state: "warning",
     directive_text: directiveFor("warning", "civilian", zone), move_text: sample.move_text, evac_point: sample.evac_point,
-    alert_text: directiveFor("warning", "civilian", zone), emergency_number: "911", memory_note: "(none)", collection_note: "(none)",
-    subject_name: "(none)", simulated: "true",
+    alert_text: directiveFor("warning", "civilian", zone), memory_note: "(none)", collection_note: "(none)", subject_name: "(none)",
   });
   const inbound = completeVars({});
   const sentinel = completeVars({
-    purpose: "sentinel", stage: "hold", language: "English", person_name: "Culver City fire station 2", zone_name: zone, zone_state: "warning",
+    ...civilian, purpose: "sentinel", stage: "hold", language: "English", person_name: "Culver City fire station 2", zone_name: zone, zone_state: "warning",
     alert_text: directiveFor("order", "civilian", zone), directive_text: "(none)", move_text: "(none)", evac_point: "(none)",
-    emergency_number: "911", simulated: "true",
   });
-  const samples = { resident, inbound, sentinel };
+  // Block-by-block Order relay: the texts a call carries under an approved block plan (as lib/engine/blocks.ts blockWords builds them).
+  const block = {
+    block: "Block C-4 (Palms, north of Venice Boulevard)", route: "Sepulveda Boulevard south", zone,
+    evac_point: sample.evac_point === "(none)" ? null : sample.evac_point,
+  };
+  const blockOrder = {
+    ...civilian, purpose: "resident", stage: "3", language: "English", person_name: "Marcus Bell", zone_name: zone, zone_state: "order",
+    evac_point: sample.evac_point, alert_text: directiveFor("order", "civilian", zone),
+  };
+  const orderGetReady = completeVars({
+    ...blockOrder,
+    directive_text: fillBlockTemplate(BLOCK_TEMPLATES.get_ready_directive, { ...block, wave: 3, time: "7:40 PM" }),
+    move_text: fillBlockTemplate(BLOCK_TEMPLATES.get_ready, { ...block, wave: 3, time: "7:40 PM" }),
+  });
+  const orderGoNow = completeVars({
+    ...blockOrder,
+    directive_text: directiveFor("order", "civilian", zone),
+    move_text: fillBlockTemplate(BLOCK_TEMPLATES.go_now, { ...block, wave: 1, time: "now" }),
+  });
+  const heatZone = "Reseda";
+  const heat = completeVars({
+    mode: "heat", purpose: "resident", stage: "1", language: "English", person_name: "Gloria Washington", zone_name: heatZone, zone_state: "warning",
+    directive_text: directiveFor("warning", "heat", heatZone),
+    move_text: `${heatZone} cooling center (demo) is open. If you need a ride there, say so on this call.`, evac_point: "(none)",
+    emergency_number: us.call_now, medical_number: us.emergency.medical, memory_note: "Lives alone; uses a powered medical device.", simulated: "true",
+  });
+  const cqZone = "歇马街道（虎头村一带）Xiema";
+  const chongqing = completeVars({
+    mode: "civilian", purpose: "resident", stage: "3", language: "Chinese (Mandarin)", person_name: "王秀英", zone_name: cqZone, zone_state: "order",
+    directive_text: localDirective("CN", "order", "歇马街道虎头村一带") ?? directiveFor("order", "civilian", cqZone),
+    move_text: cq.move_text, evac_point: cq.evac_point, emergency_number: cn.call_now, medical_number: cn.emergency.medical, simulated: "true",
+  });
+  const linkedContact = completeVars({
+    ...civilian, purpose: "linked_contact", stage: "1", language: "English", person_name: "Dana Bell", zone_name: zone, zone_state: "warning",
+    directive_text: directiveFor("warning", "civilian", zone), move_text: sample.move_text, evac_point: sample.evac_point, subject_name: "Marcus Bell",
+  });
+  const qrtCallback = completeVars({
+    ...civilian, purpose: "qrt_callback", stage: "callback", language: "English", person_name: "Marcus Bell", zone_name: zone, zone_state: "order",
+    directive_text: directiveFor("order", "civilian", zone), move_text: sample.move_text, evac_point: sample.evac_point,
+    memory_note: "Asked for help leaving: wheelchair, no car.",
+  });
+  const canary = completeVars({
+    ...civilian, purpose: "canary", stage: "canary", language: "English", person_name: "Canary phone 3", zone_name: zone, zone_state: "warning",
+    alert_text: directiveFor("order", "civilian", zone), directive_text: "(none)", move_text: "(none)", evac_point: "(none)",
+  });
+  const samples: Sample[] = [
+    { key: "resident", title: "Resident, evacuation warning (stage 1)", vars: resident },
+    { key: "inbound", title: "Public line (inbound): the defaults", vars: inbound },
+    { key: "sentinel", title: "Sentinel during a 90-second hold", vars: sentinel },
+    { key: "order_block_get_ready", title: "Order with a block plan: block waiting for its wave (get ready)", vars: orderGetReady },
+    { key: "order_block_go_now", title: "Order with a block plan: the block's wave is going (go now)", vars: orderGoNow },
+    { key: "heat_resident", title: "Heat check-in line: resident (mode heat)", vars: heat },
+    { key: "chongqing_zh", title: "Chongqing, Mandarin, relocation order (119 fire, 120 medical)", vars: chongqing },
+    { key: "linked_contact", title: "Linked contact: the subject did not answer", vars: linkedContact },
+    { key: "qrt_callback", title: "Response team callback (qrt_callback)", vars: qrtCallback },
+    { key: "canary", title: "Canary: did the alert arrive? (the alert is never read)", vars: canary },
+  ];
 
   // Clear what an earlier run wrote (only our own file names; README.md is written by hand and kept).
   mkdirSync(OUT, { recursive: true });
@@ -568,8 +629,11 @@ async function main() {
     writeOut("voiceflare-conversation-flow.json", json(flow)),
     writeOut("voiceflare-flow-agent.json", json(flowAgent)),
     ...llm.general_tools.map((t) => writeOut(`functions/${t.name}.json`, json(t))),
-    writeOut("dynamic-variables.sample.json", json({ _note: "Synthetic samples for the Retell test panel. Every value is simulated.", ...samples })),
-    writeOut("prompt.md", promptMd(samples, sample.source)),
+    writeOut("dynamic-variables.sample.json", json({
+      _note: "Synthetic samples for the Retell test panel. Every value is simulated.",
+      ...Object.fromEntries(samples.map((x) => [x.key, x.vars])),
+    })),
+    writeOut("prompt.md", promptMd(samples, resident, sample.source)),
     writeOut("retell-kit.html", kitHtml(samples)),
   ];
 

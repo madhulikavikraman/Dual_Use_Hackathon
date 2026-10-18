@@ -16,6 +16,7 @@
       "location_text"
     ]
   },
+  "args_at_root": false,
   "speak_during_execution": true,
   "execution_message_type": "prompt",
   "execution_message_description": "One short sentence in the language of the call saying you are checking the instructions for that place.",

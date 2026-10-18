@@ -17,24 +17,42 @@ matches what the app and the setup scripts use. Do not edit the generated files:
 Placeholders: `{{APP_BASE_URL}}` (your public https URL), `{{RETELL_LLM_ID}}` and `{{RETELL_FLOW_ID}}` stand in for
 values you only have after setup. Export with `--base-url=https://...` (or with `APP_BASE_URL` set) to write real URLs.
 
-## Three ways onto the dashboard, most reliable first
+## Three ways onto the dashboard
 
 You need: the dev server reachable over public HTTPS (`npx cloudflared tunnel --url http://localhost:3000`, then put the
 `https://...trycloudflare.com` URL in `APP_BASE_URL`), and the Retell API key with the **webhook badge** in
 `RETELL_API_KEY`. See `docs/RETELL.md` for the full setup and troubleshooting.
 
-### a. Script, single prompt agent (already wired)
+**Function URLs need the public tunnel.** Retell calls every custom function, the webhook and the inbound webhook over
+the internet, so `{{APP_BASE_URL}}` must become your tunnel URL before you paste anything. Either regenerate the kit with
+it baked in, or type it into the box at the top of `retell-kit.html`:
+
+```
+npx tsx scripts/retell-export.ts --base-url=https://<tunnel>
+```
+
+### a. By hand on the website, from the kit page (start here)
+
+Open `docs/retell/retell-kit.html`, type your public URL into the box at the top (every URL on the page updates), and
+follow steps 1 to 12: agent, model and voice, prompt, welcome message, 8 custom functions and the End Call tool, speech
+and call settings, post-call extraction, default variables, webhook, phone number, test. Build one agent per language
+(eight: EN, ES, KO, ZH, HI, FR, HY `hy-AM`, TL `fil-PH`); start with English. The conversation flow section lists all
+nodes and edges if you want to build the canvas by hand. Test with the samples in `dynamic-variables.sample.json`
+(resident warning, public line, sentinel, Order with a block plan in get-ready and go-now, heat check-in, Chongqing in
+Mandarin with 119 and 120, linked contact, response-team callback, canary).
+
+### b. Script, single prompt agent (API)
 
 ```
 npx tsx scripts/retell-setup.ts --dry-run
 npx tsx scripts/retell-setup.ts
 ```
 
-Creates one Retell LLM and one agent per language (EN, ES, KO, ZH, HI, FR), and binds `RETELL_FROM_NUMBER` with the
-inbound webhook. Paste the printed `RETELL_LLM_ID=` and `RETELL_AGENT_ID_*=` lines into `.env.local` and restart the dev
-server. This is the agent the code, the browser phone and the tests are built around.
+Creates one Retell LLM and one agent per language (eight: EN, ES, KO, ZH, HI, FR, HY `hy-AM`, TL `fil-PH`), and binds
+`RETELL_FROM_NUMBER` with the inbound webhook. Paste the printed `RETELL_LLM_ID=` and `RETELL_AGENT_ID_*=` lines into
+`.env.local` and restart the dev server. This is the agent the code, the browser phone and the tests are built around.
 
-### b. Script, conversation flow
+### c. Script, conversation flow (API)
 
 ```
 npx tsx scripts/retell-flow-setup.ts            # dry run: prints what it would send
@@ -47,16 +65,9 @@ printed `RETELL_FLOW_ID=` and `RETELL_FLOW_AGENT_ID_EN=` lines into `.env.local`
 `RETELL_AGENT_ID_<LANG>`, so to have VoiceFlare call with the flow agent, set `RETELL_AGENT_ID_EN` to the flow agent's id.
 Open the agent on the dashboard to see the canvas.
 
-### c. By hand, from the kit page
-
-Open `docs/retell/retell-kit.html`, type your public URL into the box at the top (every URL on the page updates), and
-follow steps 1 to 12: agent, model and voice, prompt, welcome message, 8 custom functions and the End Call tool, speech
-and call settings, post-call extraction, default variables, webhook, phone number, test. The conversation flow section
-lists all nodes and edges if you want to build the canvas by hand.
-
 **JSON import.** Retell's docs (docs.retellai.com, read on 2026-10-17) describe no dashboard import of an agent or a
 flow from a JSON file; the only JSON import they describe is for simulation test cases. The JSON files here are API
-request bodies: use the scripts above, or send one yourself after exporting with a real base URL:
+request bodies: use the scripts above (b, c), or send one yourself after exporting with a real base URL:
 
 ```
 curl -X POST https://api.retellai.com/create-retell-llm \
@@ -73,7 +84,9 @@ curl -X POST https://api.retellai.com/create-retell-llm \
    `call_analyzed`). Both scripts set it.
 3. **When the tunnel URL changes** (every `cloudflared` restart): set the new `APP_BASE_URL`, then
    `npx tsx scripts/retell-setup.ts --update` (and `npx tsx scripts/retell-flow-setup.ts --update` if you use the flow).
-   They PATCH the tool URLs, webhook URLs and the number's inbound webhook in place. Re-run the export if you use the kit.
+   They PATCH the tool URLs, webhook URLs and the number's inbound webhook in place. If you built the agent by hand,
+   re-run `npx tsx scripts/retell-export.ts --base-url=https://<new tunnel>` and paste the new function, webhook and
+   inbound webhook URLs on the dashboard.
 4. **Test call.**
    - Dashboard **Test** (web call): paste a sample from `dynamic-variables.sample.json` into the test panel. The call is
      not linked to a VoiceFlare call, so tools answer "Nothing was recorded: this call is not linked to the response
@@ -103,11 +116,13 @@ node) or a dynamic variable the kit has no description for.
   response-team callback, linked contact, sentinel, canary, monthly test, and a script fallback for any other purpose.
 - **Heat lane**: when `{{mode}}` is `heat`, resident, public-line, callback and linked-contact calls go to one
   "Heat check-in line" node that follows the prompt's "# Heat mode" section (stay cool? water, a ride or a check-in?
-  CDC heat-stroke signs mean "Hang up and call {{emergency_number}} now"). The greeting names the heat check-in line.
+  CDC heat-stroke signs mean "Hang up and call {{medical_number}} now"). The greeting names the heat check-in line.
 - **Function nodes** run a tool at a fixed step (`record_status`, `share_live_location`, `lookup_zone`, `end_call`, ...).
   Three copies of `request_human` pin the reason with `const` (`medical_emergency` + `now`, `cannot_answer`, `salvage`);
-  they post to the same `/api/retell/tools/request_human`, which reads the tool from the URL.
-- **Global nodes**, reachable from any step: medical emergency ("Hang up and call {{emergency_number}} now", then
+  they post to the same `/api/retell/tools/request_human`, which reads the tool from the URL and, for these copies,
+  sets the pinned reason (and urgency `now` for medical) again from the function name in the body.
+- **Global nodes**, reachable from any step: medical emergency ("Hang up and call {{medical_number}} now", or
+  {{emergency_number}} for someone trapped or fire at the house, then
   `request_human` now, then the location link offered once), an unapproved question such as an ETA ("I can't answer
   that; a person will call you back" and `request_human` with `asked_unapproved`, then back to where the call was), and
   a caller who doubts the call is real (verification phrase, callback number, `request_human` with `doubts_call`).

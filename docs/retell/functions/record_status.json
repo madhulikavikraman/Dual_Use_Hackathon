@@ -1,7 +1,7 @@
 {
   "type": "custom",
   "name": "record_status",
-  "description": "Record what the person told you, after you have confirmed it back to them. Call once per person, and again only if an answer changes. Use null for anything not asked or not answered.",
+  "description": "Record what the person told you, after you have confirmed it back to them. Call once per person, and again only if an answer changes. Leave out anything not asked or not answered.",
   "url": "{{APP_BASE_URL}}/api/retell/tools/record_status",
   "method": "POST",
   "parameters": {
@@ -88,7 +88,9 @@
       "needs"
     ]
   },
+  "args_at_root": false,
   "speak_during_execution": false,
+  "enable_typing_sound": true,
   "speak_after_execution": true,
   "timeout_ms": 10000,
   "max_retry": 0

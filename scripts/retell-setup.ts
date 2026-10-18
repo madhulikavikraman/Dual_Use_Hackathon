@@ -1,13 +1,13 @@
 // Create (or update) the Retell side of VoiceFlare: one Retell LLM with the shared prompt and the eight
-// tools as custom functions, one voice agent per language (EN, ES, KO, ZH, HI, FR), and the public
-// number's agent binding and inbound webhook. Prints the RETELL_AGENT_ID_* lines to paste into .env.local.
+// tools as custom functions, one voice agent per language (eight: EN, ES, KO, ZH, HI, FR, HY hy-AM, TL fil-PH),
+// and the public number's agent binding and inbound webhook. Prints the RETELL_AGENT_ID_* lines to paste into .env.local.
 //
 //   npx tsx scripts/retell-setup.ts               create everything (needs RETELL_API_KEY and APP_BASE_URL)
 //   npx tsx scripts/retell-setup.ts --dry-run     print the payloads only (automatic without RETELL_API_KEY)
 //   npx tsx scripts/retell-setup.ts --update      reuse RETELL_LLM_ID / RETELL_AGENT_ID_* from env and PATCH them
 //                                                 (run this whenever the tunnel URL changes)
 // Options: --base-url=https://...  --model=claude-5.5-haiku  --only=en,hi  --skip-number
-// Voices: RETELL_VOICE_EN ... RETELL_VOICE_FR override the automatic pick from GET /list-voices.
+// Voices: RETELL_VOICE_EN ... RETELL_VOICE_TL override the automatic pick from GET /list-voices.
 //
 // Safe imports only (no "server-only"): lib/retell/config.ts, lib/retell/api.ts, which use lib/agent/*,
 // lib/languages.ts and lib/types.ts.

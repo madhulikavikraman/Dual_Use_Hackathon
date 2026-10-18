@@ -3,6 +3,7 @@ import { TOOL_NAMES } from "@/lib/agent/tools";
 import { executeTool } from "@/lib/engine/calls";
 import { json } from "@/lib/http";
 import { stopRetellCall } from "@/lib/retell/client";
+import { pinnedHandoff } from "@/lib/retell/flow";
 import { readVerifiedRetellBody, resolveCallId, textResponse } from "@/lib/retell/guard";
 import { isToolName, normalizeToolArgs, parseFunctionCall } from "@/lib/retell/payload";
 
@@ -56,7 +57,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ name: string }
 
   const parsed = parseFunctionCall(checked.raw);
   if ("error" in parsed) return json({ error: parsed.error }, 400);
-  if (parsed.name && parsed.name !== name) {
+  // The conversation flow's hand-off copies (request_human_medical, _cannot_answer, _salvage) all post
+  // to /tools/request_human; their reason (and urgency for medical) are pinned by the copy's name, so a
+  // dropped or wrong const from the model can never turn a medical hand-off into a cannot_answer row.
+  const pinned = name === "request_human" ? pinnedHandoff(parsed.name) : null;
+  if (parsed.name && parsed.name !== name && !pinned) {
     console.warn(`[retell tools] body names "${parsed.name}" but the URL is /tools/${name}; using ${name}`);
   }
 
@@ -84,6 +89,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ name: string }
 
   const { args, dropped } = normalizeToolArgs(name, parsed.args);
   if (dropped.length) console.warn(`[retell tools] ${name}: dropped unknown arguments ${dropped.join(", ")}`);
+  if (pinned) Object.assign(args, pinned);
 
   try {
     const result = await executeTool(callId, name, args);
