@@ -92,6 +92,7 @@ npm run dev                     # http://localhost:3000
 npm run seed                    # loads the Westside Fire (or: npm run seed heat | norte | altadena | chongqing)
 ```
 
+- **Deploying?** Vercel needs Supabase (the file store cannot run there): see [`docs/DEPLOY.md`](docs/DEPLOY.md).
 - **No Supabase?** The server keeps data in `.data/secondkey.json` (one machine, one process). `STORAGE=local`
   forces the file store.
 - **Supabase:** follow [`db_setup.md`](db_setup.md): run `supabase/schema.sql`, then the migrations in

@@ -17,9 +17,8 @@ alter table households
   add column if not exists scenario text default 'westside',
   add column if not exists sim_profile text;
 
--- 'heat' (004) is listed here too, so re-running this file never drops it; 'campus' stays for old rows.
 alter table campaigns drop constraint if exists campaigns_mode_check;
-alter table campaigns add constraint campaigns_mode_check check (mode in ('civilian', 'campus', 'heat', 'base'));
+alter table campaigns add constraint campaigns_mode_check check (mode in ('civilian', 'campus', 'heat', 'base')); -- 'heat': 004; kept here so a re-run of 002 does not undo it
 alter table campaigns alter column polygon drop not null;
 alter table campaigns
   add column if not exists kind text default 'warning',
