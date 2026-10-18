@@ -81,9 +81,12 @@ export function Global() {
         </div>
       </div>
 
-      <div className="mt-12">
+      <div className="mt-12 flex flex-wrap gap-4">
         <Cta href="/global" variant="secondary">
           Compare the {places.length} profiles side by side
+        </Cta>
+        <Cta href="/global/flood" variant="secondary">
+          Floods: one ladder, {places.length} countries
         </Cta>
       </div>
     </Section>

@@ -1,0 +1,52 @@
+/* /global/flood (Twist 2, floods). Plain classes, all prefixed vff-, imported by app/global/flood/page.tsx after
+   components/global/global.css (whose vfg- classes and :lang font rules this page reuses). Brand tokens (--vf-*) come
+   from app/globals.css; the one extra colour is water, used only for decoration and level marks. */
+.vff-root {
+  --vff-water: #38bdf8;
+}
+
+/* The wave under the hero's anchor card drifts slowly; it is decoration only. */
+@keyframes vff-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.vff-wave {
+  animation: vff-drift 16s linear infinite;
+}
+
+/* Warning levels fill like a gauge, lowest first, once. */
+@keyframes vff-fill {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+.vff-level {
+  transform-origin: bottom;
+  animation: vff-fill 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(150ms + var(--vff-i, 0) * 80ms);
+}
+
+/* Native <details> marker off; the summary draws its own chevron. */
+.vff-details > summary {
+  list-style: none;
+}
+.vff-details > summary::-webkit-details-marker {
+  display: none;
+}
+.vff-details[open] .vff-chevron {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vff-wave,
+  .vff-level {
+    animation: none;
+  }
+}

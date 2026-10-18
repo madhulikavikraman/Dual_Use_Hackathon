@@ -254,6 +254,17 @@ export default function GlobalPage() {
         >
           <AdapterTable />
           <p className="mt-3 text-sm text-vf-smoke sm:hidden">Scroll the table sideways to see both columns.</p>
+          <Link
+            href="/global/flood"
+            className={`mt-6 flex items-center gap-3 rounded-2xl border border-vf-ash bg-vf-coal p-4 transition-colors hover:border-vf-flare/60 sm:p-5 ${focusRing}`}
+          >
+            <span aria-hidden="true" className="text-2xl">🌊</span>
+            <span className="min-w-0 flex-1 text-sm text-vf-smoke">
+              <span className="block font-display text-base font-semibold text-vf-bone">Floods, in all six countries</span>
+              The same ladder for rising water: official warning words, deciders and lessons, from Pune to Lismore.
+            </span>
+            <span aria-hidden="true" className="text-vf-flare">→</span>
+          </Link>
         </Section>
 
         <Section
