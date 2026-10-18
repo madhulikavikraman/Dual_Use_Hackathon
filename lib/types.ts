@@ -219,6 +219,8 @@ export interface CallVars {
   simulated: "true" | "false";
   mode: Mode;
   emergency_number: string; // what "hang up and call ... now" says in this jurisdiction (911, 119, 112...)
+  /** The ambulance number for a medical emergency (911 in the US, 120 in China). Older calls may lack it: emergency_number. */
+  medical_number?: string;
   collection_note: string; // collections line: what they hold and the grab list ("" for most households)
 }
 
