@@ -1,0 +1,733 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>VoiceFlare Team Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira:wght@500;600;700;800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: a field manual. Sticky section index on the left at desktop width, one reading column on the right;
+     tables for anything run against a clock, cards only for roles and the new features. Dark-first, on brand. */
+  :root {
+    --bg: #070708;            /* vf-ink, lifted a hair */
+    --panel: #111114;         /* vf-coal */
+    --panel-2: #1a1a1f;       /* vf-ash */
+    --line: #2a2a31;
+    --fg: #f2f1ee;            /* vf-bone */
+    --muted: #a3a3ad;         /* vf-smoke */
+    --accent: #ff4a2e;        /* vf-flare, eased for text on dark */
+    --accent-strong: #ff2a12; /* vf-flare */
+    --accent-soft: rgba(255, 42, 18, 0.12);
+    --ok: #4ade80;
+    --ok-soft: rgba(74, 222, 128, 0.12);
+    --soon: #fbbf24;
+    --soon-soft: rgba(251, 191, 36, 0.13);
+    --code-bg: #0c0c0f;
+    --ff-display: "Saira", "Geist", system-ui, sans-serif;
+    --ff-body: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --ff-mono: "Geist Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f6f5f2; --panel: #ffffff; --panel-2: #efeee9; --line: #dddbd4;
+      --fg: #131315; --muted: #5b5b64; --accent: #b3160b; --accent-strong: #d81e0c;
+      --accent-soft: rgba(216, 30, 12, 0.08); --ok: #15803d; --ok-soft: rgba(21, 128, 61, 0.1);
+      --soon: #a16207; --soon-soft: rgba(161, 98, 7, 0.12); --code-bg: #f0efea;
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f5f2; --panel: #ffffff; --panel-2: #efeee9; --line: #dddbd4;
+    --fg: #131315; --muted: #5b5b64; --accent: #b3160b; --accent-strong: #d81e0c;
+    --accent-soft: rgba(216, 30, 12, 0.08); --ok: #15803d; --ok-soft: rgba(21, 128, 61, 0.1);
+    --soon: #a16207; --soon-soft: rgba(161, 98, 7, 0.12); --code-bg: #f0efea;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font-family: var(--ff-body); font-size: 16px; line-height: 1.6;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px;
+  }
+  code, .mono { font-family: var(--ff-mono); font-size: 0.88em; }
+  code { background: var(--panel-2); padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+
+  .wrap { max-width: 1160px; margin: 0 auto; padding-block: 40px 96px; }
+
+  /* Masthead */
+  .mast { display: grid; gap: 18px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+  .eyebrow {
+    font-family: var(--ff-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+  }
+  h1 {
+    font-family: var(--ff-display); font-weight: 800; font-size: clamp(40px, 7vw, 76px);
+    line-height: 0.95; letter-spacing: -0.01em; margin: 0; text-wrap: balance;
+  }
+  h1 .flare { color: var(--accent-strong); }
+  .lede { font-size: 19px; color: var(--muted); max-width: 64ch; margin: 0; }
+  .lede strong { color: var(--fg); font-weight: 600; }
+  .statusbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 13px; padding: 6px 12px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--panel); color: var(--muted);
+  }
+  .pill b { color: var(--fg); font-weight: 600; }
+  .pill.deadline { border-color: var(--accent); color: var(--fg); background: var(--accent-soft); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-strong); flex: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    .pill.deadline .dot { animation: pulse 1.6s ease-in-out infinite; }
+    @keyframes pulse { 50% { opacity: 0.35; } }
+  }
+
+  /* Ladder strip */
+  .ladder { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; margin-top: 8px;
+    border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel); }
+  .rung { padding: 14px 16px; border-right: 1px solid var(--line); min-width: 0; }
+  .rung:last-child { border-right: 0; background: var(--accent-soft); }
+  .rung .name { font-family: var(--ff-display); font-weight: 700; font-size: 18px; letter-spacing: 0.01em; }
+  .rung:last-child .name { color: var(--accent); }
+  .rung p { margin: 4px 0 0; font-size: 13.5px; color: var(--muted); line-height: 1.45; }
+  @media (max-width: 760px) {
+    .ladder { grid-template-columns: 1fr; }
+    .rung { border-right: 0; border-bottom: 1px solid var(--line); }
+    .rung:last-child { border-bottom: 0; }
+  }
+
+  /* Body layout */
+  .layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 48px; margin-top: 36px; }
+  nav.index { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; }
+  nav.index ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  nav.index a {
+    display: block; padding: 6px 10px; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: 14px;
+    border-left: 2px solid transparent;
+  }
+  nav.index a:hover { color: var(--fg); background: var(--panel); }
+  nav.index a.on { color: var(--fg); border-left-color: var(--accent-strong); background: var(--panel); }
+  nav.index .navhead { font-family: var(--ff-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 8px 10px; }
+  details.jump { display: none; }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; gap: 24px; }
+    nav.index { display: none; }
+    details.jump { display: block; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+    details.jump summary { padding: 12px 14px; cursor: pointer; font-weight: 600; }
+    details.jump ol { margin: 0; padding: 0 14px 14px 32px; display: grid; gap: 6px; }
+  }
+
+  main { min-width: 0; display: grid; gap: 64px; }
+  section { min-width: 0; scroll-margin-top: 24px; }
+  h2 {
+    font-family: var(--ff-display); font-weight: 700; font-size: clamp(26px, 3.4vw, 34px); line-height: 1.1;
+    margin: 0 0 6px; letter-spacing: 0.005em; text-wrap: balance;
+  }
+  .sub { color: var(--muted); margin: 0 0 22px; max-width: 68ch; }
+  h3 { font-family: var(--ff-display); font-weight: 600; font-size: 20px; margin: 0 0 6px; }
+  p { margin: 0 0 12px; max-width: 70ch; }
+
+  /* Setup steps: a real sequence, so they are numbered */
+  ol.steps { list-style: none; counter-reset: s; margin: 0; padding: 0; display: grid; gap: 18px; }
+  ol.steps > li { counter-increment: s; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 14px; }
+  ol.steps > li::before {
+    content: counter(s); font-family: var(--ff-mono); font-size: 13px; width: 30px; height: 30px; border-radius: 50%;
+    display: grid; place-items: center; border: 1px solid var(--line); color: var(--muted); background: var(--panel);
+  }
+  ol.steps > li > div { min-width: 0; }
+  ol.steps p { margin: 0 0 8px; }
+
+  .cmd { position: relative; background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    margin: 6px 0 4px; }
+  .cmd pre { margin: 0; padding: 12px 84px 12px 14px; overflow-x: auto; font-family: var(--ff-mono); font-size: 13.5px;
+    line-height: 1.55; color: var(--fg); }
+  .copy {
+    position: absolute; top: 8px; right: 8px; font: 500 12px var(--ff-body); padding: 5px 10px; border-radius: 6px;
+    border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer;
+  }
+  .copy:hover { border-color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+
+  /* Tables */
+  .tablebox { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th, td { text-align: left; padding: 11px 14px; vertical-align: top; border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: 0; }
+  th { font-family: var(--ff-mono); font-weight: 500; font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--muted); background: var(--panel-2); }
+  td.t { font-family: var(--ff-mono); white-space: nowrap; color: var(--accent); font-variant-numeric: tabular-nums; }
+  td.url { white-space: nowrap; }
+  td .muted, .muted { color: var(--muted); }
+
+  .chip { display: inline-block; font-family: var(--ff-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 999px; white-space: nowrap; vertical-align: 1px; }
+  .chip.now { color: var(--ok); background: var(--ok-soft); }
+  .chip.today { color: var(--soon); background: var(--soon-soft); }
+
+  /* Roles */
+  .roles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .role { border: 1px solid var(--line); border-radius: 12px; padding: 18px; background: var(--panel); min-width: 0; }
+  .role .where { font-family: var(--ff-mono); font-size: 12.5px; color: var(--accent); margin-bottom: 6px; }
+  .role ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 14.5px; display: grid; gap: 4px; }
+  .role ul li::marker { color: var(--accent); }
+  @media (max-width: 640px) { .roles { grid-template-columns: 1fr; } }
+
+  /* Controls list */
+  dl.controls { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); gap: 0; margin: 0;
+    border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel); }
+  dl.controls dt, dl.controls dd { padding: 12px 16px; border-bottom: 1px solid var(--line); margin: 0; }
+  dl.controls dt { font-weight: 600; background: var(--panel-2); }
+  dl.controls dd { color: var(--muted); font-size: 14.5px; min-width: 0; }
+  dl.controls dt:last-of-type, dl.controls dd:last-of-type { border-bottom: 0; }
+  @media (max-width: 640px) {
+    dl.controls { grid-template-columns: 1fr; }
+    dl.controls dt { border-bottom: 0; padding-bottom: 4px; }
+  }
+
+  /* Never list */
+  .never { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 28px; margin: 0; padding: 0; list-style: none; }
+  .never li { padding-left: 26px; position: relative; font-size: 15px; }
+  .never li::before { content: ""; position: absolute; left: 0; top: 0.55em; width: 14px; height: 2px; background: var(--accent-strong); }
+  @media (max-width: 640px) { .never { grid-template-columns: 1fr; } }
+
+  /* New features */
+  .new { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .feat { border: 1px solid var(--line); border-radius: 12px; padding: 18px; background: var(--panel); min-width: 0; display: grid; gap: 8px; align-content: start; }
+  .feat h3 { margin: 0; }
+  .feat .where { font-family: var(--ff-mono); font-size: 12.5px; color: var(--accent); overflow-wrap: anywhere; }
+  .feat ol, .feat ul { margin: 0; padding-left: 20px; color: var(--muted); font-size: 14.5px; display: grid; gap: 4px; }
+  .feat.wide { grid-column: 1 / -1; }
+  @media (max-width: 760px) { .new { grid-template-columns: 1fr; } }
+  .banner { border: 1px solid var(--soon); background: var(--soon-soft); border-radius: 10px; padding: 12px 14px; font-size: 14.5px; margin-bottom: 18px; }
+
+  /* Judge asks */
+  .quote { border-left: 3px solid var(--accent-strong); padding: 4px 0 4px 18px; margin: 0 0 20px; font-size: 18px; max-width: 66ch; }
+  .quote cite { display: block; font-style: normal; font-size: 13px; color: var(--muted); margin-top: 8px; }
+
+  /* Say / avoid */
+  .say { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .say > div { border: 1px solid var(--line); border-radius: 12px; padding: 18px; background: var(--panel); min-width: 0; }
+  .say h3 { font-size: 16px; font-family: var(--ff-mono); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+  .say .yes h3 { color: var(--ok); }
+  .say .no h3 { color: var(--accent); }
+  .say ul { margin: 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14.5px; }
+  @media (max-width: 640px) { .say { grid-template-columns: 1fr; } }
+
+  /* Checklist */
+  .check { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; border: 1px solid var(--line);
+    border-radius: 12px; background: var(--panel); overflow: hidden; }
+  .check li { border-bottom: 1px solid var(--line); }
+  .check li:last-child { border-bottom: 0; }
+  .check label { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; padding: 11px 14px; cursor: pointer; font-size: 15px; }
+  .check input { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--accent-strong); }
+  .check input:checked + span { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+  .checkfoot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+  .btn { font: 500 13px var(--ff-body); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line);
+    background: var(--panel); color: var(--fg); cursor: pointer; }
+  .btn:hover { border-color: var(--accent); }
+
+  footer { margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13.5px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="eyebrow">USC Viterbi × InnovateLA Dual-Use Hackathon · Resilience Comms · Retell AI</div>
+    <h1>Voice<span class="flare">Flare</span> team guide</h1>
+    <p class="lede">How to set it up, what every screen does, how to run the demo, and what to say. <strong>Before an alert wakes a zone, VoiceFlare asks the people at its edge, shows how many phones it will wake, and calls residents with only the words a named human approved.</strong> Then it hands everyone who needs help to a person.</p>
+    <div class="statusbar">
+      <span class="pill deadline" id="next-deadline"><span class="dot" aria-hidden="true"></span><span>Devpost due Sat 10:00 PM PT</span></span>
+      <span class="pill">Branch <b>AB_dev</b></span>
+      <span class="pill">Updated <b>Sat Oct 17, 1:30 PM PT</b></span>
+      <span class="pill"><span class="chip now">Works now</span> <span class="chip today">Landing today</span></span>
+    </div>
+    <div class="ladder" role="list" aria-label="The ladder">
+      <div class="rung" role="listitem"><div class="name">Watch</div><p>Zones on the Cal OES ladder. A fire model proposes changes, drawn dashed.</p></div>
+      <div class="rung" role="listitem"><div class="name">Ask</div><p>Sentinels at the zone's edge: "Does this match what you see?"</p></div>
+      <div class="rung" role="listitem"><div class="name">Slow</div><p>Edge-first calls, five at a time. The dose before any phone rings.</p></div>
+      <div class="rung" role="listitem"><div class="name">Hold</div><p>90 seconds before an Order. It can delay an alert, never stop one.</p></div>
+      <div class="rung" role="listitem"><div class="name">Hand to a person</div><p>Help registry, pickup runs, call backs, and a ledger of every decision.</p></div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="index" aria-label="Sections">
+      <p class="navhead">On this page</p>
+      <ol>
+        <li><a href="#setup">Set up</a></li>
+        <li><a href="#screens">Screens</a></li>
+        <li><a href="#roles">Booth roles</a></li>
+        <li><a href="#run">The 3.5-minute run</a></li>
+        <li><a href="#board">Driving the board</a></li>
+        <li><a href="#console">Demo console</a></li>
+        <li><a href="#phones">The six phones</a></li>
+        <li><a href="#new">New today</a></li>
+        <li><a href="#judges">What judges asked for</a></li>
+        <li><a href="#agent">What the agent never does</a></li>
+        <li><a href="#say">Say this, avoid that</a></li>
+        <li><a href="#fails">When something fails</a></li>
+        <li><a href="#code">Before you push</a></li>
+        <li><a href="#deadlines">Deadlines</a></li>
+      </ol>
+    </nav>
+
+    <main>
+      <details class="jump">
+        <summary>Jump to a section</summary>
+        <ol>
+          <li><a href="#setup">Set up</a></li>
+          <li><a href="#screens">Screens</a></li>
+          <li><a href="#roles">Booth roles</a></li>
+          <li><a href="#run">The 3.5-minute run</a></li>
+          <li><a href="#board">Driving the board</a></li>
+          <li><a href="#console">Demo console</a></li>
+          <li><a href="#phones">The six phones</a></li>
+          <li><a href="#new">New today</a></li>
+          <li><a href="#judges">What judges asked for</a></li>
+          <li><a href="#agent">What the agent never does</a></li>
+          <li><a href="#say">Say this, avoid that</a></li>
+          <li><a href="#fails">When something fails</a></li>
+          <li><a href="#code">Before you push</a></li>
+          <li><a href="#deadlines">Deadlines</a></li>
+        </ol>
+      </details>
+
+      <section id="setup" aria-labelledby="h-setup">
+        <h2 id="h-setup">Set up the demo laptop</h2>
+        <p class="sub">About 10 minutes. You need Node 20.9 or newer and an Anthropic API key. Supabase and Retell are optional; without them the app keeps data in a local file and calls ring the browser phone.</p>
+        <ol class="steps">
+          <li><div>
+            <p><strong>Get the code</strong> on our branch.</p>
+            <div class="cmd"><pre>git clone <a href="https://urldefense.com/v3/__https://github.com/madhulikavikraman/Dual_Use_Hackathon__;!!LIr3w8kk_Xxm!s7NPm5BCSsQg42aN6FTgjNnyQt6n8_Cir7dUHjQshTfaKMWOhwNHrLOWDqQFWJjYD8OA8S_r3HxRIR0G$">https://github.com/madhulikavikraman/Dual_Use_Hackathon</a>
+cd Dual_Use_Hackathon
+git checkout AB_dev
+npm install</pre><button class="copy" type="button">Copy</button></div>
+          </div></li>
+          <li><div>
+            <p><strong>Add your keys.</strong> Copy the example file and set <code>ANTHROPIC_API_KEY</code> at minimum.</p>
+            <div class="cmd"><pre>cp .env.example .env.local</pre><button class="copy" type="button">Copy</button></div>
+          </div></li>
+          <li><div>
+            <p><strong>Run the production build.</strong> It is faster than dev mode and has no hot-reload surprises on stage.</p>
+            <div class="cmd"><pre>npm run build
+npm start            # <a href="https://urldefense.com/v3/__http://localhost:3000__;!!LIr3w8kk_Xxm!s7NPm5BCSsQg42aN6FTgjNnyQt6n8_Cir7dUHjQshTfaKMWOhwNHrLOWDqQFWJjYD8OA8S_r3KhsO-6s$">http://localhost:3000</a></pre><button class="copy" type="button">Copy</button></div>
+          </div></li>
+          <li><div>
+            <p><strong>Load the scenario.</strong> Westside Fire is the demo path. The reset also warms up the agent so the first call is quick. Run it again a minute before the demo.</p>
+            <div class="cmd"><pre>npm run seed         # or: npm run seed usc | altadena</pre><button class="copy" type="button">Copy</button></div>
+          </div></li>
+          <li><div>
+            <p><strong>Give the phones an HTTPS address.</strong> Phone browsers allow the microphone (and location) only on HTTPS pages. Start a tunnel, paste its URL into <code>APP_BASE_URL</code> in <code>.env.local</code>, set <code>DESK_PASSWORD</code> so strangers with the URL cannot open the board, and restart.</p>
+            <div class="cmd"><pre>npx cloudflared tunnel --url <a href="https://urldefense.com/v3/__http://localhost:3000__;!!LIr3w8kk_Xxm!s7NPm5BCSsQg42aN6FTgjNnyQt6n8_Cir7dUHjQshTfaKMWOhwNHrLOWDqQFWJjYD8OA8S_r3KhsO-6s$">http://localhost:3000</a></pre><button class="copy" type="button">Copy</button></div>
+            <p class="note">Using Retell? After every new tunnel URL, run <code>npx tsx scripts/retell-setup.ts --update</code> so its webhooks point at it.</p>
+          </div></li>
+          <li><div>
+            <p><strong>Connect the phones.</strong> Open <code>/phones</code> on the laptop (from the tunnel URL, so the QR codes point there). Each volunteer scans their code, taps <strong>Tap to enable sound</strong>, and keeps the screen on. <code>/phones</code> shows who is online.</p>
+          </div></li>
+        </ol>
+        <p class="note" style="margin-top:16px">Rehearsing without volunteers: on <code>/demo</code>, turn on <strong>Autopilot</strong> and the simulator answers for all six phones. Turn it off before the real run.</p>
+      </section>
+
+      <section id="screens" aria-labelledby="h-screens">
+        <h2 id="h-screens">Every screen and who uses it</h2>
+        <p class="sub">All paths are on the laptop's address, or the tunnel URL for phones.</p>
+        <div class="tablebox">
+          <table>
+            <thead><tr><th>Page</th><th>Who</th><th>What it is for</th></tr></thead>
+            <tbody>
+              <tr><td class="url"><code>/</code></td><td>Judges walking up</td><td>The landing page and setup guide: the live Norte Fire strip, the hold replay, three real fires with sources. <span class="chip now">Works now</span></td></tr>
+              <tr><td class="url"><code>/board</code></td><td>Supervisor</td><td>The main screen: map, zones, calls, the hold, the help registry, the ledger, Ask the board. <span class="chip now">Works now</span></td></tr>
+              <tr><td class="url"><code>/board?tour=1</code></td><td>Newcomers</td><td>A one-minute guided tour of every part of the board. Also the Tour button in the board header. <span class="chip now">Works now</span></td></tr>
+              <tr><td class="url"><code>/demo</code></td><td>Supervisor's helper</td><td>Reset scenarios, switch modes, fire presets, autopilot, wrong polygon. <span class="chip now">Works now</span></td></tr>
+              <tr><td class="url"><code>/phones</code></td><td>Phone captain</td><td>QR codes for the six volunteer phones and who is online. <span class="chip now">Works now</span></td></tr>
+              <tr><td class="url"><code>/phone/&lt;id&gt;</code></td><td>Volunteers</td><td>The browser phone: it rings, speaks and listens. Text mode if the mic fails. <span class="chip now">Works now</span></td></tr>
+              <tr><td class="url"><code>/call</code></td><td>Anyone</td><td>The public line: pick a language and call in. <span class="chip now">Works now</span></td></tr>
+              <tr><td class="url"><code>/qrt</code></td><td>Response team</td><td>The help registry with phone numbers, pickup runs and call backs. <span class="chip now">Works now</span></td></tr>
+              <tr><td class="url"><code>/evidence</code></td><td>Second screen</td><td>Twist 1: the NSF SBIR Phase I milestones, measured from the run you just did. <span class="chip now">Works now</span></td></tr>
+              <tr><td class="url"><code>/twists</code></td><td>Judges</td><td>Each twist with its build change and commits. <span class="chip now">Works now</span></td></tr>
+              <tr><td class="url"><code>/global</code></td><td>Second screen</td><td>Twist 2: six jurisdiction adapters; load the Chongqing scenario. <span class="chip now">Works now</span></td></tr>
+              <tr><td class="url"><code>/poster</code></td><td>Printing</td><td>Twist 3: the poster for the Devpost and the demo floor. <span class="chip now">Works now</span></td></tr>
+              <tr><td class="url"><code>/api/health</code></td><td>Setup</td><td>A quick check that the server is up. <span class="chip now">Works now</span></td></tr>
+              <tr><td class="url"><code>/board?autoplay=1</code></td><td>Booth, no volunteers</td><td>Plays the whole simulated fire on the real board with captions, about 3 to 4 minutes. <span class="chip today">Landing today</span></td></tr>
+              <tr><td class="url"><code>/adapt</code></td><td>Second screen</td><td>How the same ladder adapts to other hazards, with an interactive pool-and-drowning simulation. <span class="chip today">Landing today</span></td></tr>
+              <tr><td class="url"><code>/l/&lt;token&gt;</code></td><td>A resident</td><td>The text-message link that shares their live location with the response team, after they agree on the call. <span class="chip today">Landing today</span></td></tr>
+              <tr><td class="url"><code>/helper/&lt;token&gt;</code></td><td>A helper</td><td>The person's live location, needs, a Navigate button and status buttons. <span class="chip today">Landing today</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="roles" aria-labelledby="h-roles">
+        <h2 id="h-roles">Booth roles</h2>
+        <p class="sub">Four of us, four jobs. Agree who does what before the judges arrive, and rehearse the hand-offs once.</p>
+        <div class="roles">
+          <div class="role">
+            <div class="where">/board</div>
+            <h3>Supervisor</h3>
+            <ul>
+              <li>Drives every click in the run.</li>
+              <li>Types a real name and a reason at every approval. That is the point of the product.</li>
+              <li>Keeps the hold strip and the registry visible to the room.</li>
+            </ul>
+          </div>
+          <div class="role">
+            <div class="where">beside the screen</div>
+            <h3>Narrator</h3>
+            <ul>
+              <li>Tells the story along the ladder: watch, ask, slow, hold, hand to a person.</li>
+              <li>Says out loud what is simulated.</li>
+              <li>Hands the judge Phone 5 at the start.</li>
+            </ul>
+          </div>
+          <div class="role">
+            <div class="where">/phones</div>
+            <h3>Phone captain</h3>
+            <ul>
+              <li>Six phones online, sound enabled, screens on, charged.</li>
+              <li>Fixes a silent phone with a reload, or switches it to Text mode.</li>
+              <li>With Retell: the number saved as a contact on every phone.</li>
+            </ul>
+          </div>
+          <div class="role">
+            <div class="where">/evidence · /global · /adapt</div>
+            <h3>Second screen and questions</h3>
+            <ul>
+              <li>Shows the funding evidence, the six countries and the adaptations.</li>
+              <li>Takes judge questions while the run continues.</li>
+              <li>Keeps the deck open for the pitch slot.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="run" aria-labelledby="h-run">
+        <h2 id="h-run">The 3.5-minute run</h2>
+        <p class="sub">Westside Fire scenario. The supervisor works on <code>/board</code>; the narrator stands beside the screen.</p>
+        <div class="tablebox">
+          <table>
+            <thead><tr><th>Time</th><th>Action</th><th>What the room sees</th></tr></thead>
+            <tbody>
+              <tr><td class="t">0:00</td><td>Nothing yet. Say: synthetic roster, six real phones, every send is simulated.</td><td class="muted">Santa Monica red, Venice orange, Culver City and West LA dashed (model proposals).</td></tr>
+              <tr><td class="t">0:15</td><td>Culver City: <strong>Approve</strong> the proposal. Name, reason, check the Warning text, route, Westchester.</td><td class="muted">Pins light up from the north-west edge, five at a time.</td></tr>
+              <tr><td class="t">0:30</td><td>Phone 1 rings in Spanish: "leaving with the kids to Westchester." Teach-back.</td><td class="muted">Pin turns amber; Understood ticks.</td></tr>
+              <tr><td class="t">0:55</td><td>Phone 2: "my husband uses a wheelchair, we have no car, we're at Venice and Sepulveda."</td><td class="muted">A pin at the intersection; a registry row with the stated location.</td></tr>
+              <tr><td class="t">1:15</td><td>Walter Hale does not answer twice; Phone 1 is called as his linked contact.</td><td class="muted">His pin reads Leaving (via linked contact).</td></tr>
+              <tr><td class="t">1:35</td><td>On <code>/demo</code>, switch <strong>Wrong polygon</strong> on. Then Culver City: <strong>Compose Order</strong>.</td><td class="muted">Hold strip: "wakes about 9.8 million", a 90 s countdown, sentinels ringing.</td></tr>
+              <tr><td class="t">1:50</td><td>The judge's Phone 5: "nothing here." Click <strong>Edit polygon</strong> (name, reason).</td><td class="muted">The tally shows one no; the dose drops to about 41,000.</td></tr>
+              <tr><td class="t">2:05</td><td>Phones 3 and 4: "yes, smoke to the west." Quorum. <strong>Send now</strong>.</td><td class="muted">Canary 15 s later: Phone 6 is asked whether it received the Order. "No": canary clear.</td></tr>
+              <tr><td class="t">2:35</td><td>Stage 3 relays the Order; Phone 2 says "we can't leave." <strong>Build pickup runs</strong>.</td><td class="muted">The row jumps to priority 1; "Accessible van A: 2 stops".</td></tr>
+              <tr><td class="t">2:55</td><td>On <code>/demo</code>: <strong>Tower down</strong>.</td><td class="muted">Ten pins go silent; a card suggests a possible tower loss and a door-knock team.</td></tr>
+              <tr><td class="t">3:10</td><td>Open the <strong>Ledger</strong> tab.</td><td class="muted">Approvals, the send, sentinel reads, refusals ("asked for an ETA").</td></tr>
+              <tr><td class="t">3:25</td><td>Header <strong>Scenario</strong>: USC DPS (confirm).</td><td class="muted">The same screen for an ordinary Tuesday: Leavey Library, RAs and officers on post.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note" style="margin-top:12px">Wrong polygon is one-shot: it applies to the next hold only. Before the run, the landing page can sit on screen while people walk up, and the live option is the Norte Fire reset on <code>/demo</code>.</p>
+      </section>
+
+      <section id="board" aria-labelledby="h-board">
+        <h2 id="h-board">Driving the board</h2>
+        <p class="sub">Every change of a zone's state, every send and every hold decision asks for a name and a reason. They all land in the ledger.</p>
+        <dl class="controls">
+          <dt>Approve</dt><dd>Accept a model proposal (a dashed zone). Check the directive text, the route and the evacuation point before you confirm. Stage 1 calls start at the edge nearest the fire.</dd>
+          <dt>Change state</dt><dd>Set a zone's Cal OES state yourself: Monitor, Watch, Warning, Order, Shelter in Place, Lifted.</dd>
+          <dt>Compose Order</dt><dd>Opens the 90-second hold. It shows the dose (how many phones it will wake) and rings the sentinels at the edges.</dd>
+          <dt>Hold actions</dt><dd><strong>Send now</strong>, <strong>Hold once</strong>, <strong>Edit polygon</strong>, <strong>Cancel</strong>, <strong>Hand to authority</strong>. At 0:00 it sends on time: the machine can delay an alert, never stop one.</dd>
+          <dt>Build pickup runs</dt><dd>Groups registry rows into vehicles for the response team, for example "Accessible van A: 2 stops".</dd>
+          <dt>Registry and Ledger</dt><dd>Side panel tabs. The registry lists who needs a person and where they were last heard from. The ledger lists every decision and every refusal.</dd>
+          <dt>Ask the board</dt><dd>Read-only questions about the live board, answered by Claude. It cannot change anything.</dd>
+          <dt>Scenario and Tour</dt><dd>In the header. Scenario switches the whole board (asks to confirm). Tour starts the one-minute walkthrough.</dd>
+        </dl>
+      </section>
+
+      <section id="console" aria-labelledby="h-console">
+        <h2 id="h-console">The demo console</h2>
+        <p class="sub"><code>/demo</code> is backstage. Keep it on a second tab, not on the projector.</p>
+        <div class="tablebox">
+          <table>
+            <thead><tr><th>Control</th><th>Options</th><th>Use it for</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Reset</strong></td><td>Westside Fire (LA) · USC DPS · West Altadena · Norte Fire, San Clemente (live) · Chongqing, China</td><td>Westside is the run. Norte pulls live CAL FIRE status and NWS alerts into the feed. Chongqing is Twist 2. Resetting wipes the run but keeps the twist log.</td></tr>
+              <tr><td><strong>Mode</strong></td><td>Civilian · Cal OES, Campus · USC DPS, Base · installation</td><td>The same board with another directive ladder: the second customer on an ordinary Tuesday.</td></tr>
+              <tr><td><strong>Presets</strong></td><td>Tower down · Earthquake · Hoax flood · Fire spreading · Mass no answer · Dark zone</td><td>Stress beats. Tower down is in the run; Hoax flood shows 200 unverified reports getting the mirror, not a panic.</td></tr>
+              <tr><td><strong>Wrong polygon</strong></td><td>On for the next hold only</td><td>The 9.8 million to 41,000 moment.</td></tr>
+              <tr><td><strong>Autopilot</strong></td><td>On or off</td><td>The simulator answers for the six device phones. For rehearsal and the no-volunteer fallback.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="phones" aria-labelledby="h-phones">
+        <h2 id="h-phones">The six phones</h2>
+        <p class="sub">Each phone plays one person. Volunteers only need to answer naturally; the lines below are what the run expects.</p>
+        <div class="tablebox">
+          <table>
+            <thead><tr><th>Phone</th><th>Plays</th><th>Says</th></tr></thead>
+            <tbody>
+              <tr><td class="t">1</td><td>Lucía, resident, Spanish</td><td>Leaving with the kids to Westchester. Later answers for Walter Hale as his linked contact.</td></tr>
+              <tr><td class="t">2</td><td>Janet, resident, English</td><td>Husband uses a wheelchair, no car, at Venice and Sepulveda. "We can't leave" when the Order is relayed.</td></tr>
+              <tr><td class="t">3</td><td>Culver City edge sentinel</td><td>"Yes, smoke to the west."</td></tr>
+              <tr><td class="t">4</td><td>Culver City edge sentinel</td><td>"Yes, smoke to the west."</td></tr>
+              <tr><td class="t">5</td><td>The judge, a Long Beach sentinel</td><td>"Nothing here." This is what catches the wrong polygon.</td></tr>
+              <tr><td class="t">6</td><td>Westchester canary</td><td>Asked if it received the Order. "No" means the message stayed inside the right polygon.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note" style="margin-top:12px">With Retell: save the number as "VoiceFlare demo line" on every phone, turn off Silence Unknown Callers (iPhone) or spam filtering (Android), and test-call each phone once before the demo.</p>
+      </section>
+
+      <section id="new" aria-labelledby="h-new">
+        <h2 id="h-new">New today</h2>
+        <p class="sub">Built this afternoon in answer to the judge's note and our own ask for live locations.</p>
+        <div class="banner">These are being built and checked right now. This page will be updated when they pass verification. Until then, rehearse with the run above.</div>
+        <div class="new">
+          <div class="feat">
+            <span class="chip today">Landing today</span>
+            <h3>Play the full fire</h3>
+            <div class="where">/board?autoplay=1 · button on /board and /demo</div>
+            <p class="muted" style="margin:0;font-size:14.5px">One click plays the whole run on the real board, with captions that light up each rung of the ladder. Pause, skip, 2x, exit. Use it as the booth's attract loop and as the fallback when phones fail. Decisions it makes are labeled "Autoplay supervisor (simulated)" and never count as human decisions.</p>
+          </div>
+          <div class="feat">
+            <span class="chip today">Landing today</span>
+            <h3>The pool line</h3>
+            <div class="where">/adapt · /adapt?pool=auto</div>
+            <p class="muted" style="margin:0;font-size:14.5px">The judge's example. The same ladder in seconds: a swimmer still under water, a poolside speaker and every phone in the house asked "Are you at the pool?", then the neighbor and the emergency number. Only a person can stand it down. Fire is the loudest emergency; drowning is the quietest.</p>
+          </div>
+          <div class="feat wide">
+            <span class="chip today">Landing today</span>
+            <h3>Live location to a helper at the door</h3>
+            <div class="where">Retell call → /l/&lt;token&gt; → registry → Send helper → /helper/&lt;token&gt;</div>
+            <ol>
+              <li>A person who needs help is asked on the call: "Can I text you a link that shares your phone's live location with the response team? It stays on only until help reaches you."</li>
+              <li>On a yes, their words and the call are stored with the consent, and the link goes out by text (simulated until Twilio keys are set; demo phones get it on screen).</li>
+              <li>They tap it and allow location. Their GPS streams to the database; the board shows a live pin with its accuracy, and the registry row says "Live GPS".</li>
+              <li>The supervisor clicks <strong>Send helper</strong> (name and reason). The helper gets a page with the live spot, Navigate, Call, and En route / Arrived / Person reached.</li>
+              <li>Sharing stops when the person is reached, when they tap Stop, or after 4 hours. Exact locations never appear in public feeds.</li>
+            </ol>
+            <p class="note" style="margin:4px 0 0">A phone call cannot carry GPS by itself, which is why the link exists. In the room, volunteer phones share their real position, so expect the pin to appear at the venue, not in Culver City. Say so.</p>
+          </div>
+          <div class="feat wide">
+            <span class="chip today">Landing today</span>
+            <h3>The pitch deck</h3>
+            <div class="where">ppt/voiceflare_pitch.html in the repo (open it in Chrome)</div>
+            <ul>
+              <li>Arrow keys, space or click to move; the dots at the bottom jump to any slide.</li>
+              <li><strong>F</strong> for fullscreen, <strong>N</strong> for speaker notes with a target time per slide.</li>
+              <li>Add <code>#5</code> to the address to open slide 5. The demo slide plays <code>ppt/assets/demo.mp4</code> if it exists, otherwise it shows a screenshot and the autoplay link.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="judges" aria-labelledby="h-judges">
+        <h2 id="h-judges">What judges asked for</h2>
+        <blockquote class="quote">"Make sure your presentation is crisp, includes an end to end demo if possible (with a simulated fire event ofc), and to its novelty and usefulness. Mention how you could adapt this too (eg pools and drowning - back full circle!)."
+          <cite>Prof. Sathyanarayana Raghavachary, a judge, in a note to Leena</cite>
+        </blockquote>
+        <div class="tablebox">
+          <table>
+            <thead><tr><th>The ask</th><th>What we show</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Crisp</strong></td><td>The deck: one idea per slide, about 3 minutes, then the demo.</td></tr>
+              <tr><td><strong>End-to-end demo, simulated fire</strong></td><td>The 3.5-minute run with phones, or Play the full fire when the room is noisy or phones fail.</td></tr>
+              <tr><td><strong>Novelty</strong></td><td>It asks before it alerts (sentinels and the hold), shows the dose before sending, confirms delivery with a canary, treats silence as a signal, relays only approved words, and puts a name on every decision.</td></tr>
+              <tr><td><strong>Usefulness</strong></td><td>A help registry that turns calls into a list of who needs a person and where. Second customers on an ordinary Tuesday: USC DPS, bases, the collections line. Six jurisdictions on <code>/global</code>.</td></tr>
+              <tr><td><strong>Adapt</strong></td><td>The pool line on <code>/adapt</code>: same ladder, same rule that silence escalates and never cancels.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="agent" aria-labelledby="h-agent">
+        <h2 id="h-agent">What the agent never does</h2>
+        <p class="sub">The most common judge question is "what if the AI says something wrong?" These are hard limits in the code, and every refusal is logged.</p>
+        <ul class="never">
+          <li>Changes a zone's state, or sends or cancels an alert.</li>
+          <li>Says anyone is safe.</li>
+          <li>Gives an ETA ("How long until the fire gets here?" is refused and flagged for a person).</li>
+          <li>Tells a caller where another person is.</li>
+          <li>Reads any instruction except the one a named human approved for the caller's zone.</li>
+          <li>Treats no answer as an all-clear. Silence means a retry, a linked contact, or a door-knock team.</li>
+        </ul>
+        <p class="note" style="margin-top:14px">It speaks English, Spanish, Korean, Mandarin, Hindi, French, Armenian and Tagalog, and opens every call with the verification phrase and the call-back number so residents can tell it from a scam.</p>
+      </section>
+
+      <section id="say" aria-labelledby="h-say">
+        <h2 id="h-say">Say this, avoid that</h2>
+        <div class="say">
+          <div class="yes">
+            <h3>Say</h3>
+            <ul>
+              <li>"Every resident is synthetic except the phones in this room. Every broadcast is simulated; nothing reaches a real alert system."</li>
+              <li>On the Norte Fire: "The fire status is live from CAL FIRE. The zones and residents are simulated, and real orders come from OCFA."</li>
+              <li>"The model only proposes. A named person decides, and the ledger shows who and why."</li>
+              <li>"The machine can delay an alert by 90 seconds. It can never stop one."</li>
+            </ul>
+          </div>
+          <div class="no">
+            <h3>Avoid</h3>
+            <ul>
+              <li>Naming any alerting vendor.</li>
+              <li>Saying LA County dropped its alert vendor. It paused the service in January 2025, resumed it, and later moved evacuation alerts to a state-managed system.</li>
+              <li>Saying a Pimpri-Chinchwad library lost historic books. The floods are real; no report of that loss was found.</li>
+              <li>Promising times or safety in your own words. The product refuses to, so we should too.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="fails" aria-labelledby="h-fails">
+        <h2 id="h-fails">When something fails</h2>
+        <div class="tablebox">
+          <table>
+            <thead><tr><th>Problem</th><th>Do this</th></tr></thead>
+            <tbody>
+              <tr><td>A phone does not ring</td><td>Check <code>/phones</code> shows it online. Reload the phone page and tap <strong>Tap to enable sound</strong>. A call rings for 25 s, then retries once 30 s later.</td></tr>
+              <tr><td>Speech recognition fails</td><td>Switch that phone to <strong>Text mode</strong>. The call works the same.</td></tr>
+              <tr><td>A Retell call fails</td><td>It falls back to the browser phone by itself; a "transport" card on the board says so.</td></tr>
+              <tr><td>The first call is slow</td><td>The agent warms up after each reset. Run <code>npm run seed</code> again a minute before the demo.</td></tr>
+              <tr><td>No volunteers</td><td>Autopilot on <code>/demo</code> and narrate from the call strip, or Play the full fire once it lands.</td></tr>
+              <tr><td>Anything stuck</td><td><code>npm run seed</code> resets the run in a second. The twist log is kept.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="code" aria-labelledby="h-code">
+        <h2 id="h-code">Before you push code</h2>
+        <p class="sub">Run these on <code>AB_dev</code> before every push. The end-to-end script plays the whole demo path in-process with no API calls.</p>
+        <div class="cmd"><pre>npm run typecheck
+npx tsx --conditions=react-server scripts/e2e.ts
+npm run build</pre><button class="copy" type="button">Copy</button></div>
+        <p class="note">Two live Claude calls (Spanish and English) plus the post-call pass, when you have a key: <code>npx tsx --conditions=react-server scripts/agent-check.ts</code></p>
+      </section>
+
+      <section id="deadlines" aria-labelledby="h-deadlines">
+        <h2 id="h-deadlines">Deadlines</h2>
+        <p class="sub">All times Pacific. No extensions on the Devpost.</p>
+        <div class="tablebox">
+          <table>
+            <thead><tr><th>When</th><th>What</th><th>Status</th></tr></thead>
+            <tbody id="deadline-rows">
+              <tr data-at="2026-10-18T05:00:00Z"><td class="t">Sat 10:00 PM</td><td>Devpost due, with the poster (Twist 3) and the two-line responsible-use note</td><td class="left">—</td></tr>
+              <tr data-at="2026-10-18T07:00:00Z"><td class="t">Sun 12:00 AM</td><td>Finalists announced</td><td class="left">—</td></tr>
+              <tr data-at="2026-10-18T16:00:00Z"><td class="t">Sun 9:00 AM</td><td>Finalist deck due</td><td class="left">—</td></tr>
+              <tr data-at="2026-10-18T19:00:00Z"><td class="t">Sun 12:00 PM</td><td>Demo floor and pitches open, Ginsburg Hall (until 3:30 PM)</td><td class="left">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="margin-top:28px">Before the room</h3>
+        <p class="note">Your ticks are saved in this browser only.</p>
+        <ul class="check" id="checklist">
+          <li><label><input type="checkbox" id="c1"><span>Production build running on the demo laptop</span></label></li>
+          <li><label><input type="checkbox" id="c2"><span>Tunnel up, <code>APP_BASE_URL</code> and <code>DESK_PASSWORD</code> set, server restarted</span></label></li>
+          <li><label><input type="checkbox" id="c3"><span><code>npm run seed</code> run a minute before the demo</span></label></li>
+          <li><label><input type="checkbox" id="c4"><span>Six phones online on <code>/phones</code>, sound enabled, screens on, charged</span></label></li>
+          <li><label><input type="checkbox" id="c5"><span>Autopilot off (unless we are running without volunteers)</span></label></li>
+          <li><label><input type="checkbox" id="c6"><span>Second screen ready on <code>/evidence</code>, <code>/global</code> or <code>/adapt</code></span></label></li>
+          <li><label><input type="checkbox" id="c7"><span>Deck open in Chrome, fullscreen tested</span></label></li>
+          <li><label><input type="checkbox" id="c8"><span>Roles agreed: supervisor, narrator, phone captain, second screen</span></label></li>
+        </ul>
+        <div class="checkfoot"><span class="note" id="check-count">0 of 8 done</span><button class="btn" type="button" id="check-reset">Clear ticks</button></div>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <span>VoiceFlare · Team guide for the USC Viterbi × InnovateLA Dual-Use Hackathon, October 2026</span>
+    <span>Source of truth: README.md and docs/DEMO.md on AB_dev</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  // Copy buttons
+  document.querySelectorAll('.cmd').forEach(function (box) {
+    var btn = box.querySelector('.copy');
+    var pre = box.querySelector('pre');
+    btn.addEventListener('click', function () {
+      var text = pre.innerText.replace(/\s+#.*$/gm, '').trim();
+      var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1500); };
+      var fallback = function () {
+        var r = document.createRange(); r.selectNodeContents(pre);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        btn.textContent = 'Selected';
+        setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+      };
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+        else fallback();
+      } catch (e) { fallback(); }
+    });
+  });
+
+  // Deadlines: time left, next one in the masthead
+  function fmt(ms) {
+    var m = Math.round(ms / 60000), h = Math.floor(m / 60), mm = m % 60;
+    if (h >= 24) return Math.floor(h / 24) + 'd ' + (h % 24) + 'h';
+    return h > 0 ? h + 'h ' + mm + 'm' : mm + 'm';
+  }
+  function tick() {
+    var now = Date.now(), next = null;
+    document.querySelectorAll('#deadline-rows tr').forEach(function (tr) {
+      var at = Date.parse(tr.getAttribute('data-at'));
+      var cell = tr.querySelector('.left');
+      if (at <= now) { cell.innerHTML = '<span class="chip now">Passed</span>'; }
+      else {
+        cell.textContent = 'in ' + fmt(at - now);
+        if (!next) next = { at: at, what: tr.children[1].textContent.split(',')[0], when: tr.children[0].textContent };
+      }
+    });
+    var pill = document.querySelector('#next-deadline span:last-child');
+    if (next) pill.textContent = next.what + ' · ' + next.when + ' PT · in ' + fmt(next.at - now);
+    else pill.textContent = 'Demo day is done';
+  }
+  tick(); setInterval(tick, 30000);
+
+  // Checklist, saved per viewer
+  var KEY = 'vf-team-guide-checks';
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { saved = {}; }
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('#checklist input'));
+  function count() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    document.getElementById('check-count').textContent = n + ' of ' + boxes.length + ' done';
+  }
+  boxes.forEach(function (b) {
+    b.checked = !!saved[b.id];
+    b.addEventListener('change', function () {
+      saved[b.id] = b.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
+      count();
+    });
+  });
+  document.getElementById('check-reset').addEventListener('click', function () {
+    boxes.forEach(function (b) { b.checked = false; });
+    saved = {};
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    count();
+  });
+  count();
+
+  // Section index: highlight the section in view
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.index a'));
+  if ('IntersectionObserver' in window && links.length) {
+    var map = {};
+    links.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) {
+          links.forEach(function (a) { a.classList.remove('on'); });
+          var a = map[en.target.id]; if (a) a.classList.add('on');
+        }
+      });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    document.querySelectorAll('main section').forEach(function (s) { io.observe(s); });
+  }
+})();
+</script>
+
+</body></html>
