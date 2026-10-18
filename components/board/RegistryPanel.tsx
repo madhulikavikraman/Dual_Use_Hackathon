@@ -17,6 +17,7 @@ import { Chip, ColorChip } from "@/components/ui/Chip";
 import { useBoard } from "./BoardContext";
 import { PickupRuns } from "./PickupRuns";
 import { RegistryActions } from "./RegistryActions";
+import { displayActor } from "@/lib/ui/display";
 
 /** "Last seen" for a row: where the fix came from, how old it is, fresh under 15 minutes. */
 function LastSeen({ row, now }: { row: HelpRequest; now: string }) {
@@ -100,7 +101,7 @@ export function RegistryCard({
       </p>
       <p className="mt-0.5 text-xs text-slate-500">
         {row.zone_id ?? "no zone"} · {HELP_SOURCE_LABEL[row.source]}
-        {row.assigned_to ? ` · assigned to ${row.assigned_to}` : ""}
+        {row.assigned_to ? ` · assigned to ${displayActor(row.assigned_to)}` : ""}
       </p>
       <div className="mt-1.5">
         <RegistryActions row={row} />

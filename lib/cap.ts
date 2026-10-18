@@ -121,10 +121,10 @@ export function buildCap(input: CapInput): string {
   lines.push(`  <sent>${capTime(sent)}</sent>`);
   lines.push("  <status>Exercise</status>");
   lines.push("  <msgType>Alert</msgType>");
-  lines.push("  <source>VoiceFlare (simulated)</source>");
+  lines.push("  <source>VoiceFlare (demo)</source>");
   lines.push("  <scope>Public</scope>");
   lines.push(
-    `  <note>${e(input.note ?? "Exercise: simulated alert from a hackathon demonstration (VoiceFlare). It was not sent to IPAWS or any alert system.")}</note>`,
+    `  <note>${e(input.note ?? "Exercise: demo alert from a hackathon demonstration (VoiceFlare). It was not sent to IPAWS or any alert system.")}</note>`,
   );
   lines.push("  <info>");
   lines.push("    <language>en-US</language>");

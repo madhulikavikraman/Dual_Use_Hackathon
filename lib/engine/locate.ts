@@ -55,8 +55,8 @@ function sourceFor(call: Call | null): HelpSource {
 const VIA_LABEL: Record<ShareVia, string> = {
   twilio: "texted (Twilio)",
   retell: "texted (Retell)",
-  browser_phone: "shown on the browser phone (simulated text)",
-  simulated: "sent (simulated text)",
+  browser_phone: "shown on the browser phone (demo: no text sent)",
+  simulated: "not texted (demo: no text-message provider set)",
 };
 
 export interface CreateShareInput {

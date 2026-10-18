@@ -73,7 +73,7 @@ export async function sendHelper(
 
   const link = helperLink(d.token, input.origin);
   const sms = await sendSms(phone, `Response team: you are sent to a person who needs help (P${row.priority}, ${needsText(row)}). Their location and status buttons: ${link} (Hackathon demo)`);
-  const via = sms.via === "simulated" ? "simulated text" : `texted (${sms.via})`;
+  const via = sms.via === "simulated" ? "not texted, demo" : `texted (${sms.via})`;
   await ledger({
     actor: input.actor,
     action: `send helper: ${label} (link ${via})`,

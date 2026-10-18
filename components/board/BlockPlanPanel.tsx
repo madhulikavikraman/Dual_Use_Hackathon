@@ -24,6 +24,7 @@ import {
 } from "./blockLabels";
 import * as planApi from "./planApi";
 import { refreshPlans, usePlans, useZonePlan } from "./usePlans";
+import { displayActor } from "@/lib/ui/display";
 
 // Block-by-block evacuation: the plan panel for the board's sidebar. Waves, blocks, each exit road's load per wave,
 // and the three controls (start the next wave, hold it, everyone go now). A proposed plan is approved here by a
@@ -157,7 +158,7 @@ function PlanBody({ plan, zone, others, zoneName, clockOffset, onDone }: {
       </div>
       {plan.approved_by ? (
         <p className="-mt-2 text-xs text-slate-600">
-          <span aria-hidden="true">✍️ </span>Approved by {plan.approved_by}
+          <span aria-hidden="true">✍️ </span>Approved by {displayActor(plan.approved_by)}
           {plan.reason ? `: ${plan.reason}` : ""}
         </p>
       ) : (

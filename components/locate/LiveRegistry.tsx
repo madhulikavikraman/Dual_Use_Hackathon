@@ -167,7 +167,7 @@ function DispatchLine({ d }: { d: DispatchSummary }) {
         <Emoji e={ICON.helper} /> Helper: {displayActor(d.helper_label)}
       </span>
       <Chip tone={DISPATCH_TONE[d.status]}>{DISPATCH_TEXT[d.status]}</Chip>
-      <span>sent by {d.dispatched_by}</span>
+      <span>sent by {displayActor(d.dispatched_by)}</span>
       {d.note ? <span>· “{d.note}”</span> : null}
       <a href={d.link} target="_blank" rel="noreferrer" className="font-semibold text-blue-700 underline-offset-2 hover:underline">
         <Emoji e={ICON.navigate} /> Helper link ↗
@@ -353,7 +353,7 @@ export function LiveRegistryCard({
       ) : null}
       <p className="mt-0.5 text-xs text-slate-500">
         {row.zone_id ?? "no zone"} · {HELP_SOURCE_LABEL[row.source]}
-        {row.assigned_to ? ` · assigned to ${row.assigned_to}` : ""}
+        {row.assigned_to ? ` · assigned to ${displayActor(row.assigned_to)}` : ""}
       </p>
       <div className="mt-1.5 flex flex-wrap items-start gap-1">
         <SendHelperButton row={row} />

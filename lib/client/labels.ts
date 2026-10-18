@@ -239,7 +239,7 @@ export const HELP_SOURCE_LABEL: Record<HelpSource, string> = {
   rollcall: "Roll call",
   sentinel: "Sentinel",
   manual: "Manual",
-  sim: "Simulator",
+  sim: "Auto-answer",
 };
 
 // ---------- Calls ----------
@@ -254,7 +254,7 @@ export const PURPOSE_LABEL: Record<CallPurpose, string> = {
   test: "Test call",
 };
 
-export const TRANSPORT_LABEL: Record<Transport, string> = { retell: "Phone · Retell", browser: "Browser phone", sim: "Simulator" };
+export const TRANSPORT_LABEL: Record<Transport, string> = { retell: "Phone · Retell", browser: "Browser phone", sim: "Auto-answer" };
 
 // ---------- Hold and canary ----------
 
