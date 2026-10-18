@@ -115,15 +115,15 @@ const IN_S = {
     url: "https://www.dainikprabhat.com/pimpri-chinchwad-rain-pimpri-chinchwads-mess-municipal-corporations-drain-cleaning-is-open-citizens-plight-as-water-enters-houses",
   },
   moved: {
-    claim: "PCMC moved 1,880 residents by noon on 6 July 2026; relief shelters in the A, B, D and H wards; the Commissioner directed monitoring of river levels",
+    claim: "PCMC moved 1,880 residents to safer locations by noon on Monday 6 July 2026; relief shelters in the A, B, D and H wards; the Commissioner directed monitoring of river levels",
     url: "https://www.punekarnews.in/?p=239237",
   },
   redAlert: {
-    claim: "IMD red alert for Pune district on 6 July 2026; areas evacuated; Commissioner Dr Vijay Suryawanshi directed advance warnings by public announcement systems",
+    claim: "IMD red alert for Pune district on 6 July 2026; 1,880 moved by noon from Ambedkar Colony, Bhat Nagar and River Road, with evacuations under way in Phugewadi and Kasarwadi; Commissioner Dr Vijay Suryawanshi directed advance warnings by public announcement systems",
     url: "https://www.freepressjournal.in/pune/pune-rains-flood-threat-grows-in-pimpri-chinchwad-1880-residents-shifted-to-temporary-shelters-watch-videos",
   },
   pavana: {
-    claim: "24 July 2026: Pavana discharge raised from 5,600 to 7,000 cusecs, possibly 9,000; dam about 97% full; Pavana dam flood control cell; PCMC's words to riverbank residents; control room and fire helpline numbers",
+    claim: "24 July 2026: Pavana discharge raised from 5,600 to 7,000 cusecs at 8 pm, possibly 9,000 in phases; dam about 97% full; the words of PCMC, the Mayor, the Commissioner and the Pavana dam flood control cell to riverbank residents and farmers; control room and fire helpline numbers",
     url: "https://www.punekarnews.in/pune-pcmc-asks-residents-along-pavana-indrayani-riverbanks-to-remain-alert-as-dam-discharge-rises/",
   },
   khadakwasla: {
@@ -143,11 +143,11 @@ const IN_S = {
     url: "https://ianslive.in/govt-launches-cell-broadcast-alert-system-for-real-time-disaster-warnings--20260502131531",
   },
   sachet: {
-    claim: "SACHET is operational in all 36 states and union territories, sending geo-targeted SMS",
+    claim: "SACHET is based on the Common Alerting Protocol, is operational in all 36 states and union territories, and sends geo-targeted SMS",
     url: "https://www.etvbharat.com/en/bharat/ndma-tests-cell-broadcast-message-to-alert-citizens-on-severe-disaster-enn26050201915",
   },
   ers112: {
-    claim: "112 is India's single emergency number (ERSS)",
+    claim: "112 is India's single emergency number (ERSS), integrating police (100), fire (101) and health (108)",
     url: "https://onmanorama.com/news/india/2019/02/20/emergency-helpline-number-112-comes-into-effect.html",
   },
   aapda: {
@@ -220,23 +220,23 @@ const IN: FloodProfile = {
       step: "prepare",
       terms: [
         { en: "Avoid entering riverbeds" },
-        { en: "Move pumps, materials and livestock", note: "to farmers" },
-        { en: "Cooperate with authorities if evacuation becomes necessary" },
+        { en: "Move pumps, materials and livestock", note: "the Pavana dam flood control cell, to farmers" },
+        { en: "Cooperate with authorities if evacuation becomes necessary", note: "the Mayor" },
       ],
       src: [IN_S.pavana],
     },
-    { step: "evacuate", terms: [{ en: "Evacuated to safer locations", note: "by civic emergency teams, 6 July 2026" }], src: [IN_S.moved, IN_S.redAlert] },
+    { step: "evacuate", terms: [{ en: "Evacuated to safer locations", note: "PCMC, 6 July 2026" }], src: [IN_S.moved, IN_S.redAlert] },
     { step: "shelter", terms: [{ en: "Relief shelters", note: "in PCMC's A, B, D and H wards, 6 July 2026" }], src: [IN_S.moved] },
   ],
   orderNotes: [
-    { text: "No single national set of flood evacuation words was found. These are the words PCMC used in July 2026.", src: [IN_S.pavana, IN_S.moved] },
+    { text: "No single national set of flood evacuation words was found. These are the words PCMC, its Mayor and Commissioner, and the Pavana dam flood control cell used in July 2026.", src: [IN_S.pavana, IN_S.moved] },
     {
       text: "The legal power: the District Authority may “control and restrict the entry of any person into, his movement within and departure from, a vulnerable or affected area” (Disaster Management Act 2005, s.34(c)).",
       src: [IN_S.dmAct],
     },
   ],
   decider: {
-    text: "The District Disaster Management Authority, chaired by the Collector (Disaster Management Act 2005, s.25(2)(a)); for Pune district, the Pune Collector. Inside Pimpri-Chinchwad in July 2026, Municipal Commissioner Dr Vijay Suryawanshi directed the response and civic emergency teams moved people. The irrigation department decides dam releases.",
+    text: "The District Disaster Management Authority, chaired by the Collector (Disaster Management Act 2005, s.25(2)(a)); for Pune district, the Pune Collector. Inside Pimpri-Chinchwad in July 2026, Municipal Commissioner Dr Vijay Suryawanshi directed the response and the civic administration moved people. The irrigation department decides dam releases.",
     src: [IN_S.dmAct, IN_S.redAlert, IN_S.moved, IN_S.pavana],
   },
   channel: {
@@ -258,7 +258,7 @@ const IN: FloodProfile = {
     { text: "The Pavana dam flood control cell, which knows about a release before the river does.", src: [IN_S.pavana] },
     { text: "PCMC ward offices, emergency teams and fire brigade.", src: [IN_S.moved, IN_S.pavana] },
     {
-      text: "Machine sentinels: IMD weather stations and rain gauges (Chinchwad, Lohgaon, Pashan, Shivajinagar, NDA Khadakwasla and others) and CWC river gauges.",
+      text: "Machine sentinels: IMD weather stations and rain gauges (Chinchwad, Lohgaon, Pashan, Shivajinagar, NDA Khadakwasla and others), and CWC river gauges where a river has one.",
       src: [IN_S.rain268, IN_S.cwc],
     },
   ],
@@ -276,7 +276,7 @@ const IN: FloodProfile = {
         src: [IN_S.stuck],
       },
       {
-        text: "By noon on 6 July, under an IMD red alert, PCMC had moved 1,880 people out of Ambedkar Colony, Bhat Nagar, River Road, Phugewadi and Kasarwadi.",
+        text: "By noon on 6 July, under an IMD red alert, PCMC had moved 1,880 people from riverside areas, including Ambedkar Colony, Bhat Nagar and River Road; evacuations were under way in Phugewadi and Kasarwadi.",
         src: [IN_S.moved, IN_S.redAlert],
       },
       {
@@ -290,7 +290,7 @@ const IN: FloodProfile = {
     },
   },
   ladder: {
-    watch: "IMD colour warnings for Pune district, rain-gauge totals (268 mm in 24 hours at Chinchwad), CWC gauges against the Warning and Danger Levels, and dam-release notices. Each announced release step is a trigger.",
+    watch: "IMD colour warnings for Pune district, rain-gauge totals (268 mm in 24 hours at Chinchwad), CWC gauges against the Warning and Danger Levels where a river has one, and dam-release notices. Each announced release step is a trigger.",
     ask: "Ring the dam flood control cell, ward-office staff and Aapda Mitra volunteers where trained: “Is the water at the Thergaon bridge, or on River Road, where you are?”",
     slow: "Wave 1 is the pockets that flooded in July 2026, then the blue-line zone, then the red-line zone. Routes avoid the Thergaon bridge, Telco Road, Spine Road and the Dehu-Alandi road. Each wave has a named ward shelter.",
     hold: "The commissioner's control room, or the Collector as chair of the district authority, approves the words. VoiceFlare holds only its own calls, never an NDMA, SACHET or IMD message.",
@@ -328,21 +328,17 @@ const JP_S = {
     claim: "May 2021 amendment merged 避難勧告 into 避難指示; mayors issue evacuation information; municipalities set criteria under the Act and Cabinet Office guidelines",
     url: "https://www.fdma.go.jp/publication/hakusho/r7/chapter1/section5/para2/69311.html",
   },
-  jiji: {
-    claim: "Evacuation recommendation and order integrated into one order (revised law)",
-    url: "https://sp.m.jiji.com/english/show/11974",
-  },
   supportList: {
     claim: "避難行動要支援者名簿 mandatory, 1,727 of 1,741 municipalities (99.2%) by 1 Oct 2020; 個別避難計画 a municipal effort obligation since May 2021",
     url: "https://www.fdma.go.jp/publication/hakusho/r3/chapter1/section5/para2/63869.html",
   },
   jalert: {
-    claim: "J-ALERT carries missile, earthquake early warning and major tsunami information; starts municipal disaster radio automatically; reaches phones as 緊急速報メール",
+    claim: "J-ALERT carries missile, earthquake early warning, tsunami and special-warning (e.g. 大雨特別警報) information; switches on municipal disaster radio automatically; reaches phones as 緊急速報メール",
     url: "https://www.fdma.go.jp/about/organization/post-18.html",
   },
   areaMail: {
-    claim: "Carrier emergency alert mail reaches every compatible phone in the area with national and municipal evacuation information, unaffected by congestion; free for governments from 1 July 2011",
-    url: "https://www.docomo.ne.jp/info/notice/tohoku/page/2011/111006_01.html",
+    claim: "緊急速報メール: a free service of the mobile carriers that sends national and local government disaster and evacuation information to compatible phones in an area, with no sign-up; messages can reach neighbouring areas (Fukushima Prefecture)",
+    url: "https://www.pref.fukushima.lg.jp/sec/16025b/kinkyuusokuhoumail.html",
   },
   level5: {
     claim: "Level 5 緊急安全確保 may not be issuable",
@@ -361,7 +357,7 @@ const JP_S = {
     url: "https://www.pref.kagoshima.jp/aj03/kurashi-kankyo/anzen/shoubou/syobodan/1ninmu.html",
   },
   chiba1: {
-    claim: "Chiba, 13 Aug 2026: 6:55 pm call about a man floating on a flooded road in Ichikawa; Level 5 heavy-rain warnings at 7:30 pm; woman in cardiac arrest in a vehicle in Kashiwa",
+    claim: "Chiba, 13 Aug 2026: call shortly before 7 pm about a man floating on a flooded road in Ichikawa; Level 5 heavy-rain warnings at 7:30 pm; woman in cardiopulmonary arrest, trapped in a vehicle on a flooded road in Kashiwa",
     url: "https://english.adnkronos.com/2026/08/13/1-dead-1-with-no-sign-of-life-in-downpour-hit-chiba/",
   },
   chiba2: {
@@ -437,17 +433,17 @@ const JP: FloodProfile = {
   orderNotes: [
     { text: "The core rule: 警戒レベル4までに必ず避難 (evacuate by Level 4, without fail).", src: [JP_S.names] },
     { text: "Level 5 means the disaster is occurring or close; the municipality may not be able to issue it.", src: [JP_S.level5, JP_S.names] },
-    { text: "In 2021 the evacuation advisory (避難勧告) was abolished and merged into 避難指示.", src: [JP_S.amend2021, JP_S.jiji] },
+    { text: "In 2021 the evacuation advisory (避難勧告) was abolished and merged into 避難指示.", src: [JP_S.amend2021] },
   ],
   decider: {
     text: "The mayor (市町村長) issues evacuation information (高齢者等避難, 避難指示, 緊急安全確保) under the Disaster Countermeasures Basic Act. Each municipality sets its own criteria under the Act and Cabinet Office guidelines. JMA and river-office warnings inform the mayor; they are not evacuation orders.",
     src: [JP_S.amend2021, JP_S.tenki, JP_S.issuers],
   },
   channel: {
-    text: "Carrier emergency alert mail (緊急速報メール) reaches every compatible phone in the area, unaffected by network congestion, and has been free for governments since 1 July 2011. Municipal disaster radio (防災行政無線) carries the same instructions. J-ALERT relays urgent national alerts (missiles, earthquake early warnings, major tsunami warnings) and starts disaster radio automatically.",
+    text: "Emergency alert mail (緊急速報メール), which the mobile carriers provide free, sends national and municipal disaster and evacuation information to compatible phones in an area, with no sign-up. J-ALERT relays the most urgent alerts (missiles, earthquake early warnings, tsunami warnings, and special warnings such as 大雨特別警報), switches on municipal disaster radio (防災行政無線) automatically, and reaches phones through the same alert mail.",
     src: [JP_S.areaMail, JP_S.jalert],
   },
-  dose: "The municipality's broadcast area for 緊急速報メール.",
+  dose: "The municipality's area for 緊急速報メール, which can spill into neighbouring areas.",
   emergency: {
     call: "119",
     others: "110 police; 118 Japan Coast Guard, at sea",
@@ -473,12 +469,12 @@ const JP: FloodProfile = {
     where: "Chiba Prefecture",
     when: "13 August 2026",
     facts: [
-      { text: "At about 6:55 pm, an emergency call reported a man floating on a flooded road in Ichikawa. He was later confirmed dead.", src: [JP_S.chiba1] },
+      { text: "Shortly before 7 pm, an emergency call reported a man floating on a flooded road in Ichikawa. He was later confirmed dead.", src: [JP_S.chiba1] },
       {
         text: "At 7:30 pm JMA issued Level 5 Emergency Warnings (Heavy rain) for municipalities including Chiba, Ichikawa, Funabashi, Matsudo, Kashiwa and Inzai.",
         src: [JP_S.chiba1, JP_S.chiba2],
       },
-      { text: "A woman in her 70s was found in cardiac arrest in a vehicle on a flooded road in Kashiwa.", src: [JP_S.chiba1] },
+      { text: "In Kashiwa, a woman in her 70s was in cardiopulmonary arrest after being trapped in a vehicle on a flooded road.", src: [JP_S.chiba1] },
       { text: "JMA's forecast chief said: “It is highly likely that some sort of disaster has already occurred.”", src: [JP_S.chiba2] },
       {
         text: "By 1 pm the next day, at least six people had died. More than 7,300 went to shelters and about 7,000 were stranded at Narita Airport.",
@@ -514,7 +510,7 @@ const CN_S = {
     url: "https://m.gmw.cn/2026-07/27/content_1304538585.htm",
   },
   cmaSignals: {
-    claim: "CMA rainstorm warning signals in four levels, blue/yellow/orange/red; orange and red are an instruction to take refuge",
+    claim: "A CMA Public Meteorological Service Center expert: warning signals generally run blue/yellow/orange/red; blue and yellow mean pay attention and prepare; orange and red are an instruction to take refuge",
     url: "https://m.gmw.cn/2026-07/24/content_1304537425.htm",
   },
   plan2022: {
@@ -538,8 +534,8 @@ const CN_S = {
     url: "https://www.chinanews.com.cn/gn/2022/01-21/9658591.shtml",
   },
   zzTiming: {
-    claim: "Zhengzhou timing: fifth red warning at 16:01, Level I at 16:30, no emergency flood period; Changzhuang piping from 10:30; over 90% of 251 dead or missing lost 13:00-15:00; 139 deaths concealed",
-    url: "https://news.ifeng.com/c/8CzFKQR6ynR",
+    claim: "State Council investigation team Q&A: fifth red warning at 16:01, Level I only at 16:30; Level I not started on time despite a major danger at Changzhuang reservoir; over 90% of the 251 dead or missing in four hilly cities lost 13:00-15:00, before Level I; 139 deaths concealed",
+    url: "https://www.bjnews.com.cn/detail/164276578014711.html",
   },
   waterRescue: {
     claim: "National Fire and Rescue Administration: 462 water-rescue specialist teams, 27,000 people (June 2026)",
@@ -574,7 +570,7 @@ const CN: FloodProfile = {
       src: [CN_S.torrent],
     },
     {
-      name: "Rainstorm warning signals (暴雨预警信号)",
+      name: "Weather warning signals (预警信号), such as rainstorm (暴雨)",
       issuer: "China Meteorological Administration (CMA)",
       levels: [
         { en: "Blue", swatch: "blue" },
@@ -582,7 +578,7 @@ const CN: FloodProfile = {
         { en: "Orange", swatch: "orange" },
         { en: "Red", swatch: "red" },
       ],
-      note: "A CMA expert says blue and yellow mean prepare; orange and red are an instruction to take refuge.",
+      note: "A CMA expert says signals generally run blue to red: blue and yellow mean pay attention and prepare; orange and red are an instruction to take refuge.",
       src: [CN_S.cmaSignals],
     },
     {
@@ -632,7 +628,7 @@ const CN: FloodProfile = {
       text: "Local practice spells out five links for every relocation: 谁组织、转移谁、何时转、转何处、不擅返 (who organises, who moves, when, to where, no return without leave).",
       src: [CN_S.guangdong],
     },
-    { text: "A colour is a hazard level, not an order: a red warning does not by itself move anyone.", src: [CN_S.plan2022] },
+    { text: "Relocation itself is organised by local governments and their flood control headquarters, under the national plan.", src: [CN_S.plan2022] },
   ],
   decider: {
     text: "Local governments and their flood control and drought relief headquarters (防汛抗旱指挥部). Under the 2022 national plan, the local headquarters relocates people from danger areas in urban waterlogging, township governments organise the safe evacuation of people threatened by mountain torrents, and headquarters at county level and above may declare an emergency flood period (紧急防汛期).",
@@ -675,10 +671,10 @@ const CN: FloodProfile = {
         src: [CN_S.zzReport, CN_S.zzTiming],
       },
       {
-        text: "The weather service issued five red rainstorm warnings. Zhengzhou started its Level I response at 16:30, only after the fifth, at 16:01. It never declared the emergency flood period the plan required.",
+        text: "The weather service issued its fifth red warning at 16:01. Only then, at 16:30, did Zhengzhou start its Level I response; by then, the investigators said, the disaster had already happened.",
         src: [CN_S.zzTiming],
       },
-      { text: "Piping (管涌) at Changzhuang reservoir from 10:30 had not triggered Level I.", src: [CN_S.zzTiming] },
+      { text: "Changzhuang reservoir had a major danger, and still Zhengzhou did not start Level I on time as its rules required.", src: [CN_S.zzTiming] },
       { text: "In four hilly cities, more than 90% of the 251 dead or missing were lost between 13:00 and 15:00, before Level I began.", src: [CN_S.zzTiming] },
     ],
     lesson: {
@@ -687,7 +683,7 @@ const CN: FloodProfile = {
     },
   },
   ladder: {
-    watch: "MWR flood and mountain-torrent warnings, CMA rainstorm signals and reservoir dangers (such as the Changzhuang piping) are triggers, never orders.",
+    watch: "MWR flood and mountain-torrent warnings, CMA rainstorm signals and reservoir dangers (such as Changzhuang's in 2021) are triggers, never orders.",
     ask: "This is 叫应: ring the named responsible persons, village signal senders and grid workers at the zone's edge, and require a spoken answer.",
     slow: "Low ground, basements and underground spaces first, and MWR's vulnerable lists first (schools, hospitals, elder-care homes, construction sites). Each wave fills the five links. Routes avoid flooded roads, underpasses and gorges.",
     hold: "Zhengzhou is the case for a short, named hold: warnings sat for hours with no decision. The 90-second clock asks the headquarters duty leader to decide, and records a name and a reason.",
@@ -706,8 +702,8 @@ const GR_S = {
     url: "https://e-patras.gr/sites/default/files/2026-04/%CE%95%CE%99%CE%94%CE%99%CE%9A%CE%9F%20%CE%A3%CE%A7%CE%95%CE%94%CE%99%CE%9F%20%20O%CE%A1%CE%93%CE%91%CE%9D%CE%A9%CE%9C%CE%95%CE%9D%CE%97%CE%A3%20%CE%A0%CE%A1%CE%9F%CE%9B%CE%97%CE%A0%CE%A4%CE%99%CE%9A%CE%97%CE%A3%20%CE%91%CE%A0%CE%9F%CE%9C%CE%91%CE%9A%CE%A1%CE%A5%CE%9D%CE%A3%CE%97%CE%A3%20%CE%A0%CE%9F%CE%9B%CE%99%CE%A4%CE%A9%CE%9D%20%CE%9B%CE%9F%CE%93%CE%A9%20%CE%A0%CE%9B%CE%97%CE%9C%CE%9C%CE%A5%CE%A1%CE%99%CE%9A%CE%A9%CE%9D%20%CE%A6%CE%91%CE%99%CE%9D%CE%9F%CE%9C%CE%95%CE%9D%CE%A9%CE%9D.pdf",
   },
   edekf: {
-    claim: "ΕΜΥ emergency bulletin of dangerous weather (Ε.Δ.Ε.Κ.Φ.) 5/2026, July 2026",
-    url: "https://dimos-lokron.gov.gr/wp-content/uploads/2026/07/δελτιο-τυπου-εδεκφ-5-23.7.2026.pdf",
+    claim: "Region of Central Greece civil protection release (23 July 2026): ΕΜΥ emergency bulletin Ε.Δ.Ε.Κ.Φ. 5/2026 with a red warning for 24-25 July; emergency numbers police 100, Fire Service 199, ambulance (ΕΚΑΒ) 166, 112",
+    url: "https://dimos-lokron.gov.gr/wp-content/uploads/2026/07/%CE%B4%CE%B5%CE%BB%CF%84%CE%B9%CE%BF-%CF%84%CF%85%CF%80%CE%BF%CF%85-%CE%B5%CE%B4%CE%B5%CE%BA%CF%86-5-23.7.2026.pdf",
   },
   redCode: {
     claim: "Civil protection Risk Assessment Committee and red-code mobilisation for 11 areas (July 2026)",
@@ -754,7 +750,7 @@ const GR_S = {
     url: "https://www.moncloa.com/2026/09/03/juzgado-catarroja-232-victimas-dana-valencia-3425322/",
   },
   turis: {
-    claim: "Turís: 771 l/m² in 24 hours, 185 in one hour, a Spanish record for that duration; wettest October since 1961",
+    claim: "Turís: 771 l/m² in 24 hours, and 185 in one hour, a Spanish one-hour record; wettest October since the series began in 1961",
     url: "https://www.aemet.es/en/noticias/2024/11/resumen_oct24",
   },
   chj: {
@@ -774,7 +770,7 @@ const GR: FloodProfile = {
       name: "Emergency weather bulletins",
       issuer: "Hellenic National Meteorological Service (ΕΜΥ)",
       levels: [],
-      note: "The Έκτακτο Δελτίο Επικίνδυνων Καιρικών Φαινομένων (Ε.Δ.Ε.Κ.Φ.), an emergency bulletin of dangerous weather with colour-coded warnings. Bulletin 5/2026, in July 2026, carried a red warning.",
+      note: "The Έκτακτο Δελτίο Επικίνδυνων Καιρικών Φαινομένων (Ε.Δ.Ε.Κ.Φ.), an emergency bulletin of dangerous weather with colour-coded warnings. Bulletin 5/2026 carried a red warning for 24 and 25 July 2026.",
       src: [GR_S.edekf],
     },
     {
@@ -839,8 +835,7 @@ const GR: FloodProfile = {
     call: JURISDICTIONS["EU-GR"].call_now,
     others: profileNumbers("EU-GR"),
     note: { text: "The Fire Service leads flash-flood rescue.", src: [GR_S.patras] },
-    src: [],
-    fromProfile: true,
+    src: [GR_S.edekf],
   },
   sentinels: [
     {
@@ -858,7 +853,7 @@ const GR: FloodProfile = {
     where: "Valencia, Spain",
     when: "29 October 2024",
     facts: [
-      { text: "AEMET recorded 771 l/m² of rain in 24 hours at Turís, 185 of them in one hour, a Spanish record for that duration.", src: [GR_S.turis] },
+      { text: "AEMET recorded 771 l/m² of rain in 24 hours at Turís, 185 of them in one hour, a Spanish record for one hour.", src: [GR_S.turis] },
       { text: "AEMET's red warning had been in force since the morning.", src: [GR_S.sent2011] },
       {
         text: "The regional emergency centre had an ES-Alert draft by e-mail at 18:37. It reached phones at 20:11, when many of the deaths had already happened.",
@@ -868,7 +863,7 @@ const GR: FloodProfile = {
       { text: "The Catarroja court's official count reached 232 deaths (September 2026).", src: [GR_S.toll232] },
     ],
     lesson: {
-      text: "A gauge signal that nobody acknowledged, and a drafted alert held about 94 minutes with no named, logged decision, cost the time that mattered.",
+      text: "A gauge warning that nobody confirmed reading, and a drafted alert that took 94 minutes to reach phones, cost the time that mattered.",
       src: [GR_S.chj, GR_S.draft1837, GR_S.sent2011],
     },
     also: {
@@ -929,7 +924,7 @@ const US_S = {
     claim: "FEMA IPAWS Wireless Emergency Alerts",
     url: "https://www.fema.gov/emergency-managers/practitioners/integrated-public-alert-warning-system/public/wireless-emergency-alerts",
   },
-  calAlerts: { claim: "CalAlerts.org: Cal OES directory of county alert sign-ups", url: "https://www.calalerts.org/evacuations.html" },
+  calAlerts: { claim: "Cal OES: every county in California offers free emergency alerts; sign up through CalAlerts.org", url: "https://www.news.caloes.ca.gov/stay-informed-stay-prepared-sign-up-for-emergency-alerts/" },
   skywarn: { claim: "SKYWARN spotters: free training; they coordinate with local emergency managers", url: "https://www.weather.gov/gsp/skywarn" },
   cocorahs: { claim: "CoCoRaHS in California: since 2008; more than 1,000 observers as of spring 2020", url: "https://www.weather.gov/mtr/cocorahs" },
   cert: {
@@ -940,7 +935,7 @@ const US_S = {
   cnrfcGuidance: { claim: "CNRFC river guidance issued jointly with California DWR", url: "https://www.cnrfc.noaa.gov/rfc_guidance.php" },
   cdec: { claim: "CDEC real-time river stage maps and data", url: "https://cdec.water.ca.gov/stage_maps/" },
   pajaro: {
-    claim: "Pajaro levee breach around midnight on 10 March 2023; more than 8,500 under orders or warnings; about 1,700 Pajaro residents, many Latino farmworkers; door to door on Friday afternoon; more than 50 rescued (AP)",
+    claim: "Pajaro levee breach around midnight Friday 10 March 2023, about 100 ft wide; more than 8,500 under orders or warnings; about 1,700 Pajaro residents, many Latino farmworkers; door to door on Friday afternoon; more than 50 rescued (AP)",
     url: "https://www.ksat.com/news/2023/03/11/storm-breaches-california-rivers-levee-thousands-evacuate/",
   },
   texas: {
@@ -1019,7 +1014,7 @@ const US: FloodProfile = {
     src: [US_S.fresno, US_S.calOesLegal],
   },
   channel: {
-    text: "Wireless Emergency Alerts (WEA) through FEMA's IPAWS, the Emergency Alert System on radio and TV, and each county's opt-in alerts (listed at CalAlerts.org). A WEA has a 90-character message and may add a 360-character one. A Spanish version is optional, shows only on phones set to Spanish, and nobody translates it for the sender.",
+    text: "Wireless Emergency Alerts (WEA) through FEMA's IPAWS, the Emergency Alert System on radio and TV, and each county's free opt-in alerts (Cal OES points to CalAlerts.org to sign up). A WEA has a 90-character message and may add a 360-character one. A Spanish version is optional, shows only on phones set to Spanish, and nobody translates it for the sender.",
     src: [US_S.ipaws, US_S.fccEas, US_S.weaFaq, US_S.calAlerts],
   },
   dose: "The WEA polygon, or the county alert list for the zone.",
@@ -1035,7 +1030,7 @@ const US: FloodProfile = {
     where: "Pajaro, Monterey County",
     when: "March 2023",
     facts: [
-      { text: "The levee broke around midnight on 10 March 2023, opening a gap about 100 ft (30 m) wide.", src: [US_S.pajaro] },
+      { text: "The levee broke around midnight on Friday 10 March 2023, opening a gap about 100 ft (30 m) wide.", src: [US_S.pajaro] },
       {
         text: "More than 8,500 people in Monterey County were under evacuation orders or warnings, including about 1,700 residents of Pajaro, many of them Latino farmworkers.",
         src: [US_S.pajaro],
@@ -1100,12 +1095,12 @@ const AU_S = {
     url: "https://www.ses.nsw.gov.au/sites/default/files/document/2024-nsw-state-flood-plan.pdf",
   },
   sesWhat: { claim: "NSW SES manages the response to floods, storms and tsunami; 132 500", url: "https://www.ses.nsw.gov.au/about-us/what-we-do" },
-  tripleZero: { claim: "000; 112 from mobiles; 106 for TTY; no texting", url: "https://www.triplezero.gov.au/triple-zero/other-emergency-numbers" },
+  tripleZero: { claim: "000; 112 from mobiles; 106 for TTY; no texting", url: "https://www.infrastructure.gov.au/triple-zero" },
   acma: { claim: "Emergency calls (ACMA)", url: "https://www.acma.gov.au/emergency-calls" },
   ausAlert: { claim: "AusAlert national cell broadcast; national test 27 July 2026; planned launch 1 October 2026", url: "https://en.wikipedia.org/wiki/AusAlert" },
   ausAlertDeck: {
-    claim: "AusAlert runs alongside Emergency Alert until at least July 2027 (NEMA webinar)",
-    url: "https://wesnet.org.au/wp-content/uploads/sites/3/2026/06/Wesnet-NEMA_AusAlert-Webinar_02062026.pdf",
+    claim: "AusAlert to be used alongside the SMS Emergency Alert over the 2026/27 summer; the SMS system to be phased out in July 2027; national test 27 July 2026",
+    url: "https://www.canberratimes.com.au/story/9183992/new-emergency-siren-set-to-blast-aussie-phones-in-first-test/",
   },
   nema: { claim: "NEMA AusAlert page", url: "https://www.nema.gov.au/our-work/risk-reduction/ausalert" },
   bomVolunteers: {
@@ -1190,7 +1185,7 @@ const AU: FloodProfile = {
     src: [AU_S.floodPlan, AU_S.sesWarnings],
   },
   channel: {
-    text: "Emergency Alert sends text and voice messages to landlines and mobiles in the warning area. AusAlert, the new national cell broadcast, had a national test on 27 July 2026, with launch planned for 1 October 2026; it runs alongside Emergency Alert until at least July 2027. New South Wales also has the Hazards Near Me app.",
+    text: "Emergency Alert sends text and voice messages to landlines and mobiles in the warning area. AusAlert, the new national cell broadcast, had a national test on 27 July 2026, and its launch was planned for 1 October 2026. It is to be used alongside Emergency Alert over the 2026–27 summer, with the SMS system phased out in July 2027. New South Wales also has the Hazards Near Me app.",
     src: [AU_S.sesWarnings, AU_S.ausAlert, AU_S.ausAlertDeck, AU_S.nema],
   },
   dose: "The Emergency Alert or AusAlert area.",
@@ -1283,7 +1278,7 @@ export const PUNE_2026: {
     { when: "31 Jul", what: "Khadakwasla's release is raised to 22,880 cusecs.", src: [IN_S.khadakwasla] },
   ],
   gap: {
-    text: "The warning to riverside areas came during the flood. Rain and dam releases are measured and announced hours ahead.",
+    text: "The order to warn riverside areas by public announcement came on 6 July, during the flood. Rain and dam releases are measured and announced hours ahead.",
     src: [IN_S.redAlert, IN_S.pavana],
   },
 };

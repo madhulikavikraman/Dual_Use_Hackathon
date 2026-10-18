@@ -66,6 +66,7 @@ export default function AnchorCard() {
         <SourceLinks src={timelineSources} className="mt-2" />
 
         <p className="mt-6 border-l-2 border-vf-flare pl-3 text-[0.95rem] leading-relaxed text-vf-bone">{gap.text}</p>
+        <SourceLinks src={gap.src} className="mt-2" />
       </div>
       <Wave />
     </section>
