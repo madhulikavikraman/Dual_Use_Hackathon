@@ -40,7 +40,7 @@ const NAMES: Record<string, string> = {
 export const HEAT_PRESETS: MovePresets = Object.fromEntries(Object.entries(NAMES).map(([id, name]) => [id, presets(name)]));
 
 const FACT =
-  "Demo zone with an approximate boundary. The population figure is a round demo estimate, not a census count. Cooling centers named here are simulated. Call 211 for the nearest real cooling center (LA County, lacounty.gov/heat).";
+  "Demo zone with an approximate boundary. The population figure is a round demo estimate, not a census count. Cooling centers named here are demo choices. Call 211 for the nearest real cooling center (LA County, lacounty.gov/heat).";
 
 const ZONE = (id: string, coords: [number, number][], population_est: number): ZoneSeed => ({
   id, name: NAMES[id], coords, state: "monitor", directive_text: null, move_text: null, evac_point: null, evac: null,

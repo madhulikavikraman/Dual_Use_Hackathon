@@ -80,7 +80,7 @@ export async function resetScenario(scenario: Scenario) {
     await ledger({ actor: e.actor, action: `approve zone: ${stateLabelFor(e.to_state, mode)}`, target: zone.name, reason: "Scenario start (seeded)" });
   }
   const label = SCENARIOS.find((s) => s.id === scenario)?.label ?? scenario;
-  await feed({ kind: "info", title: `Scenario loaded: ${label}`, detail: "All residents are synthetic except the six volunteer phones. Every send is simulated." });
+  await feed({ kind: "info", title: `Scenario loaded: ${label}`, detail: "All residents are synthetic except the six volunteer phones. No real alert is sent." });
   // Block-by-block plans seeded for the zones already under an Order or a Warning (lib/engine/plans.ts).
   await seedPlans(scenario, at).catch((e) => console.error("[reset] block plans", e));
   if (scenario === "norte") await liveNorteFeed();
@@ -120,7 +120,7 @@ async function liveNorteFeed() {
   await feed({
     kind: "info", severity: "warn",
     title: `${fire ? "Live" : "Snapshot"}: ${f.name} ${size} (CAL FIRE, updated ${ptTime(f.updated)})`,
-    detail: `${f.location}. ${f.agency}. Started ${ptTime(f.started)}. ${f.url} Zone states, routes and residents here are simulated; real orders come from OCFA and the county.`,
+    detail: `${f.location}. ${f.agency}. Started ${ptTime(f.started)}. ${f.url} Zone states, routes and residents here are demo data; real orders come from OCFA and the county.`,
   });
   for (const a of alerts.slice(0, 4)) {
     await feed({ kind: "info", severity: "info", title: `NWS at the ignition point: ${a.event}`, detail: a.headline });

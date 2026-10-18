@@ -158,7 +158,7 @@ function corroborate(ctx: PassCtx, zoneId: string | null, center: [number, numbe
   const usgsCorroborates = covers && quakeShare >= 0.5;
   if (usgsCorroborates && ev) {
     const mins = Math.round((ctx.now - t(ev.at)) / 60_000);
-    by.push(`a USGS M${ev.mag.toFixed(1)} event ${mins < 1 ? "just now" : `${mins} min ago`} (${ev.place.replace(/\s*\(simulated\)/i, ", simulated")})`);
+    by.push(`a USGS M${ev.mag.toFixed(1)} event ${mins < 1 ? "just now" : `${mins} min ago`} (${ev.place.replace(/\s*\((?:simulated|drill)\)/i, ", drill")})`);
   }
   const quakeTypesOnly = types.filter((x) => QUAKE_TYPES.has(x)).length;
   return {
@@ -622,7 +622,7 @@ export async function seedEarthquake(): Promise<void> {
   const now = Date.now();
   const epicenter = { lat: 34.012, lng: -118.355 };
   await setMeta({
-    usgs_event: { mag: 5.9, place: "Newport-Inglewood fault near Mid-City (simulated)", lat: epicenter.lat, lng: epicenter.lng, at: new Date(now).toISOString() },
+    usgs_event: { mag: 5.9, place: "Newport-Inglewood fault near Mid-City (drill)", lat: epicenter.lat, lng: epicenter.lng, at: new Date(now).toISOString() },
   });
   // Two cells in Mid-City: around Pico and La Brea, and around Pico and Crenshaw (demo choices).
   const anchors: [number, number][] = [[-118.345, 34.04], [-118.325, 34.035]];
@@ -651,7 +651,7 @@ export async function seedEarthquake(): Promise<void> {
     severity: "critical",
     zone_id: zone.id,
     geo: { type: "Point", coordinates: [epicenter.lng, epicenter.lat] },
-    title: "USGS event (simulated): M5.9, Newport-Inglewood fault near Mid-City",
+    title: "Earthquake drill: USGS-style M5.9 event, Newport-Inglewood fault near Mid-City",
     detail: `Earthquake mode. ${rows.length} seeded 911-style reports (shaking, damage, injury) landed in two Mid-City hex cells over the last 4 minutes. Pattern watch clusters them; any proposal needs a human.`,
   });
   await runPatternWatchNow();
@@ -685,7 +685,7 @@ export async function seedHoaxFlood(): Promise<void> {
     severity: "warn",
     zone_id: zone.id,
     geo: { type: "Point", coordinates: anchors[0].at },
-    title: `Hoax flood drill (simulated): ${rows.length} inbound reports of smoke in ${zone.name}`,
+    title: `Hoax flood drill: ${rows.length} inbound reports of smoke in ${zone.name}`,
     detail:
       "Synthetic inbound reports in 5 minutes, with no sentinel confirmation. Watch the hoax mirror: reports high, sentinel reads zero. A cluster never sends; asking the edge is a human's hold.",
   });

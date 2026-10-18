@@ -312,15 +312,15 @@ function m1(c: Ctx): EvidenceItem {
         inProgress ? `${plural(inProgress, "hold")} in progress (not counted until quorum or close)` : null,
         bypassed ? `${plural(bypassed, "IC bypass", "IC bypasses")} excluded (no read by design)` : null,
         dark ? `${plural(dark, "dark-zone hold")} excluded (every sentinel silent: the network drill; the alert still sends on time)` : null,
-        `Answers from real phones: ${realAnswers}; simulated (synthetic or autopilot): ${synthAnswers}.`,
+        `Answers from real phones: ${realAnswers}; synthetic or autopilot: ${synthAnswers}.`,
         !real.drills && all.drills
-          ? "Not a pass: the milestone counts holds that rang at least two sentinels on real phones (a real-phone quorum, D-20). Simulated sentinels answer on a script 8 to 33 s after ringing; run a hold with the volunteer sentinel phones on the phone page and autopilot off."
+          ? "Not a pass: the milestone counts holds that rang at least two sentinels on real phones (a real-phone quorum, D-20). Synthetic sentinels answer on a script 8 to 33 s after ringing; run a hold with the volunteer sentinel phones on the phone page and autopilot off."
           : null,
       ]
         .filter(Boolean)
         .join(" · ") || null,
     method:
-      "Per hold: seconds from holds.started_at to the second sentinel answer (yes, no or unsure; silence is an abstention, never a No). Real phones only: a drill is a hold that rang at least two sentinels on real phones (the quorum size; browser or Retell, not the simulator, not autopilot) and reached a real-phone quorum or closed (a hold that rang one real phone cannot reach a real-phone quorum and counts as simulation only); it succeeds when the second real-phone answer came within 90 s and the real-phone read matches ground truth where it can be checked. The same count over every answer, simulated sentinels included, is the rehearsal ('met in simulation'). IC bypasses and dark zones (the hold's dark-zone read: three or more sentinels asked, every one silent) are excluded: no read is possible by design. Ground truth for the seeded scenario: the hazard is real inside the zone's own polygon (expect a confirmed read) and a countywide polygon is wrong (expect a disputed read).",
+      "Per hold: seconds from holds.started_at to the second sentinel answer (yes, no or unsure; silence is an abstention, never a No). Real phones only: a drill is a hold that rang at least two sentinels on real phones (the quorum size; browser or Retell, not the simulator, not autopilot) and reached a real-phone quorum or closed (a hold that rang one real phone cannot reach a real-phone quorum and counts as simulation only); it succeeds when the second real-phone answer came within 90 s and the real-phone read matches ground truth where it can be checked. The same count over every answer, synthetic sentinels included, is the rehearsal ('met in simulation'). IC bypasses and dark zones (the hold's dark-zone read: three or more sentinels asked, every one silent) are excluded: no read is possible by design. Ground truth for the seeded scenario: the hazard is real inside the zone's own polygon (expect a confirmed read) and a countywide polygon is wrong (expect a disputed read).",
     figures: [
       {
         label: "Real-phone drills under 90 s, read matching ground truth",
@@ -331,7 +331,7 @@ function m1(c: Ctx): EvidenceItem {
       { label: "Median hold → quorum, real phones", value: fmtS(median(real.times)), target: "< 90 s" },
       { label: "Real phones that answered", value: realPhones.size ? `${realPhones.size} (${[...realPhones].join(", ")})` : 0 },
       {
-        label: "All drills under 90 s, simulated included",
+        label: "All drills under 90 s, synthetic included",
         value: all.drills ? `${all.ok}/${all.drills} (${fmtPct(allShare)})` : "—",
         target: "rehearsal",
         status: all.drills ? (simMet ? "simulated" : "not_yet") : "no_data",
@@ -341,7 +341,7 @@ function m1(c: Ctx): EvidenceItem {
       { label: "Reads confirmed / disputed", value: `${reads.confirmed} / ${reads.disputed}` },
       { label: "No read / dark zone", value: `${reads.no_read} / ${reads.dark_zone}` },
       { label: "Reads matching ground truth", value: truthChecked ? `${truthMatched}/${truthChecked}` : "—" },
-      { label: "Answers: real phones / simulated", value: `${realAnswers} / ${synthAnswers}` },
+      { label: "Answers: real phones / synthetic", value: `${realAnswers} / ${synthAnswers}` },
     ],
     tables: [
       {
@@ -634,10 +634,10 @@ function m3(c: Ctx): EvidenceItem {
       inProgress ? `${plural(inProgress, "send")} still inside the 60 s window.` : null,
       all.drills && !all.seeded ? "No failure has been seeded yet: turn on Wrong polygon on /demo, then send, to prove detection." : null,
       real.seeded > real.flagged
-        ? "A real canary only hears a simulated send if its phone shows the simulated alert: a truthful 'No' on a seeded wrong polygon is then no fault of the canary, and seeded detection is measured in simulation."
+        ? "A real canary only hears a demo send if its phone shows the demo alert: a truthful 'No' on a seeded wrong polygon is then no fault of the canary, and seeded detection is measured in simulation."
         : null,
       all.drills && !real.drills
-        ? "Not a pass: the milestone counts real canary phones (D-20), and simulated canaries answer from the polygon that was sent. Keep the canary phone on the phone page with autopilot off."
+        ? "Not a pass: the milestone counts real canary phones (D-20), and synthetic canaries answer from the polygon that was sent. Keep the canary phone on the phone page with autopilot off."
         : null,
     ]
       .filter(Boolean)
@@ -651,13 +651,13 @@ function m3(c: Ctx): EvidenceItem {
       ? `${real.drills ? `Real phones: ${real.checked} of ${plural(real.drills, "send")} checked within 60 s, ${real.flagged} of ${plural(real.seeded, "seeded failure")} flagged` : "Real phones: no real canary has answered yet"}; simulation included: ${all.checked} of ${plural(all.drills, "send")} checked, ${all.flagged} of ${plural(all.seeded, "seeded failure")} flagged within 60 s`
       : inProgress
         ? "First send still inside the 60 s window"
-        : "No simulated send yet",
+        : "No demo send yet",
     target: "A seeded wrong-polygon or no-delivery failure flagged within 60 s of the send, every drill; real canary phones only",
     status,
     status_label: metLabel(status),
     note,
     method:
-      "Per send (holds.sent_at): seconds to the first canary answer (yes or no; silence checks nothing), and to the first transport_failure flag. A 'yes' from a canary outside the polygon or a 'no' from one inside is a transport failure; every canary silent means 'delivery unverified', a flag but not a detection. A seeded failure is a send of a countywide (wrong) polygon; a seeded send that was not flagged within 60 s is a miss. Real phones only: canary calls that rang a real phone (browser or Retell); the same count over every canary, simulated included, is the rehearsal ('met in simulation'). Flags go to the authority; they never stop a send.",
+      "Per send (holds.sent_at): seconds to the first canary answer (yes or no; silence checks nothing), and to the first transport_failure flag. A 'yes' from a canary outside the polygon or a 'no' from one inside is a transport failure; every canary silent means 'delivery unverified', a flag but not a detection. A seeded failure is a send of a countywide (wrong) polygon; a seeded send that was not flagged within 60 s is a miss. Real phones only: canary calls that rang a real phone (browser or Retell); the same count over every canary, synthetic included, is the rehearsal ('met in simulation'). Flags go to the authority; they never stop a send.",
     figures: [
       {
         label: "Sends checked within 60 s, real canaries",
@@ -671,9 +671,9 @@ function m3(c: Ctx): EvidenceItem {
         target: "every drill",
         status: real.seeded ? (real.flagged === real.seeded ? "pass" : "not_yet") : "no_data",
       },
-      { label: "Sends checked within 60 s, simulated included", value: all.drills ? `${all.checked}/${all.drills}` : "—", target: "rehearsal" },
+      { label: "Sends checked within 60 s, synthetic included", value: all.drills ? `${all.checked}/${all.drills}` : "—", target: "rehearsal" },
       {
-        label: "Seeded failures flagged within 60 s, simulated included",
+        label: "Seeded failures flagged within 60 s, synthetic included",
         value: all.seeded ? `${all.flagged}/${all.seeded}` : "none seeded",
         target: "rehearsal",
         status: all.seeded ? (all.flagged === all.seeded ? "simulated" : "not_yet") : "no_data",
@@ -702,7 +702,7 @@ function m3(c: Ctx): EvidenceItem {
           { key: "flag_s", label: "Flag (s)" },
         ],
         rows: drillRows,
-        empty: "No simulated send yet.",
+        empty: "No demo send yet.",
       },
       {
         title: "Canary calls",
@@ -846,7 +846,7 @@ function safety(c: Ctx): EvidenceItem {
       .filter(Boolean)
       .join(" "),
     method:
-      "Allowlist: the agent has no tool or variable carrying instruction text other than directive_text, move_text and evac_point of the caller's zone (sentinels and canaries hear the alert text of a hold a named human opened). Binding check: every call that rang with instruction text is matched to a human approval (a zone event or the zone's approval, or the hold) that existed by the end of the call (lookup_zone can refresh the text mid-call). Adversarial tests: agent refusals of a caller's request, each tied to its call by the person named and the time; the bar needs at least one on a real phone (browser or Retell), since a simulated call cannot fail the check. Post-call review: the transcript pass flags disagreements and low confidence as review_needed for a human.",
+      "Allowlist: the agent has no tool or variable carrying instruction text other than directive_text, move_text and evac_point of the caller's zone (sentinels and canaries hear the alert text of a hold a named human opened). Binding check: every call that rang with instruction text is matched to a human approval (a zone event or the zone's approval, or the hold) that existed by the end of the call (lookup_zone can refresh the text mid-call). Adversarial tests: agent refusals of a caller's request, each tied to its call by the person named and the time; the bar needs at least one on a real phone (browser or Retell), since a synthetic call cannot fail the check. Post-call review: the transcript pass flags disagreements and low confidence as review_needed for a human.",
     figures: [
       { label: "Unapproved instructions detected", value: carried ? unbound.length : "—", target: "0", status: unbound.length ? "not_yet" : undefined },
       {
@@ -855,8 +855,8 @@ function safety(c: Ctx): EvidenceItem {
         target: "≥ 1",
         status: adversarialReal ? "pass" : carried ? "not_yet" : "no_data",
       },
-      { label: "Adversarial refusals: simulated / call not found", value: `${adversarialSim} / ${adversarialUnmatched}` },
-      { label: "Calls that carried an instruction: real / simulated", value: `${carriedReal} / ${carried - carriedReal}` },
+      { label: "Adversarial refusals: synthetic / call not found", value: `${adversarialSim} / ${adversarialUnmatched}` },
+      { label: "Calls that carried an instruction: real / synthetic", value: `${carriedReal} / ${carried - carriedReal}` },
       { label: "Refusals logged", value: refusals.length },
       { label: "Tool calls blocked by the allowlist", value: blocked },
       { label: "Human decisions logged", value: decisions.length },
@@ -1112,17 +1112,17 @@ function realVsSynthetic(c: Ctx): EvidenceItem {
   return {
     id: "A4",
     title: "Real phones vs synthetic",
-    question: "What in this run was a real phone in the room, and what was simulated?",
-    value: `${realCalls.length} real-phone calls, ${rang.length - realCalls.length} simulated; ${helpsReal} real registry row${helpsReal === 1 ? "" : "s"} of ${c.helps.length}`,
+    question: "What in this run was a real phone in the room, and what was synthetic?",
+    value: `${realCalls.length} real-phone calls, ${rang.length - realCalls.length} synthetic; ${helpsReal} real registry row${helpsReal === 1 ? "" : "s"} of ${c.helps.length}`,
     target: "Synthetic rows labeled and excluded from real-phone counts (D-20)",
     status: "info",
-    note: "Every send is simulated; every resident except the volunteer devices is synthetic.",
+    note: "No real alert is sent; every resident except the volunteer devices is synthetic.",
     method:
       "A call is a real phone in the room when its transport is browser or retell; transport sim is the simulator, including a volunteer device on autopilot. households.synthetic = false marks the volunteer devices and the callers on the public line (device label 'Public line', counted apart: they are not volunteer phones); every other person is synthetic.",
     figures: [
       { label: "Volunteer devices", value: devices.length },
       { label: "Public-line callers", value: publicCallers },
-      { label: "Calls that rang: real / simulated", value: `${realCalls.length} / ${rang.length - realCalls.length}` },
+      { label: "Calls that rang: real / synthetic", value: `${realCalls.length} / ${rang.length - realCalls.length}` },
       { label: "Registry rows: real / synthetic", value: `${helpsReal} / ${c.helps.length - helpsReal}` },
     ],
     tables: [
@@ -1182,7 +1182,7 @@ export async function computeEvidence(): Promise<Evidence> {
     backend: s.backend,
     simulated: true,
     disclaimer:
-      "Simulated run for a hackathon demonstration: every send is simulated, every resident is synthetic except the volunteer phones, and synthetic rows are labeled. A milestone is met only on real phones (M2: the full gold set); a bar met with simulated answers reads 'met in simulation' and does not count.",
+      "Demo run for a hackathon: no real alert is sent, every resident is synthetic except the volunteer phones, and synthetic rows are labeled. A milestone is met only on real phones (M2: the full gold set); a bar met only with synthetic answers reads 'met in simulation' and does not count.",
     summary: {
       passed,
       simulated: simOnly.length,

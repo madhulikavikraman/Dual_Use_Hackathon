@@ -12,7 +12,7 @@ import type { ScenarioBuild } from "./westside";
 
 const SHELTER: [number, number] = [106.468, 29.8];
 const SHELTER_NAME = "嘉陵江东岸临时安置点（演示）";
-const NOTE = "这是黑客松演示的模拟场景；安置点和路线为演示选择。This is a simulated scenario for a hackathon demonstration.";
+const NOTE = "这是黑客松演示的模拟场景；安置点和路线为演示选择。This is a demo scenario for a hackathon.";
 
 export const CHONGQING_PRESETS: MovePresets = {
   "CQ-TS": {

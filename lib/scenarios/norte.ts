@@ -16,7 +16,7 @@ export const NORTE_ORIGIN: [number, number] = [-117.63618, 33.4813];
 const SHELTER: [number, number] = [-117.6119, 33.4268];
 const SHELTER_NAME = "San Clemente Community Center, 100 North Calle Seville (demo choice)";
 const NOTE =
-  "Simulated scenario on the real Norte Fire location for a hackathon demonstration. Zone states, routes and residents are simulated; real orders come from OCFA and the county.";
+  "Demo scenario on the real Norte Fire location for a hackathon. Zone states, routes and residents are demo data; real orders come from OCFA and the county.";
 
 export const NORTE_PRESETS: MovePresets = {
   "NOR-TA": {

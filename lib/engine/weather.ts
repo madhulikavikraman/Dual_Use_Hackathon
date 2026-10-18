@@ -113,7 +113,7 @@ export function proposalReason(w: ZoneWeather): string {
   const live = w.live ? `live Open-Meteo ${localClock(w.live.observed_local)}: feels like ${deg(w.live.feels_like_f)} now` : "live reading unavailable";
   const used =
     w.basis === "simulated"
-      ? `Feels like ${deg(w.feels_like_high_f)} today in the SIMULATED heat wave (${live}).`
+      ? `Feels like ${deg(w.feels_like_high_f)} today in the DEMO heat wave (${live}).`
       : `Feels like ${deg(w.feels_like_high_f)} today (live forecast, Open-Meteo ${w.live ? localClock(w.live.observed_local) : ""}).`;
   const product = w.nws.find((a) => a.event in NWS_HEAT_LEVEL);
   const table = row && w.feels_like_high_f >= row.min_f ? ` Demo table: ${row.min_f}°F and up proposes ${row.label}.` : "";
@@ -168,7 +168,7 @@ export async function runHeatCheck(opts: { actor?: string; at?: string } = {}): 
   }
   await ledger({
     actor: opts.actor ?? "system",
-    action: `heat check: live weather ${check.live_ok ? "read" : "unavailable"}, ${check.basis === "live" ? "live readings drive the ladder" : "simulated heat wave in use (labeled)"}`,
+    action: `heat check: live weather ${check.live_ok ? "read" : "unavailable"}, ${check.basis === "live" ? "live readings drive the ladder" : "demo heat wave in use (labeled)"}`,
     kind: "system",
     target: `${zones.length} zones`,
     reason: `${proposals.length} new proposal(s); thresholds are a demo setting`,
@@ -177,20 +177,20 @@ export async function runHeatCheck(opts: { actor?: string; at?: string } = {}): 
 }
 
 function summaryTitle(check: HeatCheck, zones: Zone[]): string {
-  if (!check.live_ok) return `Live weather unavailable (${check.live_error}): simulated heat wave in use, labeled on every zone`;
+  if (!check.live_ok) return `Live weather unavailable (${check.live_error}): demo heat wave in use, labeled on every zone`;
   const r = zones.map((z) => check.weather.get(z.id)!.live!).filter(Boolean);
   const feels = r.map((x) => x.feels_like_f);
   const when = r[0] ? localClock(r[0].observed_local) : "";
   const range = `${deg(Math.min(...feels))}–${deg(Math.max(...feels))}`;
   return check.basis === "live"
     ? `Live weather drives the heat ladder: feels like ${range} now (Open-Meteo, ${when} PT)`
-    : `Live weather: feels like ${range} now (Open-Meteo, ${when} PT), below the heat thresholds; SIMULATED heat wave in use`;
+    : `Live weather: feels like ${range} now (Open-Meteo, ${when} PT), below the heat thresholds; DEMO heat wave in use`;
 }
 
 function summaryDetail(check: HeatCheck, zones: Zone[]): string {
   const rows = zones.map((z) => {
     const w = check.weather.get(z.id)!;
-    return `${z.name} ${deg(w.feels_like_high_f)}${w.basis === "simulated" ? " (simulated)" : ""}`;
+    return `${z.name} ${deg(w.feels_like_high_f)}${w.basis === "simulated" ? " (demo)" : ""}`;
   });
   const table = HEAT_THRESHOLDS.slice().reverse().map((t) => `${t.min_f}°F ${t.label}`).join(", ");
   return `Feels-like highs used: ${rows.join(", ")}. Thresholds (demo setting, not NWS criteria): ${table}. Sources: ${SOURCES.open_meteo.url}, api.weather.gov.`;

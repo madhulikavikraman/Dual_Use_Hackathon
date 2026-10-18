@@ -83,5 +83,5 @@ export function weatherLine(w: ZoneWeather): string {
     ? `live ${deg(w.live.feels_like_f)} feels like (${deg(w.live.temp_f)} air) at ${localClock(w.live.observed_local)}, Open-Meteo`
     : `live reading unavailable${w.live_error ? ` (${w.live_error})` : ""}`;
   const nws = !w.nws_checked ? "NWS not reached" : w.nws.length ? `NWS: ${w.nws.map((a) => a.event).join(", ")}` : "NWS: no active alerts";
-  return w.basis === "simulated" ? `${used} (SIMULATED heat wave) · ${live} · ${nws}` : `${used} (live forecast) · ${live} · ${nws}`;
+  return w.basis === "simulated" ? `${used} (DEMO heat wave) · ${live} · ${nws}` : `${used} (live forecast) · ${live} · ${nws}`;
 }

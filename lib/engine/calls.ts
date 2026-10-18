@@ -6,14 +6,16 @@ import { db, isoIn, nowIso, uid } from "@/lib/db";
 import { stateLabelFor } from "@/lib/directives";
 import { geocode } from "@/lib/geocode";
 import { centroidOf, zoneForPoint } from "@/lib/geo";
+import { jurisdictionFor } from "@/lib/jurisdictions";
 import { languageByCode } from "@/lib/languages";
 import { isE164, requestOrigin } from "@/lib/sms";
 import type {
-  Call, CallVars, HelpSource, Household, HouseholdStatus, Intent, IntentFlag, Need, PrimaryIntent, Report, ReportType,
+  Call, CallVars, EvacPlan, HelpSource, Household, HouseholdStatus, Intent, IntentFlag, Meta, Need, PrimaryIntent, Report, ReportType,
   ShareConsentSource, Status, Zone, ZoneState,
 } from "@/lib/types";
 import { NEEDS } from "@/lib/types";
-import { blankStatus, buildVars, inboundCampaign, newCall } from "./campaigns";
+import { blockAt, blockWords, messageKind, refresh } from "./blocks";
+import { blankStatus, buildVars, inboundCampaign, newCall, planWords } from "./campaigns";
 import { activeShareFor, createShare } from "./locate";
 import { feed, getMeta, ledger } from "./log";
 
@@ -79,9 +81,22 @@ function helpSource(call: Call): HelpSource {
 
 // ---------- tool input schemas (tolerant: Retell may send strings for numbers and booleans) ----------
 
-const bool = z.preprocess((v) => (v === "true" ? true : v === "false" ? false : v === "" ? null : v), z.boolean().nullable().optional());
-const numb = z.preprocess((v) => (v === "" || v === null || v === undefined ? null : typeof v === "string" ? Number(v) : v), z.number().nullable().optional());
-const text = z.preprocess((v) => (v === "" ? null : v), z.string().nullable().optional());
+// A model that read "use null" literally may send the word: "null", "none" or "(none)" means not said, never the text.
+const NOT_SAID = new Set(["", "null", "none", "(none)", "n/a", "undefined"]);
+const notSaid = (v: unknown) => typeof v === "string" && NOT_SAID.has(v.trim().toLowerCase());
+const yesNo = (v: string): boolean | null => (/^(true|yes|y)$/i.test(v.trim()) ? true : /^(false|no|n)$/i.test(v.trim()) ? false : null);
+const WORD_NUMBER: Record<string, number> = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12 };
+const toNumber = (v: string): number | null => {
+  const t = v.trim().toLowerCase();
+  const n = t in WORD_NUMBER ? WORD_NUMBER[t] : Number(t);
+  return Number.isFinite(n) ? n : null;
+};
+const bool = z.preprocess((v) => (typeof v === "string" ? (notSaid(v) ? null : yesNo(v)) : v), z.boolean().nullable().optional());
+const numb = z.preprocess(
+  (v) => (v === null || v === undefined || notSaid(v) ? null : typeof v === "string" ? toNumber(v) : typeof v === "number" && !Number.isFinite(v) ? null : v),
+  z.number().nullable().optional(),
+);
+const text = z.preprocess((v) => (notSaid(v) ? null : v), z.string().nullable().optional());
 
 const RecordStatus = z.object({
   status: z.enum(["leaving", "staying", "already_left", "needs_help_leaving", "needs_help_now", "unclear", "wrong_number", "not_in_zone"]),
@@ -91,7 +106,7 @@ const RecordStatus = z.object({
   refusal_reason: text, memory_note: text,
 });
 const ReportHazard = z.object({
-  seen: z.preprocess((v) => (v === "true" ? true : v === "false" ? false : v), z.boolean()),
+  seen: z.preprocess((v) => (typeof v === "string" ? yesNo(v) ?? v : v), z.boolean()),
   type: z.enum(["smoke", "fire", "shaking", "damage", "injury", "flood", "power", "other"]).catch("other"),
   direction: text, distance: text, location_text: text,
 });
@@ -129,6 +144,13 @@ async function stateFix(text: string | null | undefined, consent: boolean | null
   return { lat: hit.lat, lng: hit.lng, accuracy_m: hit.accuracy_m, source: "stated", stated_text: text, consent: consent ?? false };
 }
 
+/** "hang up and call 911 now", or both numbers where the ambulance has its own (China: 120 and 119). */
+function callLine(v: CallVars): string {
+  const fire = v.emergency_number || "911";
+  const medical = v.medical_number || fire;
+  return medical === fire ? `hang up and call ${fire} now` : `hang up and call ${medical} now for a medical emergency, or ${fire} for fire or someone trapped`;
+}
+
 // ---------- the eight tools ----------
 
 /** Run one of the eight tools for a call. Validates input, writes rows, logs refusals. */
@@ -146,7 +168,12 @@ export async function executeTool(callId: string, name: ToolName, args: Record<s
     case "end_call": {
       const { outcome } = EndCall.parse(args);
       await db().update("calls", callId, { analysis: { ...(ctx.call.analysis ?? {}), end_outcome: outcome } });
-      return { result: "The call will end after your goodbye.", end: true };
+      return {
+        result: ctx.call.transport === "retell"
+          ? "Recorded. If you have already said goodbye, call hang_up now and say nothing more; otherwise say goodbye in one short sentence, then call hang_up."
+          : "The call will end after your goodbye.",
+        end: true,
+      };
     }
     case "lookup_zone": return lookupZone(ctx, LookupZone.parse(args));
     case "read_observation": return readObservation(ctx, ReadObservation.parse(args));
@@ -186,7 +213,7 @@ async function shareLiveLocation(ctx: Ctx, a: z.infer<typeof ShareLive>): Promis
   if (!r.created) {
     return { result: "A link is already on for this person; nothing new was sent. Say they can use the link they already have. Never say when anyone will arrive." };
   }
-  const where = r.via === "browser_phone" ? "It is on their screen now." : r.via === "simulated" ? "The text is simulated in this demonstration." : "It was sent by text message.";
+  const where = r.via === "browser_phone" ? "It is on their screen now." : r.via === "simulated" ? "No real text is sent in this demonstration." : "It was sent by text message.";
   return {
     result: `Link sent. ${where} Say: tap the link and press Share; it stays on only until help reaches them, and they can stop it at any time. Never say when anyone will arrive. Then continue the call.`,
   };
@@ -220,10 +247,18 @@ async function recordStatus(ctx: Ctx, a: z.infer<typeof RecordStatus>): Promise<
     can_leave: a.can_leave ?? null, understood: a.understood ?? null, language: call.vars.language, confidence: 1,
     summary: null, source: "in_call", review_needed: false, created_at: nowIso(),
   };
-  // One in-call intent per call: replace the earlier one if the agent recorded twice (teach-back update).
+  // One in-call intent per call. A second record_status (the teach-back, a declined link) updates it: what it leaves
+  // out keeps the earlier answer, and needs add up.
   const prior = (await db().where("intents", { call_id: call.id, source: "in_call" }))[0];
-  if (prior) await db().update("intents", prior.id, { ...row, id: prior.id, created_at: prior.created_at });
-  else await db().insert("intents", row);
+  if (prior) {
+    const allNeeds = [...new Set([...prior.needs, ...needs])];
+    await db().update("intents", prior.id, {
+      ...row, id: prior.id, created_at: prior.created_at, needs: allNeeds,
+      flags: [...new Set([...flagsFor(intent, allNeeds, a.animals), ...prior.flags.filter((f) => f !== "medical")])],
+      people: row.people ?? prior.people, location_text: row.location_text ?? prior.location_text,
+      destination: row.destination ?? prior.destination, can_leave: row.can_leave ?? prior.can_leave, understood: row.understood ?? prior.understood,
+    });
+  } else await db().insert("intents", row);
 
   const hh: Partial<Household> = { last_heard: nowIso() };
   if (a.memory_note) hh.memory_note = a.memory_note.slice(0, 280);
@@ -244,19 +279,23 @@ async function recordStatus(ctx: Ctx, a: z.infer<typeof RecordStatus>): Promise<
     await refreshLocation(subject.id, fix);
   }
 
-  // Live location: offered once to someone who needs help, or who stays inside an Order zone (never pressed).
+  // Live location: offered once to someone who needs help, or who stays inside an Order zone (never pressed). On the
+  // heat line only to someone who needs a ride or feels unwell: staying home under an Extreme Heat Warning is no reason.
+  const heat = call.vars.mode === "heat";
   const offer = a.location_consent !== false && (a.status === "needs_help_now" || a.status === "needs_help_leaving" ||
-    (a.status === "staying" && call.vars.zone_state === "order")) && (await canOfferLink(ctx));
+    (!heat && a.status === "staying" && call.vars.zone_state === "order")) && (await canOfferLink(ctx));
   if (a.status === "needs_help_now") {
-    return { result: `Recorded as life safety (registry priority 1). If you have not yet, say: hang up and call ${call.vars.emergency_number || "911"} now.${offer ? ` In the same turn you may ${LINK_ASK} If they do not say yes at once, end the call.` : ""} Then end the call.` };
+    return { result: `Recorded as life safety (registry priority 1). If you have not yet, say: ${callLine(call.vars)}.${offer ? ` In the same turn you may ${LINK_ASK} If they do not say yes at once, end the call.` : ""} Then end the call.` };
   }
   if (a.status === "needs_help_leaving") {
     return { result: `Recorded: needs help leaving (registry priority 2).${offer ? ` Now ${LINK_ASK}` : ""} Tell them a person from the response team will call them back, then end the call.` };
   }
   if (a.status === "staying" && offer) return { result: `Recorded. The zone is under an order: ${LINK_ASK} Never pressure them.` };
-  if (a.status === "leaving" || a.status === "already_left") {
-    if (a.understood === true) return { result: "Recorded, teach-back passed. Say goodbye and end the call." };
-    if (a.understood === false) return { result: "Recorded. Repeat the approved route and evacuation point once, then end the call." };
+  // The teach-back is for warning calls and the public line, never the heat line, a linked contact or an Order relay.
+  const teachBack = (call.vars.stage === "1" || call.purpose === "inbound") && call.vars.mode !== "heat" && call.purpose !== "linked_contact";
+  if ((a.status === "leaving" || a.status === "already_left") && teachBack) {
+    if (a.understood === true) return { result: "Recorded, teach-back passed. Ask any question the script has left, then say goodbye and end the call." };
+    if (a.understood === false) return { result: "Recorded. Repeat the approved route and evacuation point once, ask any question the script has left, then end the call." };
     return { result: "Recorded. Now ask the teach-back question: where will you go, and by when?" };
   }
   return { result: "Recorded." };
@@ -299,9 +338,13 @@ async function requestHuman(ctx: Ctx, a: z.infer<typeof RequestHuman>): Promise<
   const { call, subject } = ctx;
   const who = subject?.name ?? "caller";
   if (a.reason === "salvage") return salvageRequest(ctx, a);
+  // Heat line: "distress" is how the agent asks for a check-in visit (someone to check on them, water, a door knock).
+  // The registry and the ledger say so in plain words.
+  const visit = call.vars.mode === "heat" && a.reason === "distress";
+  const said = visit ? "check-in visit" : a.reason.replace(/_/g, " ");
   if (subject) {
     await upsertStatus(call, subject.id, {
-      human_requested: true, human_reason: a.note ? `${a.reason}: ${a.note}` : a.reason,
+      human_requested: true, human_reason: a.note ? `${visit ? said : a.reason}: ${a.note}` : visit ? said : a.reason,
       ...(a.reason === "distress" || a.reason === "confusion" ? { distress: true } : {}),
       ...(a.reason === "medical_emergency" ? { status: "needs_help" as Status } : {}),
     });
@@ -312,18 +355,22 @@ async function requestHuman(ctx: Ctx, a: z.infer<typeof RequestHuman>): Promise<
       await upsertHelp({ household: subject, zone_id: subject.zone_id ?? (call.vars.zone_id || null), priority: 1, needs: subject.afn_flags,
         reason: `Life safety${a.note ? `: ${a.note}` : ""}`, source: helpSource(call) });
     }
-    return { result: `Flagged as life safety. Make sure you said: hang up and call ${call.vars.emergency_number || "911"} now. Then end the call.` };
+    const record = call.purpose === "resident" || call.purpose === "inbound" || call.purpose === "qrt_callback";
+    return {
+      result: `Flagged as life safety. Make sure you said: ${callLine(call.vars)}.${record ? " If you have not yet, call record_status with status needs_help_now; its result says whether to ask the live-location question." : ""} Then end the call.`,
+    };
   }
   if (a.reason === "asked_unapproved" || a.reason === "cannot_answer") {
     await ledger({ actor: "agent", action: `refused: ${a.note ?? "asked for something outside the approved text"}`, allowed: false, kind: "refusal", target: who, reason: "Not in the approved text; a person will call back" });
   } else if (a.reason === "doubts_call") {
     await ledger({ actor: "agent", action: "repeated the verification phrase and callback number (caller doubted the call)", kind: "agent", target: who });
   } else {
-    await ledger({ actor: "agent", action: `hand to a person: ${a.reason}`, kind: "agent", target: who, reason: a.note });
+    await ledger({ actor: "agent", action: `hand to a person: ${said}`, kind: "agent", target: who, reason: a.note });
   }
   if (subject) {
+    const note = a.note && !(visit && /^wants a check-in visit\.?$/i.test(a.note.trim())) ? ` (${a.note})` : "";
     await upsertHelp({ household: subject, zone_id: subject.zone_id ?? (call.vars.zone_id || null), priority: 3, needs: [],
-      reason: `Call back: ${a.reason.replace(/_/g, " ")}${a.note ? ` (${a.note})` : ""}`, source: helpSource(call) });
+      reason: visit ? `Check-in visit${note || " (asked for one)"}` : `Call back: ${said}${note}`, source: helpSource(call) });
   }
   return { result: "Flagged for a person to call back. Tell them a person will call them back." };
 }
@@ -367,14 +414,21 @@ async function lookupZone(ctx: Ctx, a: z.infer<typeof LookupZone>): Promise<Tool
   if (!zone || !zone.directive_text || zone.state === "monitor") {
     return { result: `No active instruction for ${hit.label}. Say you have no instructions for their location and a person will call them back.` };
   }
-  // The rest of the call uses this zone's approved texts.
+  // The rest of the call uses this zone's approved texts; under a running block plan, the block's words for that place.
+  const block = await planWords(zone, { id: ctx.household?.id ?? "", lng: hit.lng, lat: hit.lat }, meta.mode);
+  const directive = block?.directive_text ?? zone.directive_text;
+  const move = block?.move_text ?? zone.move_text ?? "";
   const vars: CallVars = { ...ctx.call.vars, zone_id: zone.id, zone_name: zone.name, zone_state: zone.state,
-    directive_text: zone.directive_text, move_text: zone.move_text ?? "", evac_point: zone.evac_point ?? "" };
+    directive_text: directive, move_text: move, evac_point: zone.evac_point ?? "" };
   await db().update("calls", ctx.call.id, { vars });
   // A public-line caller's pin moves to where they said they are; they never join a zone's call list.
   if (ctx.household?.device_label === "Public line") await db().update("households", ctx.household.id, { lat: hit.lat, lng: hit.lng });
+  // The ladder in the place's own words (China: 转移指令, not "Evacuation Order"); heat and base keep their mode's words.
+  const label = meta.mode === "civilian" && meta.jurisdiction && meta.jurisdiction !== "US-CA"
+    ? jurisdictionFor(meta.jurisdiction).labels[zone.state]
+    : await labelOf(zone.state);
   return {
-    result: `Zone: ${zone.name} (${await labelOf(zone.state)}). Read exactly. Directive: "${zone.directive_text}" Route: "${zone.move_text ?? "(none)"}" Evacuation point: "${zone.evac_point ?? "(none)"}"`,
+    result: `Zone: ${zone.name} (${label}; zone state ${zone.state}). From now on these are the approved texts for this call. Read exactly. Directive: "${directive}" Route: "${move || "(none)"}" Evacuation point: "${zone.evac_point ?? "(none)"}"`,
   };
 }
 
@@ -454,6 +508,40 @@ export async function endCall(callId: string, outcome = "completed") {
 
 const RETRY_MS = 30_000; // PRD: one retry after 10 minutes, 30 seconds in the demo
 
+/** The words a call reads about its zone. A follow-up call keeps them together (never one from the zone, one from the plan). */
+const WORD_KEYS = ["zone_id", "zone_name", "zone_state", "directive_text", "move_text", "evac_point", "alert_text"] as const;
+type Words = Pick<CallVars, (typeof WORD_KEYS)[number]>;
+
+/** The zone's approved, running block plan (active or everyone go now), or null. Never throws (before migration 005). */
+async function runningPlanFor(zoneId: string): Promise<EvacPlan | null> {
+  const rows = await db().where("evac_plans", { zone_id: zoneId }).catch(() => [] as EvacPlan[]);
+  const p = rows.filter((x) => x.status === "active" || x.status === "all_go").sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0];
+  return p ? refresh(p) : null;
+}
+
+/**
+ * What a follow-up call (the retry, the linked contact) reads. It starts from the missed call's words, so a household
+ * in a later wave still hears its block's words and its road, never a bare "leave now" on any road. With a block plan
+ * running, both texts come from the plan as it stands now (its wave may have started since), together, via blockWords.
+ * If the zone moved on the ladder since the missed call, the zone's new approved words (the block's words under a plan).
+ */
+async function followUpWords(call: Call, zone: Zone, subject: Household, meta: Meta): Promise<Words> {
+  const prev = Object.fromEntries(WORD_KEYS.map((k) => [k, call.vars[k]])) as Words;
+  const same = call.vars.zone_id === zone.id && call.vars.zone_state === zone.state;
+  const words: Words = same ? prev : {
+    zone_id: zone.id, zone_name: zone.name, zone_state: zone.state, directive_text: zone.directive_text ?? "",
+    move_text: zone.move_text ?? "", evac_point: zone.evac_point ?? "", alert_text: zone.directive_text ?? "",
+  };
+  const plan = zone.state === "order" && meta.mode !== "heat" ? await runningPlanFor(zone.id) : null;
+  const block = plan ? blockAt(plan, subject.lng, subject.lat) : null;
+  if (!plan || !block) return words;
+  // People who need extra time to leave (access and functional needs, or an open help row) never wait for a wave.
+  const extra = subject.afn_flags.length > 0 ||
+    (await db().where("help_requests", { household_id: subject.id })).some((r) => r.status !== "closed" && (r.kind ?? "people") === "people");
+  const w = blockWords(plan, block, zone, messageKind(plan, block, extra));
+  return { ...words, directive_text: w.directive_text, move_text: w.move_text };
+}
+
 /**
  * A call that did not connect (PRD 13): one retry, then the linked contact, then a registry row for
  * people with access and functional needs or in an Order zone. Sentinel and canary silence is handled by
@@ -483,9 +571,9 @@ export async function failCall(callId: string, kind: "no_answer" | "voicemail" |
   // A lifted (or monitored) zone gets no more follow-ups.
   if (!zone || zone.state === "lifted" || zone.state === "monitor") return;
   if (call.purpose === "resident" && call.attempt === 1 && kind !== "unreachable") {
+    const vars = { ...buildVars({ zone, household: subject, purpose: "resident", stage: call.vars.stage, meta }), ...(await followUpWords(call, zone, subject, meta)) };
     await db().insert("calls", newCall({
-      campaign_id: call.campaign_id, household: subject, purpose: "resident",
-      vars: buildVars({ zone, household: subject, purpose: "resident", stage: call.vars.stage, meta, alert_text: call.vars.alert_text }),
+      campaign_id: call.campaign_id, household: subject, purpose: "resident", vars,
       attempt: 2, planned_at: isoIn(RETRY_MS), order_index: call.order_index, ring_index: call.ring_index, edge_distance_m: call.edge_distance_m,
     }));
     return;
@@ -493,9 +581,9 @@ export async function failCall(callId: string, kind: "no_answer" | "voicemail" |
   if (call.purpose === "resident" && subject.linked_contact_household_id) {
     const contact = await db().get("households", subject.linked_contact_household_id);
     if (contact) {
+      const vars = { ...buildVars({ zone, household: contact, purpose: "linked_contact", stage: call.vars.stage, meta, subject }), ...(await followUpWords(call, zone, subject, meta)) };
       await db().insert("calls", newCall({
-        campaign_id: call.campaign_id, household: contact, purpose: "linked_contact", subject_household_id: subject.id,
-        vars: buildVars({ zone, household: contact, purpose: "linked_contact", stage: call.vars.stage, meta, subject }),
+        campaign_id: call.campaign_id, household: contact, purpose: "linked_contact", subject_household_id: subject.id, vars,
         planned_at: isoIn(1500),
       }));
       await ledger({ actor: "system", action: "calling the linked contact", kind: "system", target: subject.name, reason: `${subject.name} did not answer twice; asking ${contact.name}` });
@@ -505,9 +593,16 @@ export async function failCall(callId: string, kind: "no_answer" | "voicemail" |
   // People who already told us they are leaving or gone are not door-knock rows when their phone goes quiet.
   const said = await db().where("household_status", { household_id: subject.id });
   if (said.some((s) => s.status === "safe" || s.status === "leaving")) return;
-  if (subject.afn_flags.length || zone.state === "order") {
+  // Heat line: an older resident who lives alone or has no air conditioning and stops answering is a door knock,
+  // even with no linked contact, no access and functional needs and no Extreme Heat Warning (no answer is never safe).
+  const heatRisk = meta.mode === "heat" ? [
+    ...(subject.heat_profile?.lives_alone ? ["lives alone"] : []),
+    ...(subject.heat_profile?.no_ac ? ["no air conditioning"] : []),
+  ] : [];
+  if (subject.afn_flags.length || zone.state === "order" || heatRisk.length) {
+    const why = [...subject.afn_flags, ...heatRisk];
     await upsertHelp({ household: subject, zone_id: subject.zone_id, priority: 3, needs: subject.afn_flags,
-      reason: `Unreached${subject.afn_flags.length ? ` (${subject.afn_flags.join(", ")})` : ""}: door-knock list`, source: helpSource(call),
+      reason: `Unreached${why.length ? ` (${why.join(", ")})` : ""}: door-knock list`, source: helpSource(call),
       fix: enrolledFix(subject, zone) });
   }
 }
@@ -526,12 +621,14 @@ export async function startInboundCall(input: {
   let household = input.from_number
     ? (await db().where("households", { phone_e164: input.from_number }))[0] ?? null
     : null;
-  if (!household) household = await createCaller(input.from_number, input.lang_code ?? "en-US");
+  // Retell's inbound webhook carries no language: an unknown caller is greeted in the place's first language.
+  if (!household) household = await createCaller(input.from_number, input.lang_code ?? jurisdictionFor(meta.jurisdiction).languages[0] ?? "en-US");
   const zone = household.zone_id ? await db().get("zones", household.zone_id) : null;
-  const call = newCall({
-    campaign_id: campaign.id, household, purpose: "inbound",
-    vars: buildVars({ zone, household, purpose: "inbound", stage: "inbound", meta }),
-  });
+  const vars = buildVars({ zone, household, purpose: "inbound", stage: "inbound", meta });
+  // An enrolled caller in a block-by-block Order hears their own block's words.
+  const block = zone ? await planWords(zone, household, meta.mode) : null;
+  if (block) Object.assign(vars, block);
+  const call = newCall({ campaign_id: campaign.id, household, purpose: "inbound", vars });
   call.transport = input.transport;
   call.retell_call_id = input.retell_call_id ?? null;
   call.state = input.transport === "retell" ? "active" : "ringing";

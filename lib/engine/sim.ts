@@ -230,8 +230,8 @@ async function applyOutcome(call: Call, h: Household, plan: SimPlan, meta: Meta)
   const v = call.vars;
   const heat = meta.mode === "heat";
   const agentOpen = heat
-    ? `This is the heat check-in line, an automated AI voice, verification phrase ${v.verification_phrase}. Simulated call.`
-    : `This is the city emergency information line, verification phrase ${v.verification_phrase}. Simulated call.`;
+    ? `This is the heat check-in line, an automated AI voice, verification phrase ${v.verification_phrase}. Demo call.`
+    : `This is the city emergency information line, verification phrase ${v.verification_phrase}. Demo call.`;
   const hazard = heat ? "Yes. It's very hot here; people are looking for shade." : meta.usgs_event ? "Yes, strong shaking. A wall is down on Pico." : "Yes. Smoke and a glow to the west.";
   switch (plan.profile) {
     case "sentinel_yes":

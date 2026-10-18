@@ -1,7 +1,8 @@
 import "server-only";
 import { db, nowIso, uid } from "@/lib/db";
 import { serverEnv } from "@/lib/env";
-import type { AlertItem, LedgerEntry, Meta } from "@/lib/types";
+import { SCENARIOS, modeFor } from "@/lib/scenarios";
+import type { AlertItem, LedgerEntry, Meta, Mode } from "@/lib/types";
 
 /** Append a ledger line. Every human decision and every refused action lands here (PRD section 9). */
 export async function ledger(entry: {
@@ -63,9 +64,22 @@ export function defaultMeta(): Meta {
   };
 }
 
+const MODES: readonly string[] = ["civilian", "heat", "base"] satisfies Mode[];
+
+/**
+ * A stored meta row from an older build (mode "campus", scenario "usc": the USC DPS line was removed) must not crash
+ * the board: an unknown scenario falls back to westside (and its mode), an unknown mode to the scenario's own mode.
+ */
+function known(m: Meta): Meta {
+  const scenarioOk = SCENARIOS.some((s) => s.id === m.scenario);
+  const scenario = scenarioOk ? m.scenario : "westside";
+  const mode = scenarioOk && MODES.includes(m.mode) ? m.mode : modeFor(scenario);
+  return scenario === m.scenario && mode === m.mode ? m : { ...m, scenario, mode };
+}
+
 export async function getMeta(): Promise<Meta> {
   const m = await db().get("meta", "meta");
-  return m ? { ...defaultMeta(), ...m } : defaultMeta();
+  return m ? known({ ...defaultMeta(), ...m }) : defaultMeta();
 }
 
 export async function setMeta(patch: Partial<Meta>): Promise<Meta> {

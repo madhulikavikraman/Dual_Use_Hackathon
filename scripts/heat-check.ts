@@ -1,6 +1,6 @@
 // Heat check-in line, end to end, in-process, against its own data file (the dev server is untouched).
 // Run: npx tsx --conditions=react-server scripts/heat-check.ts
-// The network is switched OFF for the run (fetch throws), so reset must fall back to the labeled simulated heat wave.
+// The network is switched OFF for the run (fetch throws), so reset must fall back to the labeled demo heat wave.
 // The simulator answers for every phone (autopilot): no volunteers or API calls are needed. A final, non-fatal step
 // turns the network back on and prints the live Open-Meteo and NWS readings, if they can be reached.
 import { config } from "dotenv";
@@ -58,7 +58,7 @@ async function main() {
   check(heatLevelFor(89) === "monitor" && heatLevelFor(90) === "watch" && heatLevelFor(100) === "warning" && heatLevelFor(108) === "order",
     "threshold table: 89 monitor, 90 watch, 100 Heat Advisory, 108 Extreme Heat Warning");
 
-  // 1. Reset with the network off: the labeled simulated heat wave, quickly.
+  // 1. Reset with the network off: the labeled demo heat wave, quickly.
   const t0 = Date.now();
   const res = await resetScenario("heat");
   const ms = Date.now() - t0;
@@ -67,10 +67,10 @@ async function main() {
   check(ms < 5000, `reset with the network off took ${ms} ms (no waiting on the network)`);
   const zones = (await db().all("zones")).filter((z) => z.scenario === "heat");
   check(zones.every((z) => z.weather?.basis === "simulated" && z.weather.live === null && z.weather.simulated && !z.weather.nws_checked),
-    "every zone falls back to the simulated heat wave; no live reading, NWS not reached (nothing assumed)");
+    "every zone falls back to the demo heat wave; no live reading, NWS not reached (nothing assumed)");
   check(zones.every((z) => /network off/.test(z.weather?.live_error ?? "")), `the live error is kept on the zone (${zones[0].weather?.live_error})`);
   const feedRows = await db().all("alerts_feed");
-  check(feedRows.some((f) => /Live weather unavailable/.test(f.title) && /simulated heat wave/i.test(f.title)), "feed says live weather is unavailable and the simulated heat wave is in use");
+  check(feedRows.some((f) => /Live weather unavailable/.test(f.title) && /demo heat wave/i.test(f.title) && !/simulated/i.test(f.title)), "feed says live weather is unavailable and the demo heat wave is in use");
   const seniors = (await db().where("households", { scenario: "heat" })).filter((h) => h.role === "resident" && h.heat_profile);
   const langs = new Set(seniors.map((h) => h.language));
   check(["Spanish", "Armenian", "Tagalog", "Korean"].every((l) => langs.has(l)), `roster languages include Spanish, Armenian, Tagalog, Korean (${[...langs].join(", ")})`);
@@ -84,12 +84,15 @@ async function main() {
     if (expected === "monitor" ? Boolean(p) : p?.proposed_state !== expected) fromTable = false;
   }
   check(fromTable && open.length === 5, `proposals match the table: ${open.map((p) => `${p.zone_id} ${p.proposed_state}`).join(", ")} (North Hollywood below the thresholds: none)`);
-  check(open.every((p) => /SIMULATED/.test(p.reason) && /Demo table/.test(p.reason)), `proposal reasons say SIMULATED and name the demo table ("${open[0]?.reason}")`);
+  check(open.every((p) => /DEMO heat wave/.test(p.reason) && /Demo table/.test(p.reason) && !/simulated/i.test(p.reason)), `proposal reasons say DEMO heat wave and name the demo table ("${open[0]?.reason}")`);
   check(zones.every((z) => z.state === "monitor"), "no zone moved without a human");
   const rs = zones.find((z) => z.id === "SFV-RS")!;
   const d = zoneDefaults(rs, "warning", "heat");
-  check(/heat check for Reseda/.test(d.directive_text) && /simulated heat wave/.test(d.directive_text) && /103 degrees/.test(d.directive_text) && /Call 211/.test(d.directive_text),
+  check(/heat check for Reseda/.test(d.directive_text) && /In the demo heat wave/.test(d.directive_text) && !/simulated/i.test(d.directive_text) && /103 degrees/.test(d.directive_text) && /Call 211/.test(d.directive_text),
     `approved-message default: "${d.directive_text}"`);
+  const { heatDirective } = await import("../lib/directives");
+  const ehw = heatDirective("order", "Woodland Hills", { ...zones.find((z) => z.id === "SFV-WH")!.weather!, nws: [{ event: "Extreme Heat Warning", headline: null, expires: null }], nws_checked: true });
+  check(/has issued an Extreme Heat Warning for this area/.test(ehw), `"an" before a vowel: "${ehw.match(/The National Weather Service[^.]*\./)?.[0]}"`);
   check(/cooling center \(demo\)/.test(d.move_text) && /ride/.test(d.move_text), `route text offers a ride to a demo cooling center: "${d.move_text}"`);
 
   // 3. The prompt (both transports) and the simulator's lines.
@@ -134,9 +137,14 @@ async function main() {
   const gloria = await byName("Gloria Washington");
   const carmen = await byName("Carmen Morales");
   const ruth = await byName("Ruth Klein");
+  // Canoga Park (Heat Advisory): Armen Petrosyan lives alone with no air conditioning, has no linked contact and no
+  // access and functional needs, and does not answer. Below Extreme Heat, he must still become a door knock.
+  const armen = await byName("Armen Petrosyan");
+  const pCP = open.find((p) => p.zone_id === "SFV-CP")!;
+  await decideProposal(pCP.id, { decision: "approve", actor: "Heat Supervisor (test)", reason: "Feels like 105 today" });
   const done = async () => {
     const [h2, r1, g3, c3, k3] = await Promise.all([helpOf(harold), helpOf(rosario.id), helpOf(gloria.id), helpOf(carmen.id), helpOf(ruth.id)]);
-    return Boolean(h2 && r1 && g3 && c3 && k3 && (await db().where("location_shares", { household_id: harold })).length);
+    return Boolean(h2 && r1 && g3 && c3 && k3 && (await helpOf(armen.id)) && (await db().where("location_shares", { household_id: harold })).length);
   };
   const t1 = Date.now();
   await tickFor(240_000, done);
@@ -148,7 +156,7 @@ async function main() {
   const rosarioCall = (await db().where("calls", { household_id: rosario.id })).find((c) => c.answered_at);
   check(rowR?.priority === 1 && /Hang up and call 911 now/.test(rosarioCall?.transcript ?? ""), `unwell (Tagalog, heat-stroke signs): "hang up and call 911 now" and P1 (${rowR?.reason})`);
   const rowG = await helpOf(gloria.id);
-  check(rowG?.priority === 3 && /check-in visit/.test(rowG.reason ?? ""), `wants a check-in visit: P3 (${rowG?.reason})`);
+  check(rowG?.priority === 3 && /^Check-in visit/.test(rowG.reason ?? "") && !/distress|Call back/.test(rowG.reason ?? ""), `wants a check-in visit: P3, reads as a check-in visit (${rowG?.reason})`);
   const kim = await byName("Kim Young-ja");
   const kimSt = (await db().where("household_status", { household_id: kim.id }))[0];
   check(kimSt?.status === "leaving" && /cooling center/.test(kimSt.destination ?? ""), `Korean speaker going to a cooling center (${kimSt?.status}, ${kimSt?.destination})`);
@@ -163,6 +171,14 @@ async function main() {
     const row = await helpOf(who.id);
     check(twice >= 2 && Boolean(contactCall) && row?.priority === 3 && /door knock/.test(row.reason ?? ""),
       `${who.name} (${where}): no answer ${twice}x -> linked contact called -> door-knock card P3 (${row?.reason})`);
+  }
+  {
+    const twice = (await db().where("calls", { household_id: armen.id })).filter((c) => c.purpose === "resident" && c.state === "no_answer").length;
+    const row = await helpOf(armen.id);
+    const cp = await db().get("zones", "SFV-CP");
+    check(!armen.linked_contact_household_id && !armen.afn_flags.length && cp?.state === "warning" && twice >= 2 && row?.priority === 3 &&
+      /door-knock/.test(row.reason ?? "") && /lives alone/.test(row.reason ?? ""),
+      `${armen.name} (Canoga Park, Heat Advisory; lives alone, no AC, no contact, no AFN): no answer ${twice}x -> door-knock card P3 (${row?.reason})`);
   }
 
   // 7. Pickup run and the helper sent to the exact spot (a wellness visit is a helper), with live location.

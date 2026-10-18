@@ -14,7 +14,7 @@ const WRC = "Westchester Recreation Center, 7000 West Manchester Avenue";
 const JOP = "Jesse Owens Community Regional Park, 9651 South Western Avenue";
 const EXP = "Exposition Park, 700 Exposition Park Drive";
 
-const DEMO_NOTE = "This is a simulated scenario for a hackathon demonstration; shelters and routes are demo choices.";
+const DEMO_NOTE = "This is a demo scenario for a hackathon; shelters and routes are demo choices.";
 
 export const WESTSIDE_PRESETS: MovePresets = {
   "LA-SM": {

@@ -21,7 +21,7 @@ const ZONES: ZoneSeed[] = [
   { id: "ALT-W", name: "West Altadena", coords: ring, state: "watch",
     directive_text: "Be aware. No action is required right now. We will call again if that changes.",
     move_text: null, evac_point: null, evac: null,
-    fact_sheet: `${PCC_NAME} accepts pets in carriers. Simulated scenario for a hackathon demonstration.`,
+    fact_sheet: `${PCC_NAME} accepts pets in carriers. Demo scenario for a hackathon.`,
     population_est: 14_000, hazard_origin: [-118.135, 34.205] },
 ];
 

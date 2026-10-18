@@ -47,6 +47,63 @@ async function main() {
   // 1. Reset and approve Culver City to Near-Crisis (Stage 1, edge-first).
   await resetScenario("westside");
   await setMeta({ autopilot_devices: true });
+
+  // 0. A missed call keeps its block's words. Venice's seeded plan is made to run for this check (wave 1 going now);
+  // a household in a later wave misses its get-ready call. The retry, then the linked contact, hear the same block
+  // words (both texts, together), never "leave now" on any road. Venice is put back as it was afterwards.
+  {
+    const { blockAt, blockWords } = await import("../lib/engine/blocks");
+    const { buildVars, newCall } = await import("../lib/engine/campaigns");
+    const { failCall } = await import("../lib/engine/calls");
+    const { getMeta } = await import("../lib/engine/log");
+    const { planFor } = await import("../lib/engine/plans");
+    const { directiveFor } = await import("../lib/directives");
+    const vn0 = (await db().get("zones", "LA-VN"))!;
+    const plan0 = (await planFor("LA-VN"))!;
+    await db().update("zones", "LA-VN", { state: "order", directive_text: directiveFor("order", "civilian", vn0.name) });
+    await db().update("evac_plans", plan0.id, { status: "active", current_wave: 1, wave_started_at: new Date().toISOString() });
+    const vn = (await db().get("zones", "LA-VN"))!;
+    const plan = (await planFor("LA-VN"))!;
+    const helped = new Set((await db().all("help_requests")).filter((r) => r.status !== "closed").map((r) => r.household_id));
+    const people = (await db().where("households", { zone_id: "LA-VN" })).filter((h) => h.role === "resident");
+    const waiting = people.find((h) => {
+      const b = blockAt(plan, h.lng, h.lat);
+      return b && b.wave > plan.current_wave + 1 && !h.afn_flags.length && !helped.has(h.id);
+    });
+    const contact = people.find((h) => h.id !== waiting?.id);
+    if (!waiting || !contact) check(false, "Venice has a household in a later wave (for the retry check)");
+    else {
+      const block = blockAt(plan, waiting.lng, waiting.lat)!;
+      const words = blockWords(plan, block, vn);
+      const before = { linked_contact_household_id: waiting.linked_contact_household_id, linked_contact_name: waiting.linked_contact_name };
+      await db().update("households", waiting.id, { linked_contact_household_id: contact.id, linked_contact_name: contact.name });
+      const vars = buildVars({ zone: vn, household: waiting, purpose: "resident", stage: "3", meta: await getMeta(), alert_text: vn.directive_text });
+      vars.directive_text = words.directive_text;
+      vars.move_text = words.move_text;
+      const c1 = newCall({ campaign_id: null, household: (await db().get("households", waiting.id))!, purpose: "resident", vars });
+      c1.state = "ringing";
+      await db().insert("calls", c1);
+      await failCall(c1.id, "no_answer");
+      const retry = (await db().where("calls", { household_id: waiting.id })).find((c) => c.attempt === 2);
+      const same = (v?: { directive_text: string; move_text: string }) => Boolean(v && v.directive_text === words.directive_text && v.move_text === words.move_text);
+      check(words.kind === "get_ready" && same(retry?.vars) && retry!.vars.move_text !== vn.move_text && retry!.vars.directive_text !== vn.directive_text,
+        `retry (attempt 2) keeps ${block.id}'s words (wave ${block.wave}, ${words.kind}): "${retry?.vars.move_text.slice(0, 60)}..."`);
+      if (retry) {
+        await db().update("calls", retry.id, { state: "ringing" });
+        await failCall(retry.id, "no_answer");
+      }
+      const lc = (await db().where("calls", { household_id: contact.id })).find((c) => c.purpose === "linked_contact" && c.subject_household_id === waiting.id);
+      check(same(lc?.vars) && lc!.vars.person_name === contact.name && lc!.vars.subject_name === waiting.name,
+        `linked contact (${contact.name}) hears the same block words about ${waiting.name}`);
+      for (const c of [c1, retry, lc]) if (c) await db().remove("calls", { id: c.id });
+      const inbound = (await db().where("campaigns", { kind: "inbound" }))[0];
+      if (inbound) await db().remove("household_status", { household_id: waiting.id, campaign_id: inbound.id });
+      await db().update("households", waiting.id, before);
+    }
+    await db().update("zones", "LA-VN", { state: vn0.state, directive_text: vn0.directive_text });
+    await db().update("evac_plans", plan0.id, { status: plan0.status, current_wave: plan0.current_wave, wave_started_at: plan0.wave_started_at });
+  }
+
   let t0 = Date.now();
   const res = await approveZone("LA-CC", {
     state: "warning", directive_text: "", move_text: "", evac_point: "Westchester Recreation Center, 7000 West Manchester Avenue",
